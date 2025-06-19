@@ -2,6 +2,7 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { Socket, socketCtx, UserInput } from '$lib/socket.svelte';
 	import { sessionCtx } from '$lib/threads';
+	import { ModeWatcher } from 'mode-watcher';
 	import '../app.css';
 
 	let { children } = $props();
@@ -21,5 +22,6 @@
 	socketCtx.set(socket);
 </script>
 
+<ModeWatcher />
 <Toaster />
 {@render children()}
