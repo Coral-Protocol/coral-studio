@@ -433,25 +433,27 @@
 					onclick={async () => {
 						if (!ctx.connection) return;
 						try {
-							const res: { sessionId: string } = await fetch(
-								`http://${ctx.connection.host}/sessions`,
-								{
-									method: 'POST',
-									headers: {
-										'Content-Type': 'application/json'
-									},
-									body: JSON.stringify({
-										...finalBody,
-										applicationId: ctx.connection.appId,
-										privacyKey: ctx.connection.privacyKey
-									})
-								}
-							).then((res) => res.json());
+							const res = await fetch(`http://${ctx.connection.host}/sessions`, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify({
+									...finalBody,
+									applicationId: ctx.connection.appId,
+									privacyKey: ctx.connection.privacyKey
+								})
+							});
+
+							if (res.status !== 200) {
+								throw await res.text();
+							}
+							const obj: { sessionId: string } = await res.json();
 							if (!ctx.sessions) ctx.sessions = [];
-							ctx.sessions.push(res.sessionId);
+							ctx.sessions.push(obj.sessionId);
 							ctx.session = new Session({
 								...ctx.connection,
-								session: res.sessionId
+								session: obj.sessionId
 							});
 							open = false;
 						} catch (e) {
