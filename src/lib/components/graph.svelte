@@ -24,14 +24,6 @@
 	const marginTop = margin; // the top margin, in pixels
 	const marginBottom = margin; // the bottom margin, in pixels
 
-	// Visual styling
-	const textColor = 'black'; // The color of the text
-	const fill = '#ccc'; // A static fill color (not currently used)
-	const fillOpacity = 0.9; // The opacity of the circles
-	const strokeColor = 'none'; // The color of the circle borders
-	const strokeWidth = 1; // The width of the circle borders
-	const strokeOpacity = 1; // The opacity of the circle borders
-
 
 	/**
 	 * Data preparation for visualization
