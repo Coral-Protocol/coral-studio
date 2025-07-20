@@ -82,13 +82,33 @@
   </section>
 
   <section class="mb-16">
-    {#if data !== undefined}
+    {#if data !== undefined}      
       <h2 class="text-2xl font-bold mb-6 border-b pb-2">GAIA Question - {data.result.question.task_id}</h2>
+
       <p class="text-lg leading-relaxed mb-8">
         {data.result.question.Question}
       </p>
 
-      <h2 class="text-2xl font-bold mb-6 border-b pb-2">Annotated </h2>
+      <table class="mb-8">
+        <tbody>
+          <tr>
+            <td style="padding-right: 1rem;">Correct answer</td>
+            <td><span style="color: green;">{data.result.question["Final answer"]}</span></td>
+          </tr>
+          <tr>
+            <td>Our answer</td>
+            <td>
+              {#if data.result.answerAttempt?.answer !== undefined}
+                <span style="color: {data.result.question["Final answer"] == data.result.answerAttempt.answer ? "green" : "red"};">{data.result.answerAttempt.answer}</span>
+              {:else}
+                <span style="color: red; font-style: italic;">No answer provided</span>
+              {/if}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2 class="text-2xl font-bold mb-6 border-b pb-2">Annotated metadata</h2>
       <p class="text-lg leading-relaxed mb-8">
         {#each data.result.question["Annotator Metadata"].Steps.split("\n") as step, i}
           <span class="block mb-2">
