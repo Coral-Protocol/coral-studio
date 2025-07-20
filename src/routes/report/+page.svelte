@@ -82,8 +82,22 @@
   </section>
 
   <section class="mb-16">
-
     {#if data !== undefined}
+      <h2 class="text-2xl font-bold mb-6 border-b pb-2">GAIA Question - {data.result.question.task_id}</h2>
+      <p class="text-lg leading-relaxed mb-8">
+        {data.result.question.Question}
+      </p>
+
+      <h2 class="text-2xl font-bold mb-6 border-b pb-2">Annotated </h2>
+      <p class="text-lg leading-relaxed mb-8">
+        {#each data.result.question["Annotator Metadata"].Steps.split("\n") as step, i}
+          <span class="block mb-2">
+            {step}
+          </span>
+        {/each}
+      </p>
+
+      <h2 class="text-2xl font-bold mb-6 border-b pb-2">Threads</h2>
       {#each data.result?.threads as thread}
         <div class="mb-8">
           <Button
@@ -97,7 +111,7 @@
           </Button>
         </div>
       {/each}
-        <ThreadView thread={selectedThread} {messages} />
+      <ThreadView thread={selectedThread} {messages} />
     {/if}
   </section>
 

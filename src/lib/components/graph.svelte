@@ -57,10 +57,10 @@
 	 * @returns The color as a string
 	 */
 	function color(index: number): string {
-		const result = data[index].result;
-		// if (!result.isCorrect) {
-		// 	return "grey";
-		// }
+		let result = data[index].result;
+		if (!result.isCorrect) {
+			return "grey";
+		}
 		switch (result.question.Level) {
 			case 1:
 				return schemeTableau10[1];
