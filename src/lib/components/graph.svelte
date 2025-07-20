@@ -24,23 +24,48 @@
 	const marginTop = margin; // the top margin, in pixels
 	const marginBottom = margin; // the bottom margin, in pixels
 
+	// Visual styling
+	const textColor = 'black'; // The color of the text
+	const fill = '#ccc'; // A static fill color (not currently used)
+	const fillOpacity = 0.9; // The opacity of the circles
+	const strokeColor = 'none'; // The color of the circle borders
+	const strokeWidth = 1; // The width of the circle borders
+	const strokeOpacity = 1; // The opacity of the circle borders
 
-	// Compute the values.
+
+	/**
+	 * Data preparation for visualization
+	 */
+	// Extract character counts from data for sizing the circles
 	const vVals = data.map((el) => el.characterCount);
+
+	// Create an array of indices for non-zero values
 	const iVals = range(vVals.length).filter(i => vVals[i] > 0);
 
 	// // Compute labels.
 	// const lVals = data.map((el) => [...el.result.question.task_id.split('.').pop()!.split(/(?=[A-Z][a-z])/g), el.characterCount.toLocaleString('en')].join('\n'));
 	// const tVals = data.map((el) => `${el.result.question.task_id}\n${el.characterCount.toLocaleString('en')}`);
 
+	/**
+	 * Create a hierarchical layout for the visualization
+	 * 
+	 * This uses D3's pack layout to create a circle packing visualization
+	 * where each circle represents a data point with size proportional to its value.
+	 */
 	const root = pack()
 		.size([width - marginLeft - marginRight, height - marginTop - marginBottom])
 		.padding(padding)
-		(hierarchy<unknown>({children: iVals})
+		(hierarchy<{ children: number[] }>({ children: iVals })
 			.sum(i => vVals[i as number]));
 
+	/**
+	 * Determine the color of a node based on the question level
+	 *
+	 * @param index - The index of the data point
+	 * @returns The color as a string
+	 */
 	function color(index: number): string {
-		let result = data[index].result;
+		const result = data[index].result;
 		// if (!result.isCorrect) {
 		// 	return "grey";
 		// }

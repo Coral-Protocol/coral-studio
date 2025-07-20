@@ -39,7 +39,7 @@
 				{mention}
 			</span>
 		{/each}
-		{#if mentions.length == 0}
+		{#if mentions.length === 0}
 			<span class="text-muted-foreground">nobody</span>
 		{/if}
 		<p class="flex-grow text-right" title={message.timestamp?.toString() ?? 'null'}>
