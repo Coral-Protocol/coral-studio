@@ -22,7 +22,11 @@ export type AgentOption = {
 	name: string;
 	description?: string;
 	value: string | undefined;
-} & ({ type: 'string'; default: string | null } | { type: 'number'; default: number | null });
+} & (
+	| { type: 'string'; default: string | null }
+	| { type: 'number'; default: number | null }
+	| { type: 'secret'; default: void }
+);
 
 export type RegistryAgent = {
 	id: string;

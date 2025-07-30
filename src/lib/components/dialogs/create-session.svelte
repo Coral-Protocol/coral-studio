@@ -15,7 +15,13 @@
 	import { ClipboardCopy, PlusIcon, TrashIcon } from '@lucide/svelte';
 
 	import { cn } from '$lib/utils';
-	import { sessionCtx, type Agent, type CustomTool, type RegistryAgent } from '$lib/threads';
+	import {
+		sessionCtx,
+		type Agent,
+		type AgentOption,
+		type CustomTool,
+		type RegistryAgent
+	} from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
 	import { tools } from '$lib/mcptools';
 
@@ -31,8 +37,15 @@
 	import { watch } from 'runed';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { Textarea } from '../ui/textarea';
+	import type { HTMLInputTypeAttribute } from 'svelte/elements';
 
 	let ctx = sessionCtx.get();
+
+	const inputTypes: { [K in AgentOption['type']]: HTMLInputTypeAttribute } = {
+		string: 'string',
+		secret: 'password',
+		number: 'number'
+	};
 
 	let {
 		open = $bindable(false),
@@ -257,15 +270,15 @@
 												class="grid grid-cols-[max-content_minmax(0,auto)] gap-2 p-2 pl-4"
 											>
 												{#each Object.values(agent.options) as option (option.name)}
+													{@const required =
+														option.default === null || option.default === undefined}
 													<Tooltip.Provider>
 														<Tooltip.Root disabled={!option.description}>
 															<Tooltip.Trigger>
 																{#snippet child({ props })}
 																	<Label {...props} class="gap-1">
 																		{option.name}
-																		<span class="text-destructive"
-																			>{option.default === null ? '*' : ''}
-																		</span>
+																		<span class="text-destructive">{required ? '*' : ''} </span>
 																	</Label>
 																{/snippet}
 															</Tooltip.Trigger>
@@ -275,12 +288,12 @@
 														</Tooltip.Root>
 													</Tooltip.Provider>
 													<Input
-														type={/key/i.test(option.name) ? 'password' : 'text'}
+														type={inputTypes[option.type]}
 														autocomplete="off"
 														name={option.name}
-														placeholder={option.default !== null ? option.default.toString() : ''}
-														required={option.default === null}
-														aria-invalid={option.default === null && !option.value}
+														placeholder={required ? '' : (option.default?.toString() ?? '')}
+														{required}
+														aria-invalid={required && !option.value}
 														bind:value={option.value}
 													/>
 												{/each}
@@ -433,31 +446,28 @@
 					onclick={async () => {
 						if (!ctx.connection) return;
 						try {
-							const res = await fetch(
-								`http://${ctx.connection.host}/sessions`,
-								{
-									method: 'POST',
-									headers: {
-										'Content-Type': 'application/json'
-									},
-									body: JSON.stringify({
-										...finalBody,
-										applicationId: ctx.connection.appId,
-										privacyKey: ctx.connection.privacyKey
-									})
-								}
-							);
+							const res = await fetch(`http://${ctx.connection.host}/sessions`, {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify({
+									...finalBody,
+									applicationId: ctx.connection.appId,
+									privacyKey: ctx.connection.privacyKey
+								})
+							});
 
 							if (res.status != 200) {
 								// todo @alan there should probably be an api class where we can generic-ify the handling of this error
 								// with a proper type implementation too..!
-								let error: { message: string, stackTrace: string[] } = await res.json();
+								let error: { message: string; stackTrace: string[] } = await res.json();
 								console.error(error.stackTrace);
 
 								toast.error(`Failed to create session: ${error.message}`);
 								return;
 							}
-							
+
 							let session: { sessionId: string } = await res.json();
 
 							if (!ctx.sessions) ctx.sessions = [];
