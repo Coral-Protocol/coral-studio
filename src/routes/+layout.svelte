@@ -23,23 +23,32 @@
 	});
 	logContext.set(logCtx);
 
-	watch([() => session.session, () => session.connection], () => {
-		if (!session.session || !session.connection) return;
-		if (logCtx.session !== null && logCtx.session !== session.session.session) {
-			logCtx.logs = {};
-			console.log('invalidating session logs');
-		}
-		logCtx.session = session.session.session;
-		for (const agent of Object.keys(session.session.agents)) {
-			if (!(agent in logCtx.logs)) {
-				logCtx.logs[agent] = new AgentLogs(
-					{ ...session.connection, session: session.session.session },
-					agent
-				);
-				console.log(`opening agent logs for '${agent}'`);
+	//if we get problems we just need to logCtx.logs[agent]?.close() before assigning, according to our good developer friend, Alan.
+
+	watch(
+		[
+			() => session.session,
+			() => session.connection,
+			() => Object.keys(session.session?.agents ?? {})
+		],
+		() => {
+			if (!session.session || !session.connection) return;
+			if (logCtx.session !== null && logCtx.session !== session.session.session) {
+				logCtx.logs = {};
+				console.log('invalidating session logs');
+			}
+			logCtx.session = session.session.session;
+			for (const agent of Object.keys(session.session.agents)) {
+				if (!(agent in logCtx.logs)) {
+					logCtx.logs[agent] = new AgentLogs(
+						{ ...session.connection, session: session.session.session },
+						agent
+					);
+					console.log(`opening agent logs for '${agent}'`);
+				}
 			}
 		}
-	});
+	);
 
 	let socket = $state({
 		socket: new Socket(),
