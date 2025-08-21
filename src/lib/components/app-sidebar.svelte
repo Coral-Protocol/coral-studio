@@ -54,9 +54,9 @@
 			connecting = true;
 			error = null;
 			sessCtx.registry = null;
-			const agents = (await fetch(`http://${sessCtx.connection.host}/api/v1/registry`).then((res) =>
-				res.json()
-			)) as RegistryAgent[];
+					const agents = (await fetch(`http://${sessCtx.connection.host}/api/v1/agents`).then((res) =>
+			res.json()
+		)) as RegistryAgent[];
 			sessCtx.registry = Object.fromEntries(agents.map((agent) => [agent.id, agent]));
 
 			const sessions = (await fetch(`http://${sessCtx.connection.host}/api/v1/sessions`).then(

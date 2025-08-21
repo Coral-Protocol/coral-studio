@@ -43,7 +43,7 @@
 		testSuccess = null;
 		testing = true;
 		try {
-			const res = await fetch(`http://${host}/api/v1/registry`);
+			const res = await fetch(`http://${host}/api/v1/agents`);
 			await tick();
 			testSuccess = res.status === 200;
 		} catch {
