@@ -3,7 +3,10 @@
 	import * as Chart from '$lib/components/ui/chart/index.js';
 	import { ArcChart, Text } from 'layerchart';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+<<<<<<< HEAD
 	import type { ServerStatistics } from '$lib/statisticData';
+=======
+>>>>>>> e35323b (feat: new statistics page)
 
 	const chartData = [{ browser: 'safari', visitors: 80, color: 'var(--color-safari)' }];
 
@@ -11,6 +14,7 @@
 		visitors: { label: 'Visitors' },
 		safari: { label: 'Safari', color: 'var(--chart-2)' }
 	} satisfies Chart.ChartConfig;
+<<<<<<< HEAD
 	let {
 		span = '1',
 		class: className = '',
@@ -20,6 +24,8 @@
 		statisticData: Promise<ServerStatistics> | undefined;
 		class?: string;
 	} = $props();
+=======
+>>>>>>> e35323b (feat: new statistics page)
 </script>
 
 <Card.Root>

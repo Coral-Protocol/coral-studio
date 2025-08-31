@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import * as Select from '$lib/components/ui/select/index.js';
@@ -23,6 +24,12 @@
 		statisticData: Promise<ServerStatistics> | undefined;
 		class?: string;
 	} = $props();
+=======
+<script>
+	import * as Card from '$lib/components/ui/card';
+
+	let { span = '1', data = [] } = $props();
+>>>>>>> e35323b (feat: new statistics page)
 </script>
 
 <Card.Root class="col-span-{span}">
@@ -30,6 +37,7 @@
 		<Card.Title>Agent list</Card.Title>
 	</Card.Header>
 	<Card.Content>
+<<<<<<< HEAD
 		<Select.Root type="single" name="favoriteFruit" bind:value>
 			<Select.Trigger class="w-full">
 				{triggerContent}
@@ -49,5 +57,8 @@
 				</Select.Group>
 			</Select.Content>
 		</Select.Root>
+=======
+		<p>widget placeholder</p>
+>>>>>>> e35323b (feat: new statistics page)
 	</Card.Content>
 </Card.Root>

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import type { ServerStatistics } from '$lib/statisticData';
@@ -11,6 +12,12 @@
 		statisticData: Promise<ServerStatistics> | undefined;
 		class?: string;
 	} = $props();
+=======
+<script>
+	import * as Card from '$lib/components/ui/card';
+
+	let { span = '1', data = [] } = $props();
+>>>>>>> e35323b (feat: new statistics page)
 </script>
 
 <Card.Root class="col-span-{span}">

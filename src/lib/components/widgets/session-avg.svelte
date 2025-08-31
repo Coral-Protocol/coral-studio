@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
 	import type { ServerStatistics } from '$lib/statisticData';
@@ -11,6 +12,12 @@
 		statisticData: Promise<ServerStatistics> | undefined;
 		class?: string;
 	} = $props();
+=======
+<script>
+	import * as Card from '$lib/components/ui/card';
+
+	let { span = '1', data = [] } = $props();
+>>>>>>> e35323b (feat: new statistics page)
 </script>
 
 <Card.Root class="col-span-{span}">
@@ -18,6 +25,7 @@
 		<Card.Title>Average per Session</Card.Title>
 	</Card.Header>
 	<Card.Content class="flex h-24 flex-col items-center justify-center gap-2">
+<<<<<<< HEAD
 		{#await statisticData}
 			<p>Loading…</p>
 		{:then stats}
@@ -29,6 +37,9 @@
 		{:catch err}
 			<p>Error loading stats</p>
 		{/await}
+=======
+		<h1 class="text-4xl font-bold">$28</h1>
+>>>>>>> e35323b (feat: new statistics page)
 		<span class="text-chart-1 text-sm">+2.2%</span>
 	</Card.Content>
 </Card.Root>
