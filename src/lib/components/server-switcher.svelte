@@ -42,6 +42,10 @@
 
 	let host = $state('127.0.0.1:5555');
 
+	const stripProtocol = (value: string) => {
+		return value.replace(/^https?:\/\//, '');
+	};
+
 	const debouncedTest = useDebounce(async () => {
 		testSuccess = null;
 		testing = true;
@@ -149,7 +153,17 @@
 		<form>
 			<section class="grid grid-cols-2">
 				<TooltipLabel>Host</TooltipLabel>
-				<Input placeholder="localhost:5555" bind:value={host} />
+				<Input 
+					placeholder="localhost:5555" 
+					bind:value={host}
+					oninput={(e) => {
+						const input = e.currentTarget as HTMLInputElement;
+						const cleaned = stripProtocol(input.value);
+						if (cleaned !== input.value) {
+							host = cleaned;
+						}
+					}}
+				/>
 			</section>
 		</form>
 		<Dialog.Footer class="items-center">
