@@ -1,5 +1,5 @@
 import type { PublicRegistryAgent } from '$lib/threads';
-import { registry, z } from 'zod/v4';
+import { z } from 'zod/v4';
 
 const formSchema = z.object({
 	applicationId: z.string().nonempty(),
@@ -42,6 +42,8 @@ export const makeFormSchema = (registryAgents: { [agent: string]: PublicRegistry
 				});
 				return;
 			}
+			console.log(regAgent.runtimes);
+
 			if (regAgent.runtimes.indexOf(agent.provider.runtime) === -1) {
 				ctx.addIssue({
 					code: 'custom',

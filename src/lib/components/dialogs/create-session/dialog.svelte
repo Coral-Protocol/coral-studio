@@ -16,7 +16,7 @@
 
 	// TODO: change these icons
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
-	import { ClipboardCopy, PlusIcon, TrashIcon } from '@lucide/svelte';
+	import { ClipboardCopy, PlusIcon, TrashIcon, X } from '@lucide/svelte';
 
 	import { cn } from '$lib/utils';
 	import {
@@ -176,124 +176,120 @@
 {#if ctx.connection}
 	<Dialog.Root bind:open>
 		<Dialog.Content
-			class="grid max-h-[90svh] grid-cols-[100%] grid-rows-[max-content_minmax(0,1fr)_max-content] gap-y-2 lg:max-w-2xl"
+			class="grid max-h-[90svh] w-full grid-cols-[100%] grid-rows-[max-content_minmax(0,1fr)_max-content] gap-y-2 md:max-w-3xl lg:max-w-5xl"
 		>
 			<Dialog.Header>
 				<Dialog.Title>New Session</Dialog.Title>
-				<Dialog.Description>Create a new session.</Dialog.Description>
+				<Dialog.Description class="flex items-baseline justify-between gap-2">
+					<span class="grow">Create a new session.</span>
+					<ClipboardImportDialog onImport={importFromJson}>
+						{#snippet child({ props })}
+							<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
+						{/snippet}
+					</ClipboardImportDialog>
+					<ClipboardImportDialog onImport={importFromJson}>
+						{#snippet child({ props })}
+							<Button {...props} variant="outline" class="w-fit">Export <ClipboardCopy /></Button>
+						{/snippet}
+					</ClipboardImportDialog>
+				</Dialog.Description>
 			</Dialog.Header>
-			<form method="POST" use:enhance>
+			<form method="POST" use:enhance autocomplete="off" class="flex flex-col gap-4">
 				<ScrollArea class="">
-					<section class="flex max-w-full flex-col gap-2 pr-4">
-						<section class="grid grid-cols-[minmax(0,max-content)_auto] gap-4 gap-y-2 pt-2">
-							<Form.Field {form} name="applicationId">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Application ID</Form.Label>
-										<Input {...props} bind:value={$formData.applicationId} />
-									{/snippet}
-								</Form.Control>
-							</Form.Field>
-							<Form.Field {form} name="privacyKey">
-								<Form.Control>
-									{#snippet children({ props })}
-										<Form.Label>Privacy Key</Form.Label>
-										<Input {...props} type="password" bind:value={$formData.privacyKey} />
-									{/snippet}
-								</Form.Control>
-							</Form.Field>
-						</section>
-						<ClipboardImportDialog onImport={importFromJson}>
-							{#snippet child({ props })}
-								<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
-							{/snippet}
-						</ClipboardImportDialog>
+					<section class="flex max-w-full flex-col gap-2">
 						<Separator class="mt-2" />
-
-						<h2>Agents</h2>
-						<!-- TODO: h-96 here but overflow is ruining me -->
-						<section class="grid grid-cols-2 grid-rows-[min-content_1fr] gap-1 gap-x-2">
-							<ScrollArea
-								class="bg-card text-card-foreground row-span-full flex min-h-0 flex-col gap-6 rounded-md border shadow-sm"
-							>
-								<ul class="flex h-full min-h-0 w-full grow flex-col content-stretch">
-									{#each $formData.agents as agent, i}
-										<li class="contents">
-											<Toggle
-												class="flex justify-start pr-0"
-												bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
-											>
-												<p class="grow">{agent.name}</p>
-												<TwostepButton
-													class="size-9"
-													variant="outline"
-													onclick={() => {
-														$formData.agents.splice(i, 1);
-														$formData.agents = $formData.agents;
-														selectedAgent =
-															selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-													}}><TrashIcon /></TwostepButton
+						<section
+							class="grid h-96 grid-cols-4 grid-rows-[min-content_1fr] gap-1 gap-x-4 overflow-hidden"
+						>
+							<section class="flex h-96 flex-col gap-2">
+								<ScrollArea
+									class="bg-card text-card-foreground row-span-full flex min-h-0 grow flex-col gap-6 rounded-md border shadow-sm"
+								>
+									<ul class="flex h-full min-h-0 w-full grow flex-col content-stretch gap-2">
+										{#each $formData.agents as agent, i}
+											<li class="contents">
+												<Toggle
+													class="group relative flex justify-start rounded-none pr-0"
+													bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
 												>
-											</Toggle>
-										</li>
-									{/each}
-									{#if $formData.agents.length == 0}
-										<li class="contents">
-											<p
-												class="text-muted-foreground flex h-9 grow items-center justify-center text-sm"
-											>
-												No agents added.
-											</p>
-										</li>
-									{:else}
-										<li class="grow"></li>
-									{/if}
-									<Combobox
-										side="right"
-										align="start"
-										options={Object.keys(agents)}
-										searchPlaceholder="Search agents..."
-										onValueChange={(value) => {
-											const count = $formData.agents.filter(
-												(agent) => agent.agentName === value
-											).length;
-											$formData.agents.push({
-												agentName: value,
-												provider: {
-													type: 'local',
-													runtime: agents[value]?.runtimes?.at(-1) ?? 'executable'
-												},
-												systemPrompt: undefined,
-												blocking: true,
-												name: value + (count > 0 ? `-${count + 1}` : ''),
-												options: {},
-												customTools: new Set()
-											});
-											$formData.agents = $formData.agents;
-											selectedAgent = $formData.agents.length - 1;
-										}}
-									>
-										{#snippet trigger({ props })}
-											<Button {...props} size="icon" class="mt-2 w-full gap-1 px-3"
-												>New agent<PlusIcon /></Button
-											>{/snippet}
-										{#snippet option({ option })}
-											{option}
-										{/snippet}
-									</Combobox>
-								</ul>
-							</ScrollArea>
+													<p class="grow">{agent.name}</p>
+
+													<TwostepButton
+														class="absolute top-0 right-0 hidden size-9  {selectedAgent === i
+															? 'block'
+															: 'group-hover:block'} "
+														variant="ghost"
+														onclick={() => {
+															$formData.agents.splice(i, 1);
+															$formData.agents = $formData.agents;
+															selectedAgent =
+																selectedAgent &&
+																Math.min(selectedAgent, $formData.agents.length - 1);
+														}}><X /></TwostepButton
+													>
+												</Toggle>
+											</li>
+										{/each}
+										{#if $formData.agents.length == 0}
+											<li class="contents">
+												<p
+													class="text-muted-foreground flex h-9 grow items-center justify-center text-sm"
+												>
+													No agents added.
+												</p>
+											</li>
+										{:else}
+											<li class="grow"></li>
+										{/if}
+									</ul>
+								</ScrollArea>
+								<Combobox
+									side="top"
+									align="center"
+									options={Object.keys(agents)}
+									searchPlaceholder="Search agents..."
+									onValueChange={(value) => {
+										const count = $formData.agents.filter(
+											(agent) => agent.agentName === value
+										).length;
+										$formData.agents.push({
+											agentName: value,
+											provider: {
+												type: 'local',
+												runtime: agents[value]?.runtimes?.at(-1) ?? 'executable'
+											},
+											systemPrompt: undefined,
+											blocking: true,
+											name: value + (count > 0 ? `-${count + 1}` : ''),
+											options: {},
+											customTools: new Set()
+										});
+										$formData.agents = $formData.agents;
+										selectedAgent = $formData.agents.length - 1;
+									}}
+								>
+									{#snippet trigger({ props })}
+										<Button {...props} size="icon" class="w-full gap-1 px-3"
+											>Add agent <PlusIcon />
+										</Button>
+									{/snippet}
+									{#snippet option({ option })}
+										{option}
+									{/snippet}
+								</Combobox>
+							</section>
 							{#if selectedAgent !== null && $formData.agents.length > selectedAgent}
 								{@const agent = $formData.agents[selectedAgent]!}
 								{@const availableOptions = agent && agents[agent.agentName]?.options}
-								<Tabs.Root value="options" class="min-h-0">
+								<Tabs.Root value="options" class="col-span-3 min-h-0">
 									<Tabs.List class="w-full">
 										<Tabs.Trigger value="options">Options</Tabs.Trigger>
 										<Tabs.Trigger value="prompt">Prompt</Tabs.Trigger>
 										<Tabs.Trigger value="tools">Tools</Tabs.Trigger>
+										<Tabs.Trigger value="groups">Groups</Tabs.Trigger>
 									</Tabs.List>
-									<ScrollArea class="min-h-0">
-										<Tabs.Content value="options" class="flex min-h-0 flex-col gap-2">
+									<ScrollArea class="h-96 px-4">
+										<Tabs.Content value="options" class="flex min-h-0 flex-col gap-4">
 											{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
 												<Form.ElementField
 													{form}
@@ -371,10 +367,11 @@
 													<Form.ElementField
 														{form}
 														name="agents[{selectedAgent}].options.{name}.value"
+														class="flex flex-col gap-2"
 													>
 														<Form.Control>
 															{#snippet children({ props })}
-																<TooltipLabel tooltip={opt.description} class="gap-1">
+																<TooltipLabel tooltip={opt.description} class="gap-2">
 																	{name}
 																	{#if !('default' in opt) || opt.default === undefined}
 																		<span class="text-destructive">*</span>
@@ -453,12 +450,56 @@
 												</ul>
 											</Form.Fieldset>
 										</Tabs.Content>
+										<Tabs.Content value="groups" class="flex flex-col gap-2">
+											<ul class="flex flex-col gap-1">
+												{#each $formData.links as link, i}
+													<Select.Root
+														type="multiple"
+														value={link}
+														onValueChange={(value) => {
+															$formData.links[i] = value;
+															$formData.links = $formData.links;
+														}}
+													>
+														<Select.Trigger>
+															{#if link.length == 0}
+																<span class="text-muted-foreground text-sm italic"
+																	>Group {i + 1} &#40;no members&#41;</span
+																>
+															{:else if link.length == 1}
+																Group {i + 1} &#40;{link.length} member&#41;
+															{:else}
+																Group {i + 1} &#40;{link.length} members&#41;
+															{/if}
+														</Select.Trigger>
+														<Select.Content>
+															{#if $formData.agents.length == 0}
+																<span class="text-muted-foreground px-2 text-sm italic"
+																	>No agents</span
+																>
+															{/if}
+															{#each new Set($formData.agents.map((agent) => agent.name)) as id}
+																<Select.Item value={id}>{id}</Select.Item>
+															{/each}
+														</Select.Content>
+													</Select.Root>
+												{/each}
+											</ul>
+											<Button
+												size="icon"
+												class="w-full gap-1 px-3"
+												disabled={($formData.links.at(-1)?.length ?? 1) == 0}
+												onclick={() => {
+													$formData.links = [...$formData.links, []];
+												}}>Create group<PlusIcon /></Button
+											>
+										</Tabs.Content>
 									</ScrollArea>
 								</Tabs.Root>
 							{/if}
 						</section>
 
-						<ModalCollapsible title="Groups">
+						<!-- <ModalCollapsible title="Groups">
 							<p class="text-muted-foreground text-sm leading-tight">
 								Define a list of groups, where each agent in a group can all interact.
 							</p>
@@ -489,26 +530,42 @@
 										</Select.Content>
 									</Select.Root>
 								{/each}
-								<Button
-									size="icon"
-									class="w-fit gap-1 px-3"
-									disabled={($formData.links.at(-1)?.length ?? 1) == 0}
-									onclick={() => {
-										$formData.links = [...$formData.links, []];
-									}}>New group<PlusIcon /></Button
-								>
 							</ul>
-						</ModalCollapsible>
-						<ModalCollapsible title="Export">
+						</ModalCollapsible> -->
+						<!-- <ModalCollapsible title="Export">
 							<CodeBlock text={JSON.stringify(asJson, null, 2)} class="" language="json" />
 							<!-- TODO: add an Issues: collapsible with a user friendly list (e.g "Agents > my-agent > API_KEY : misssing required field", and it's clickable)
-							<!-- <CodeBlock text={JSON.stringify($errors, null, 2)} class="" language="json" /> -->
-						</ModalCollapsible>
+							<!-- <CodeBlock text={JSON.stringify($errors, null, 2)} class="" language="json" />
+						</ModalCollapsible> -->
 					</section>
 				</ScrollArea>
-
+				<Separator />
 				<Dialog.Footer>
-					<Form.Button>Create</Form.Button>
+					<Form.Field {form} name="applicationId">
+						<Form.Control>
+							{#snippet children({ props })}
+								<Input
+									{...props}
+									bind:value={$formData.applicationId}
+									autocomplete="one-time-code"
+									placeholder="Application ID"
+								/>
+							{/snippet}
+						</Form.Control>
+					</Form.Field>
+					<Form.Field {form} name="privacyKey" class="grow">
+						<Form.Control>
+							{#snippet children({ props })}
+								<Input
+									{...props}
+									type="password"
+									bind:value={$formData.privacyKey}
+									placeholder="Privacy Key"
+								/>
+							{/snippet}
+						</Form.Control>
+					</Form.Field>
+					<Form.Button class="ml-auto">Create</Form.Button>
 				</Dialog.Footer>
 			</form>
 		</Dialog.Content>
