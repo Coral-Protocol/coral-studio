@@ -35,12 +35,17 @@
 	--telemetry-assistant: oklch(0.4177 0.1012 155.85);
 	--telemetry-user: oklch(0.3071 0.1218 259.53);
 	--telemetry-tool: oklch(0.3 0.069 71.67);
+	--chart-1: oklch(0.75 0.18 80);
+	--chart-2: oklch(0.75 0.18 250);
+	--chart-3: oklch(0.75 0.18 160);
+	--chart-4: oklch(0.75 0.18 30);
+	--chart-5: oklch(0.75 0.18 320);
 }
 
 .dark {
 	--background: oklch(0.1448 0 0);
 	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.1689 0.0021 286.18);
+	--card: oklch(0.2046 0 0);
 	--card-foreground: oklch(0.985 0 0);
 	--popover: oklch(0.21 0.006 285.885);
 	--popover-foreground: oklch(0.985 0 0);
@@ -67,6 +72,11 @@
 	--telemetry-assistant: oklch(0.8001 0.1824 151.8);
 	--telemetry-user: oklch(0.7137 0.1434 254.62);
 	--telemetry-tool: oklch(0.8369 0.1644 84.43);
+	--chart-1: oklch(0.6738 0.1778 146.34);
+	--chart-2: oklch(0.6606 0.1769 272.78);
+	--chart-3: oklch(0.55 0.18 160);
+	--chart-4: oklch(0.55 0.18 30);
+	--chart-5: oklch(0.55 0.18 320);
 }
 
 @theme inline {

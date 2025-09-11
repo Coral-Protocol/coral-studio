@@ -17,6 +17,7 @@
 	import IconToolbox from 'phosphor-icons-svelte/IconToolboxRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
+	import IconChartBar from 'phosphor-icons-svelte/IconChartBarRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { sessionCtx } from '$lib/threads';
@@ -147,6 +148,7 @@
 				<Sidebar.Menu>
 					<SidebarLink url="/registry" icon={IconPackage} title="Agent Registry" />
 					<SidebarLink url="/logs" icon={IconNotepad} title="Logs" />
+					<SidebarLink url="/statistics" icon={IconChartBar} title="Statistics" />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
