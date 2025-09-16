@@ -187,7 +187,7 @@
 		<Dialog.Content
 			class="3xl:w-[45%] flex h-[60%] w-full !max-w-full flex-col sm:w-[75%] md:w-[70%] lg:w-[80%] xl:w-[70%] 2xl:w-[55%]"
 		>
-			<form method="POST" use:enhance class="flex grow flex-col overflow-hidden">
+			<form method="POST" use:enhance class="flex grow flex-col gap-2 overflow-hidden">
 				<Tabs.Root value="agents" class="grow overflow-hidden">
 					<Dialog.Header>
 						<Dialog.Title>New Session</Dialog.Title>
