@@ -5,7 +5,6 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-
 	import { Button } from '$lib/components/ui/button';
 
 	import ChevronDown from 'phosphor-icons-svelte/IconCaretDownRegular.svelte';
@@ -17,6 +16,11 @@
 	import IconToolbox from 'phosphor-icons-svelte/IconToolboxRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
+	import IconDesktop from 'phosphor-icons-svelte/IconComputerTowerRegular.svelte';
+	import IconServer from 'phosphor-icons-svelte/IconHardDrivesRegular.svelte';
+	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
+	import IconListHeart from 'phosphor-icons-svelte/IconListHeartRegular.svelte';
+	import IconRocket from 'phosphor-icons-svelte/IconRocketRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { sessionCtx } from '$lib/threads';
@@ -60,9 +64,7 @@
 			connecting = true;
 			error = null;
 			sessCtx.registry = null;
-
 			const agents = (await client.GET('/api/v1/agents')).data!;
-
 			sessCtx.registry = agents;
 			sessCtx.sessions = (await client.GET('/api/v1/sessions')).data!;
 
@@ -76,9 +78,44 @@
 
 	let serverSwitcher = $state(null) as unknown as HTMLButtonElement;
 	let sessionSwitcher = $state(null) as unknown as HTMLButtonElement;
+
+	const documentation = [
+		{
+			title: 'Coral Server Github',
+			url: 'https://github.com/Coral-Protocol/coral-server',
+			icon: IconServer
+		},
+		{
+			title: 'Coral Studio Github',
+			url: 'https://github.com/Coral-Protocol/coral-studio',
+			icon: IconDesktop
+		},
+		{
+			title: 'Coral Protocol Documentation',
+			url: 'https://docs.coralprotocol.org/',
+			icon: IconNotepad
+		},
+		{
+			title: 'Multi agent demo',
+			url: 'https://github.com/Coral-Protocol/Multi-Agent-Demo',
+			icon: IconGraph
+		},
+		{
+			title: 'Example app',
+			url: 'https://github.com/Coral-Protocol/coral-example-app',
+			icon: IconRocket
+		},
+		{
+			title: 'Awesome Agents',
+			url: 'https://github.com/Coral-Protocol/awesome-agents-for-multi-agent-systems',
+			icon: IconListHeart
+		}
+	];
 </script>
 
+
 <CreateSession bind:open={createSessionOpen} registry={sessCtx.registry ?? []} />
+
 <Tour
 	open={tourOpen}
 	items={[
@@ -237,10 +274,23 @@
 				]}
 			/>
 		</Sidebar.Group>
+		<Sidebar.Group class="gap-1">
+			<Sidebar.GroupLabel class="text-muted-foreground">Documentation</Sidebar.GroupLabel>
+			{#each documentation as item (item.title)}
+				<Sidebar.MenuButton>
+					{#snippet child({ props })}
+						<a href={item.url} {...props} target="_blank">
+							<item.icon />
+							<span>{item.title}</span>
+						</a>
+					{/snippet}
+				</Sidebar.MenuButton>
+			{/each}
+		</Sidebar.Group>
 	</Sidebar.Content>
 	<Sidebar.Footer>
 		<Sidebar.Menu>
-			<Sidebar.MenuItem class="flex justify-end">
+			<Sidebar.MenuItem class="flex justify-end gap-4">
 				<Button onclick={toggleMode} variant="outline" size="icon">
 					<SunIcon
 						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90"
