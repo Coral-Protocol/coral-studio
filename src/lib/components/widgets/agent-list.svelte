@@ -1,7 +1,28 @@
-<script>
+<script lang="ts">
 	import * as Card from '$lib/components/ui/card';
+	import * as Select from '$lib/components/ui/select/index.js';
+	import type { ServerStatistics } from '$lib/statisticData';
 
-	let { span = '1', data = [] } = $props();
+	const fruits = [
+		{ value: 'apple', label: 'Apple' },
+		{ value: 'banana', label: 'Banana' },
+		{ value: 'blueberry', label: 'Blueberry' },
+		{ value: 'grapes', label: 'Grapes' },
+		{ value: 'pineapple', label: 'Pineapple' }
+	];
+
+	let value = $state('');
+
+	const triggerContent = $derived(fruits.find((f) => f.value === value)?.label ?? 'Select a fruit');
+	let {
+		span = '1',
+		class: className = '',
+		statisticData
+	}: {
+		span?: string;
+		statisticData: Promise<ServerStatistics> | undefined;
+		class?: string;
+	} = $props();
 </script>
 
 <Card.Root class="col-span-{span}">
@@ -9,6 +30,24 @@
 		<Card.Title>Agent list</Card.Title>
 	</Card.Header>
 	<Card.Content>
-		<p>widget placeholder</p>
+		<Select.Root type="single" name="favoriteFruit" bind:value>
+			<Select.Trigger class="w-full">
+				{triggerContent}
+			</Select.Trigger>
+			<Select.Content>
+				<Select.Group>
+					<Select.Label>Fruits</Select.Label>
+					{#each fruits as fruit (fruit.value)}
+						<Select.Item
+							value={fruit.value}
+							label={fruit.label}
+							disabled={fruit.value === 'grapes'}
+						>
+							{fruit.label}
+						</Select.Item>
+					{/each}
+				</Select.Group>
+			</Select.Content>
+		</Select.Root>
 	</Card.Content>
 </Card.Root>
