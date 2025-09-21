@@ -33,27 +33,28 @@
 =======
 	import { curveCardinal, curveMonotoneX, curveNatural } from 'd3-shape';
 	import { Area, AreaChart, LinearGradient } from 'layerchart';
-	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
-
-	const chartData: {
-		date: Date;
-		desktop: number; // random mobile values (50–250)
-	}[] = [];
-	let startDate = new Date('2024-01-01');
-
-	for (let i = 0; i < 10; i++) {
-		chartData.push({
-			date: new Date(startDate),
-			desktop: Math.floor(Math.random() * 100) + 50 // random mobile values (50–250)
-		});
-
-		startDate.setDate(startDate.getDate() + 7);
-	}
+	import type { ServerStatistics } from '$lib/statisticData';
 
 	const chartConfig = {
-		desktop: { label: 'Desktop', color: 'var(--chart-2)' }
+		desktop: { label: 'Sessions', color: 'var(--chart-2)' }
 	} satisfies Chart.ChartConfig;
-	let { span = '2', data = [] } = $props();
+
+	let {
+		span = '2',
+		class: className = '',
+		statisticData
+	}: {
+		span?: string;
+		statisticData: Promise<ServerStatistics> | undefined;
+		class?: string;
+	} = $props();
+
+	function mapSnapshotsToChartData(stats: ServerStatistics) {
+		return stats.totalSessionCountsSnapshots.map((snap) => ({
+			date: new Date(snap.Timestamp),
+			desktop: snap.totalSessionCounts
+		}));
+	}
 </script>
 
 <Card.Root class="col-span-2">

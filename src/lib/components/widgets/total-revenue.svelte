@@ -15,6 +15,7 @@
 =======
 <script>
 	import * as Card from '$lib/components/ui/card';
+	import type { ServerStatistics } from '$lib/statisticData';
 
 	let { span = '1', data = [] } = $props();
 >>>>>>> e35323b (feat: new statistics page)
