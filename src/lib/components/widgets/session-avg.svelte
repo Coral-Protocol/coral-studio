@@ -21,9 +21,11 @@
 		{#await statisticData}
 			<p>Loading…</p>
 		{:then stats}
-			<h1 class="text-4xl font-bold">
-				{(stats.totalMicroCoralsRevenue / stats.totalSessionCount).toFixed(2)}
-			</h1>
+			{#if stats}
+				<h1 class="text-4xl font-bold">
+					{(stats.totalMicroCoralsRevenue / stats.totalSessionCount).toFixed(2)}
+				</h1>
+			{/if}
 		{:catch err}
 			<p>Error loading stats</p>
 		{/await}
