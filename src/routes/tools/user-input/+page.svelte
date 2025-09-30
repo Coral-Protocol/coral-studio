@@ -10,6 +10,7 @@
 	import { socketCtx } from '$lib/socket.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import IconArrow from 'phosphor-icons-svelte/IconArrowRightRegular.svelte';
+	import { arrayProxy } from 'sveltekit-superforms';
 
 	//warning the below ts is a bit of classic ai slop that i will clean up later but for now it works
 
@@ -28,7 +29,6 @@
 		agentId: string;
 		latestRequest: string;
 		latestTimestamp: string | number | Date;
-		unreadCount: number;
 		totalMessages: number;
 	}
 
@@ -75,15 +75,11 @@
 			if (!latestRequest) {
 				return null;
 			}
-			const unreadCount = agentRequests.filter(
-				(req: Request) => req.userQuestion === undefined
-			).length;
 
 			const summary: AgentSummary = {
 				agentId,
 				latestRequest: latestRequest.agentRequest,
 				latestTimestamp: latestRequest.timestamp,
-				unreadCount,
 				totalMessages: agentRequests.length
 			};
 			return summary;
@@ -95,7 +91,7 @@
 			// Sort by latest timestamp descending
 			const timeA = new Date(a.latestTimestamp).getTime();
 			const timeB = new Date(b.latestTimestamp).getTime();
-			return timeB - timeA;
+			return timeA - timeB;
 		});
 	});
 
@@ -104,7 +100,7 @@
 		if (!selectedAgentId || !agentGroups[selectedAgentId]) {
 			return [] as Request[];
 		}
-		return agentGroups[selectedAgentId] as Request[];
+		return agentGroups[selectedAgentId].slice().reverse() as Request[];
 	});
 
 	// Get the current pending request for the selected agent (if any)
@@ -216,11 +212,7 @@
 							<section class="flex w-full min-w-0 flex-col gap-1">
 								<span class="flex w-full items-center">
 									<span class="grow truncate font-medium">{agent.agentId}</span>
-									{#if agent.unreadCount > 0}
-										<span class="bg-primary text-primary-foreground rounded-full px-2 py-1 text-xs">
-											{agent.unreadCount}
-										</span>
-									{/if}
+									<!-- spot for a badge  -->
 								</span>
 								<div class="flex items-center justify-between">
 									<p class="text-muted-foreground flex-1 truncate text-sm">
@@ -239,9 +231,9 @@
 	</section>
 
 	<!-- Chat Interface -->
-	<section class="col-span-3 h-full w-full">
+	<section class="relative col-span-3 min-h-0 w-full">
 		{#if selectedAgentId}
-			<Card.Root class="flex h-full flex-col">
+			<Card.Root class="absolute top-0 right-0 left-0 flex h-full flex-col overflow-hidden">
 				<Card.Header class="flex-shrink-0">
 					<Card.Title class="flex w-full items-center gap-2">
 						<div
@@ -261,15 +253,20 @@
 
 				<Card.Content class="flex-1 overflow-y-auto">
 					<ol class="flex flex-col gap-4 p-4">
-						{#each selectedAgentMessages as request (request.id)}
+						{#each selectedAgentMessages as request, i (request.id)}
 							<li
-								class="border-card flex flex-col gap-2 rounded-e-md border-l-2 p-4 transition-colors {request.id ===
+								class="border-card flex h-min flex-col gap-2 rounded-e-md border-l-2 transition-colors {request.id ===
 								currentPendingRequest?.id
 									? 'bg-primary border-primary-foreground '
 									: 'hover:bg-primary rounded-s-md '}"
 							>
 								<!-- Agent Request -->
-								<button onclick={() => (currentPendingRequest = request)}>
+								<button
+									onclick={() => (currentPendingRequest = request)}
+									class="flex flex-col gap-2 p-4 {i !== 0 && !request.userQuestion
+										? 'opacity-50'
+										: ''} "
+								>
 									<div class="flex gap-4">
 										<div
 											class="flex h-8 min-w-8 items-center justify-center rounded-md"
@@ -277,8 +274,10 @@
 										>
 											<IconRobot class="size-4 text-white" />
 										</div>
-										<div class="bg-input min-h-8 max-w-[70%] rounded-md p-2 text-start">
-											<p class="text-sm">{request.agentRequest}</p>
+										<div
+											class="bg-input min-h-8 max-w-[50%] rounded-md p-2 text-start wrap-break-word"
+										>
+											<p class="text-sm select-text">{request.agentRequest}</p>
 											<span class="text-muted-foreground text-xs">
 												{formatTimestamp(request.timestamp)}
 											</span>
@@ -286,13 +285,16 @@
 										<div class="my-auto flex flex-col">
 											<span
 												class="text-muted-foreground text-xs {request.id ===
-													currentPendingRequest?.id && !request.userQuestion
+													currentPendingRequest?.id &&
+												!request.userQuestion &&
+												i === 0
 													? ''
 													: ' hidden'}">Responding to</span
 											>
 											<IconArrow
 												class="mt-2 rotate-180 {request.id === currentPendingRequest?.id &&
-												!request.userQuestion
+												!request.userQuestion &&
+												i === 0
 													? 'animate-pulse'
 													: ' hidden'}"
 											/>
@@ -300,12 +302,13 @@
 									</div>
 
 									<!-- User Response (if exists) -->
+
 									{#if request.userQuestion}
 										<div class="flex items-start justify-end gap-4">
 											<div
-												class="bg-input text-primary-foreground min-h-8 max-w-[70%] rounded-md p-2"
+												class="bg-input text-primary-foreground min-h-8 max-w-[50%] rounded-md p-2 text-left wrap-break-word"
 											>
-												<p class="text-sm">{request.userQuestion}</p>
+												<p class="text-sm select-text">{request.userQuestion}</p>
 											</div>
 											<div
 												class="bg-input flex h-9 min-w-9 items-center justify-center rounded-full"
@@ -331,7 +334,7 @@
 									{/if}
 								</button>
 
-								{#if currentPendingRequest && request.id === currentPendingRequest.id && !request.userQuestion}
+								{#if currentPendingRequest && request.id === currentPendingRequest.id && !request.userQuestion && i === 0}
 									<div class="flex flex-shrink-0 gap-2 p-4">
 										<Input
 											bind:value={userQuestions[currentPendingRequest.id]}
@@ -341,13 +344,22 @@
 										/>
 										<Button onclick={sendResponse}>Send</Button>
 									</div>
+								{:else if currentPendingRequest && request.id === currentPendingRequest.id && !request.userQuestion}
+									<div class="flex flex-shrink-0 gap-2 p-4">
+										<Input
+											bind:value={userQuestions[currentPendingRequest.id]}
+											placeholder="This request is no longer active or has timed out"
+											class="w-full grow"
+											onkeydown={handleKeydown}
+											disabled
+										/>
+										<Button disabled>Send</Button>
+									</div>
 								{/if}
 							</li>
 						{/each}
 					</ol>
 				</Card.Content>
-
-				<!-- Input Footer (only show if there's a pending request) -->
 			</Card.Root>
 		{:else}
 			<Card.Root class="flex h-full items-center justify-center">
