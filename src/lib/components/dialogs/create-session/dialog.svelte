@@ -173,15 +173,18 @@
 				}),
 				customTools: Object.fromEntries(
 					Array.from(usedTools).map((tool) => {
-                        let toolBody = tools[tool];
-                        return [tool, {
-                            ...toolBody,
-                            transport: {
-                                ...toolBody.transport,
-                                url: `${window.location.origin}${toolBody.transport.url}`,
-                            }
-                        }]
-                    })
+						let toolBody = tools[tool];
+						return [
+							tool,
+							{
+								...toolBody,
+								transport: {
+									...toolBody.transport,
+									url: `${window.location.origin}${toolBody.transport.url}`
+								}
+							}
+						];
+					})
 				) as any, // FIXME: !!!
 				groups: $formData.groups
 			}
@@ -476,6 +479,12 @@
 									</Form.Fieldset>
 								</Tabs.Content>
 							</Tabs.Root>
+						{:else}
+							<p
+								class="text-muted-foreground col-span-3 flex h-full grow items-center justify-center text-sm"
+							>
+								Add your first agent to begin.
+							</p>
 						{/if}
 					</Tabs.Content>
 					<Tabs.Content value="groups">
