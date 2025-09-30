@@ -225,7 +225,7 @@
 		<Sidebar.Separator class="sticky top-0" />
 		<Sidebar.Group class="overflow-x-hidden overflow-y-scroll">
 			<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
-			<div class="flex max-w-[23rem] justify-between gap-2">
+			<div class="group/session flex max-w-[23rem] justify-between gap-2">
 				<Popover.Root bind:open={sessionSearcherOpen}>
 					{#if sessCtx.sessions && sessCtx.sessions.length === 0}
 						<Popover.Trigger
@@ -303,14 +303,15 @@
 								createSessionOpen = true;
 								sessionSearcherOpen = false;
 							}}
-							class="button p-0 {buttonVariants({ variant: 'outline' })} aspect-square"
+							class="button p-0 {buttonVariants({
+								variant: 'ghost'
+							})} group-hover/session:bg-ring/10 aspect-square"
 						>
 							<Plus />
 						</Tooltip.Trigger>
 						<Tooltip.Content>Create a new session</Tooltip.Content>
 					</Tooltip.Root>
 				</Tooltip.Provider>
-				<!-- this button is slightly (1-2 px) smaller than it should be -->
 			</div>
 			<NavBundle
 				items={[
