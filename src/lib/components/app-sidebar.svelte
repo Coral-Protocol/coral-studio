@@ -227,41 +227,55 @@
 			<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
 			<div class="flex max-w-[23rem] justify-between gap-2">
 				<Popover.Root bind:open={sessionSearcherOpen}>
-					<Popover.Trigger
-						class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-						bind:ref={sessionSwitcher}
-						aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
-					>
-						{#snippet child({ props })}
-							<Button
-								variant="outline"
-								{...props}
-								role="combobox"
-								aria-expanded={sessionSearcherOpen}
-							>
-								{sessCtx.session && sessCtx.session.connected
-									? sessCtx.session.session
-									: 'Select Session'}
-								<CaretUpDown />
-							</Button>
-						{/snippet}
-					</Popover.Trigger>
+					{#if sessCtx.sessions && sessCtx.sessions.length === 0}
+						<Popover.Trigger
+							class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
+							bind:ref={sessionSwitcher}
+							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
+						>
+							{#snippet child({ props })}
+								<Button
+									variant="outline"
+									{...props}
+									onclick={() => {
+										createSessionOpen = true;
+										sessionSearcherOpen = false;
+									}}
+								>
+									{sessCtx.session && sessCtx.session.connected
+										? sessCtx.session.session
+										: 'Select Session'}
+									<CaretUpDown />
+								</Button>
+							{/snippet}
+						</Popover.Trigger>
+					{:else}
+						<Popover.Trigger
+							class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
+							bind:ref={sessionSwitcher}
+							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
+						>
+							{#snippet child({ props })}
+								<Button
+									variant="outline"
+									{...props}
+									role="combobox"
+									aria-expanded={sessionSearcherOpen}
+								>
+									{sessCtx.session && sessCtx.session.connected
+										? sessCtx.session.session
+										: 'Select Session'}
+									<CaretUpDown />
+								</Button>
+							{/snippet}
+						</Popover.Trigger>
+					{/if}
+
 					<Popover.Content align="center" class="w-[20em]">
 						<Command.Root>
 							<Command.Input placeholder="Search" />
 							<Command.List>
-								<Command.Empty
-									>No sessions found {#if sessCtx.sessions && sessCtx.sessions.length === 0}
-										<Button
-											variant="link"
-											class="w-fit cursor-pointer"
-											onclick={() => {
-												createSessionOpen = true;
-												sessionSearcherOpen = false;
-											}}>Create one</Button
-										>
-									{/if}</Command.Empty
-								>
+								<Command.Empty>No sessions found</Command.Empty>
 								{#if sessCtx.sessions && sessCtx.sessions.length > 0}
 									<Command.Group>
 										{#each sessCtx.sessions as session}
