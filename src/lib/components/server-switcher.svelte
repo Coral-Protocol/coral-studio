@@ -4,7 +4,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { toast } from 'svelte-sonner';
 
-	import CheckIcon from 'phosphor-icons-svelte/IconCheckRegular.svelte';
+	import IconX from 'phosphor-icons-svelte/IconXRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 
 	import Logo from '$lib/icons/logo.svelte';
@@ -37,7 +37,7 @@
 	});
 
 	let dialogOpen = $state(false);
-	let testState: 'success' | 'fail' | 'outdated' | null = $state(null);
+	let testState: 'success' | 'fail' | 'outdated' | 'dupe' | null = $state(null);
 	let testing = $state(false);
 
 	let host = $state('127.0.0.1:5555');
@@ -54,7 +54,7 @@
 
 	const checkForDupe = () => {
 		if (servers.current.indexOf(hostSanitized) !== -1) {
-			toast.error('This server is already in your list.');
+			testState = 'dupe';
 			return true;
 		}
 		return false;
@@ -98,7 +98,7 @@
 		selected.current = hostSanitized;
 		dialogOpen = false;
 		testState = null;
-		host = '';
+		host = '127.0.0.1:5555';
 		toast.success('Server added to list.');
 	};
 
@@ -117,6 +117,11 @@
 		},
 		HTMLButtonElement
 	> = $props();
+
+	const removeServer = (server: string) => () => {
+		servers.current.indexOf(server) !== -1 &&
+			servers.current.splice(servers.current.indexOf(server), 1);
+	};
 </script>
 
 <Sidebar.Menu>
@@ -152,15 +157,18 @@
 				{/if}
 				{#each servers.current as server (server)}
 					<DropdownMenu.Item
+						class={server === selected.current ? 'bg-accent/50' : ''}
 						onSelect={() => {
 							selected.current = server;
 							onSelect?.(server);
 						}}
 					>
 						{server}
-						{#if server === selected.current}
-							<CheckIcon class="ml-auto" />
-						{/if}
+						<div class="ml-auto flex items-center gap-1">
+							<Button size="icon" variant="outline" onclick={removeServer(server)}
+								><IconX></IconX></Button
+							>
+						</div>
 					</DropdownMenu.Item>
 				{/each}
 				<DropdownMenu.Separator />
@@ -188,16 +196,30 @@
 						This server is outdated. See <a
 							class="hover:text-background hover:bg-destructive underline"
 							href="https://github.com/Coral-Protocol/coral-server/#readme">coral-server's README</a
-						> for help using the latest version.
+						>
+						for help using the latest version.
+					{:else if testState === 'dupe'}
+						This server has already been added, would you like to switch to it instead?
 					{:else}
-						Connection failed, add anyway?{/if}
+						Connection failed, add anyway?
+					{/if}
 				</p>
-				<Button
-					variant="outline"
-					onclick={() => {
-						pushServerAndClose();
-					}}>Add Anyway</Button
-				>
+				{#if testState === 'dupe'}
+					<Button
+						variant="outline"
+						onclick={() => {
+							selected.current = hostSanitized;
+							dialogOpen = false;
+						}}>Continue</Button
+					>
+				{:else}
+					<Button
+						variant="outline"
+						onclick={() => {
+							pushServerAndClose();
+						}}>Add Anyway</Button
+					>
+				{/if}
 			{/if}
 			<Button
 				disabled={testing}
@@ -206,7 +228,13 @@
 					testState = null;
 					testing = true;
 					testConnection();
-				}}>Connect</Button
+				}}
+			>
+				<span class={!testing && testState === null ? '' : 'opacity-0'}>Connect</span>
+				<span class="{testing && testState === null ? '' : 'opacity-0'} absolute m-auto"
+					>Loading</span
+				>
+				<span class="{testState !== null ? '' : 'opacity-0'} absolute m-auto">Retry</span></Button
 			>
 		</Dialog.Footer>
 	</Dialog.Content>
