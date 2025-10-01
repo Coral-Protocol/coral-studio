@@ -52,9 +52,21 @@
 		}
 	};
 
+	const checkForDupe = () => {
+		if (servers.current.indexOf(hostSanitized) !== -1) {
+			toast.error('This server is already in your list.');
+			return true;
+		}
+		return false;
+	};
+
 	const debouncedTest = useDebounce(async () => {
 		testState = null;
 		testing = true;
+		if (checkForDupe()) {
+			testing = false;
+			return;
+		}
 		try {
 			const client = createClient<paths>({
 				baseUrl: `${location.protocol}//${hostSanitized}`
