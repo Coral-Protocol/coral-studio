@@ -52,8 +52,8 @@
 		}
 	};
 
-	const checkForDupe = () => {
-		if (servers.current.indexOf(hostSanitized) !== -1) {
+	const checkForDupe = (s: string) => {
+		if (servers.current.indexOf(s) !== -1) {
 			testState = 'dupe';
 			return true;
 		}
@@ -63,7 +63,7 @@
 	const debouncedTest = useDebounce(async () => {
 		testState = null;
 		testing = true;
-		if (checkForDupe()) {
+		if (checkForDupe(hostSanitized)) {
 			testing = false;
 			return;
 		}
@@ -82,7 +82,6 @@
 		} catch {
 			await tick();
 			testState = 'fail';
-			await checkForOld();
 		}
 		testing = false;
 	}, 250);
@@ -94,12 +93,12 @@
 	};
 
 	const pushServerAndClose = () => {
+		dialogOpen = false;
 		servers.current.push(hostSanitized);
 		selected.current = hostSanitized;
-		dialogOpen = false;
 		testState = null;
-		host = '127.0.0.1:5555';
 		toast.success('Server added to list.');
+		host = '127.0.0.1:5555';
 	};
 
 	$effect(() => {
@@ -117,11 +116,6 @@
 		},
 		HTMLButtonElement
 	> = $props();
-
-	const removeServer = (server: string) => () => {
-		servers.current.indexOf(server) !== -1 &&
-			servers.current.splice(servers.current.indexOf(server), 1);
-	};
 </script>
 
 <Sidebar.Menu>
@@ -164,11 +158,6 @@
 						}}
 					>
 						{server}
-						<div class="ml-auto flex items-center gap-1">
-							<Button size="icon" variant="outline" onclick={removeServer(server)}
-								><IconX></IconX></Button
-							>
-						</div>
 					</DropdownMenu.Item>
 				{/each}
 				<DropdownMenu.Separator />
@@ -180,18 +169,25 @@
 
 <Dialog.Root bind:open={dialogOpen}>
 	<Dialog.Content>
-		<Dialog.Header>
-			<Dialog.Title>Add a server</Dialog.Title>
-		</Dialog.Header>
-		<form>
+		<form class=" grid w-full gap-4">
+			<Dialog.Header>
+				<Dialog.Title>Add a server</Dialog.Title>
+			</Dialog.Header>
 			<section class="grid grid-cols-2">
 				<TooltipLabel>Host</TooltipLabel>
-				<Input placeholder="localhost:5555" bind:value={host} />
+				<Input
+					placeholder="localhost:5555"
+					bind:value={host}
+					disabled={testing}
+					oninput={() => {
+						testState = null;
+						testing = false;
+						checkForDupe(hostSanitized);
+					}}
+				/>
 			</section>
-		</form>
-		<Dialog.Footer class="items-center">
-			{#if testState !== 'success' && testState !== null}
-				<p class="text-destructive text-sm" transition:fade>
+			<Dialog.Footer class="items-center">
+				<p class="text-destructive mr-auto text-sm" transition:fade>
 					{#if testState === 'outdated'}
 						This server is outdated. See <a
 							class="hover:text-background hover:bg-destructive underline"
@@ -199,8 +195,8 @@
 						>
 						for help using the latest version.
 					{:else if testState === 'dupe'}
-						This server has already been added, would you like to switch to it instead?
-					{:else}
+						This server has already been added.
+					{:else if testState === 'fail'}
 						Connection failed, add anyway?
 					{/if}
 				</p>
@@ -210,32 +206,50 @@
 						onclick={() => {
 							selected.current = hostSanitized;
 							dialogOpen = false;
-						}}>Continue</Button
+							toast.info(`Switched to existing server ${hostSanitized}`);
+						}}>Use</Button
 					>
-				{:else}
+				{:else if testState !== null}
 					<Button
 						variant="outline"
 						onclick={() => {
 							pushServerAndClose();
-						}}>Add Anyway</Button
+						}}>Yes</Button
 					>
 				{/if}
-			{/if}
-			<Button
-				disabled={testing}
-				onclick={(e) => {
-					e.preventDefault();
-					testState = null;
-					testing = true;
-					testConnection();
-				}}
-			>
-				<span class={!testing && testState === null ? '' : 'opacity-0'}>Connect</span>
-				<span class="{testing && testState === null ? '' : 'opacity-0'} absolute m-auto"
-					>Loading</span
-				>
-				<span class="{testState !== null ? '' : 'opacity-0'} absolute m-auto">Retry</span></Button
-			>
-		</Dialog.Footer>
+				{#if testState !== 'dupe'}
+					<Button
+						type="submit"
+						disabled={testing}
+						onclick={(e) => {
+							testState = null;
+							testing = true;
+							testConnection();
+						}}
+					>
+						<span class={!testing && testState === null ? '' : 'opacity-0'}>Connect</span>
+						<span class="{testing && testState === null ? '' : 'opacity-0'} absolute m-auto"
+							>Loading</span
+						>
+						<span class="{testState !== null && testing ? '' : 'opacity-0'} absolute m-auto"
+							>Validating</span
+						>
+						<span class="{testState !== null && !testing ? '' : 'opacity-0'} absolute m-auto"
+							>Retry</span
+						>
+					</Button>
+				{:else}
+					<Button
+						onclick={() => {
+							testState = null;
+							testing = false;
+							host = '';
+						}}
+					>
+						Clear
+					</Button>
+				{/if}
+			</Dialog.Footer>
+		</form>
 	</Dialog.Content>
 </Dialog.Root>
