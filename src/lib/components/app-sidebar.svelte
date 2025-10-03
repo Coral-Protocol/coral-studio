@@ -86,10 +86,12 @@
 			sessCtx.sessions = (await client.GET('/api/v1/sessions')).data!;
 
 			connecting = false;
+			return agents;
 		} catch (e) {
 			connecting = false;
 			sessCtx.registry = null;
 			error = `${e}`;
+			throw e;
 		}
 	};
 
@@ -176,7 +178,11 @@
 					appId: sessCtx.connection?.appId ?? 'app',
 					privacyKey: sessCtx.connection?.privacyKey ?? 'priv'
 				};
-				refreshAgents();
+				toast.promise(refreshAgents(), {
+					loading: `Connecting to server '${host}'...`,
+					success: `Connected to server '${host}'`,
+					error: (err) => `Failed to connect to server '${host}', Error: ${err || err}`
+				});
 			}}
 		/>
 	</Sidebar.Header>
@@ -305,7 +311,7 @@
 							}}
 							class="button p-0 {buttonVariants({
 								variant: 'ghost'
-							})} group-hover/session:bg-ring/10 aspect-square"
+							})} aspect-square"
 						>
 							<Plus />
 						</Tooltip.Trigger>
