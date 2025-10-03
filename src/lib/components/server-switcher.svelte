@@ -17,6 +17,7 @@
 	import type { WithElementRef } from 'bits-ui';
 	import type { paths } from '../../generated/api';
 	import createClient from 'openapi-fetch';
+	import Badge from './ui/badge/badge.svelte';
 
 	let servers = new PersistedState<string[]>('servers', []);
 	let selected = new PersistedState<string | null>('selectedServer', null);
@@ -151,13 +152,19 @@
 				{/if}
 				{#each servers.current as server (server)}
 					<DropdownMenu.Item
-						class={server === selected.current ? 'bg-accent/50' : ''}
 						onSelect={() => {
 							selected.current = server;
 							onSelect?.(server);
 						}}
 					>
 						{server}
+
+						<Badge
+							class="ml-auto
+							{selected.current === server ? '' : 'hidden'}"
+						>
+							Connected
+						</Badge>
 					</DropdownMenu.Item>
 				{/each}
 				<DropdownMenu.Separator />
