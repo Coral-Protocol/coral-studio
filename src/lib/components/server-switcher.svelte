@@ -160,10 +160,11 @@
 						{server}
 
 						<Badge
+							variant="outline"
 							class="ml-auto
 							{selected.current === server ? '' : 'hidden'}"
 						>
-							Connected
+							Selected
 						</Badge>
 					</DropdownMenu.Item>
 				{/each}

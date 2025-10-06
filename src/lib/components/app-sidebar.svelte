@@ -202,9 +202,9 @@
 								)}
 							>
 								{#if error}
-									Error
+									disconnected
 								{:else if sessCtx.registry}
-									{Object.keys(sessCtx.registry).length} agents
+									connected
 								{/if}
 							</span>
 						</Tooltip.Trigger>
@@ -242,6 +242,7 @@
 							{#snippet child({ props })}
 								<Button
 									variant="outline"
+									disabled={error !== null || connecting === true}
 									{...props}
 									onclick={() => {
 										createSessionOpen = true;
@@ -305,6 +306,7 @@
 				<Tooltip.Provider>
 					<Tooltip.Root>
 						<Tooltip.Trigger
+							disabled={error !== null || connecting === true}
 							onclick={() => {
 								createSessionOpen = true;
 								sessionSearcherOpen = false;
