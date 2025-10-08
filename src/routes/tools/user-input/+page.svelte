@@ -9,8 +9,10 @@
 
 	import { socketCtx } from '$lib/socket.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import IconArrow from 'phosphor-icons-svelte/IconArrowRightRegular.svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import { toast } from 'svelte-sonner';
+
+	let searchTerm = $state('');
 
 	interface Request {
 		id: string;
@@ -110,6 +112,7 @@
 		}
 	});
 
+	// this is a bit awful but it works and is simple enough for now, it colours the agent icon bg based off their ID
 	function stringToColor(str: string): string {
 		let hash = 0;
 		for (let i = 0; i < str.length; i++) {
@@ -119,16 +122,13 @@
 		return '#' + color.padStart(6, '0').slice(0, 6);
 	}
 
+	// formats timestamp to a readable time, i want to use date-fns in the future tho
 	function formatTimestamp(timestamp: string | number | Date): string {
 		try {
 			return new Date(timestamp).toLocaleTimeString();
 		} catch {
 			return '';
 		}
-	}
-
-	function selectAgent(agentId: string): void {
-		selectedAgentId = agentId;
 	}
 
 	function sendResponse(): void {
@@ -146,20 +146,6 @@
 			sendResponse();
 		}
 	}
-
-	function handleAgentCardClick(agentId: string) {
-		return () => selectAgent(agentId);
-	}
-
-	let scrollContainer: HTMLOListElement | null = $state(null);
-
-	$effect(() => {
-		if (scrollContainer) {
-			scrollContainer.scrollTop = scrollContainer.scrollHeight;
-		}
-	});
-
-	let searchTerm = $state('');
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -180,7 +166,7 @@
 
 <section class="grid h-full grid-cols-2 gap-3 p-4 md:grid-cols-3 lg:grid-cols-4">
 	<section class="flex h-full w-full flex-col gap-4">
-		<nav class="flex w-full flex-col gap-2 p-1">
+		<nav class="flex w-full flex-col gap-2">
 			<h1 class="text-lg font-medium">{agentList.length} Agents</h1>
 			<section class="flex w-full gap-2">
 				<Input placeholder="Filter agents" class="grow" bind:value={searchTerm} />
@@ -199,7 +185,7 @@
 					class="hover:bg-muted cursor-pointer transition-colors {selectedAgentId === agent.agentId
 						? 'bg-muted'
 						: ''}"
-					onclick={handleAgentCardClick(agent.agentId)}
+					onclick={() => (selectedAgentId = agent.agentId)}
 					role="button"
 					tabindex={0}
 				>
@@ -255,7 +241,7 @@
 				<Separator />
 
 				<Card.Content class="flex-1 overflow-y-auto">
-					<ol class="flex flex-col gap-4 p-4" bind:this={scrollContainer}>
+					<ol class="flex flex-col gap-4 p-4">
 						{#each selectedAgentMessages as request, i (request.id)}
 							<li
 								class="border-card flex h-min flex-col gap-2 rounded-e-md border-l-2 transition-colors {request.id ===

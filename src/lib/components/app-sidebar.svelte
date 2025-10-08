@@ -41,6 +41,7 @@
 	import { Send } from '@lucide/svelte';
 
 	import { supabase } from '$lib/supabaseClient';
+	import { goto } from '$app/navigation';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -101,8 +102,24 @@
 			feedbackVisible = false;
 		}
 	}
+	$effect(() => {
+		const hasNewRequest = Object.values(tools.userInput.requests).some(
+			(req) => req.userQuestion === undefined
+		);
+		if (hasNewRequest) {
+			toast.info('New input request from an agent', {
+				duration: 4000,
+				id: 'new-user-input-message',
+				action: {
+					label: 'View',
+					onClick: () => {
+						goto('/tools/user-input');
+					}
+				}
+			});
+		}
+	});
 </script>
-
 
 <CreateSession bind:open={createSessionOpen} registry={sessCtx.registry ?? []} />
 
