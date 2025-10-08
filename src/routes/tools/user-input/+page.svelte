@@ -10,11 +10,8 @@
 	import { socketCtx } from '$lib/socket.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import IconArrow from 'phosphor-icons-svelte/IconArrowRightRegular.svelte';
-	import { arrayProxy } from 'sveltekit-superforms';
+	import { Badge } from '$lib/components/ui/badge';
 
-	//warning the below ts is a bit of classic ai slop that i will clean up later but for now it works
-
-	// Type definitions
 	interface Request {
 		id: string;
 		agentId: string;
@@ -27,7 +24,7 @@
 
 	interface AgentSummary {
 		agentId: string;
-		latestRequest: string;
+		latestRequest: Request;
 		latestTimestamp: string | number | Date;
 		totalMessages: number;
 	}
@@ -36,38 +33,34 @@
 		[agentId: string]: Request[];
 	}
 
-	// Context and state
 	let ctx = socketCtx.get();
-	let userQuestions: Record<string, string> = $state({});
+	let userResponse: Record<string, string> = $state({});
 	let selectedAgentId: string | null = $state(null);
-
-	// Derived values
 	let requests = $derived(Object.values(ctx.userInput.requests ?? {}) as Request[]);
 
-	// Group requests by agent ID and sort by timestamp
 	let agentGroups = $derived.by(() => {
 		const groups: AgentGroups = {};
 
 		for (const request of requests) {
-			if (!groups[request.agentId]) {
+			if (!Array.isArray(groups[request.agentId])) {
 				groups[request.agentId] = [];
 			}
-			groups[request.agentId].push(request);
+			groups[request.agentId]!.push(request);
 		}
 
-		// Sort each agent's requests by timestamp
 		for (const agentId in groups) {
-			groups[agentId].sort((a: Request, b: Request) => {
-				const timeA = new Date(a.timestamp || 0).getTime();
-				const timeB = new Date(b.timestamp || 0).getTime();
-				return timeA - timeB;
-			});
+			if (groups[agentId]) {
+				groups[agentId].sort((a: Request, b: Request) => {
+					const timeA = new Date(a.timestamp || 0).getTime();
+					const timeB = new Date(b.timestamp || 0).getTime();
+					return timeA - timeB;
+				});
+			}
 		}
 
 		return groups;
 	});
 
-	// Get list of agents with their latest interaction info
 	let agentList = $derived.by(() => {
 		const entries = Object.entries(agentGroups);
 		const mapped = entries.map(([agentId, agentRequests]: [string, Request[]]) => {
@@ -78,7 +71,7 @@
 
 			const summary: AgentSummary = {
 				agentId,
-				latestRequest: latestRequest.agentRequest,
+				latestRequest: latestRequest,
 				latestTimestamp: latestRequest.timestamp,
 				totalMessages: agentRequests.length
 			};
@@ -88,30 +81,31 @@
 		const filtered = mapped.filter((agent): agent is AgentSummary => agent !== null);
 
 		return filtered.sort((a: AgentSummary, b: AgentSummary) => {
-			// Sort by latest timestamp descending
 			const timeA = new Date(a.latestTimestamp).getTime();
 			const timeB = new Date(b.latestTimestamp).getTime();
-			return timeA - timeB;
+			return timeB - timeA;
 		});
 	});
 
-	// Get messages for the selected agent
 	let selectedAgentMessages = $derived.by(() => {
 		if (!selectedAgentId || !agentGroups[selectedAgentId]) {
 			return [] as Request[];
 		}
-		return agentGroups[selectedAgentId].slice().reverse() as Request[];
+		return (agentGroups[selectedAgentId]?.slice() as Request[]) ?? [];
 	});
 
-	// Get the current pending request for the selected agent (if any)
 	let currentPendingRequest = $derived.by(() => {
-		return selectedAgentMessages.find((req: Request) => req.userQuestion === undefined);
+		return selectedAgentMessages.findLast(
+			(req: Request) =>
+				req.userQuestion === undefined &&
+				selectedAgentMessages.indexOf(req) === selectedAgentMessages.length - 1
+		);
 	});
 
 	$effect(() => {
 		for (const request of requests) {
 			if (request.userQuestion !== undefined) {
-				userQuestions[request.id] = request.userQuestion;
+				userResponse[request.id] = request.userQuestion;
 			}
 		}
 	});
@@ -140,11 +134,10 @@
 	function sendResponse(): void {
 		if (!currentPendingRequest) return;
 
-		const response = userQuestions[currentPendingRequest.id];
+		const response = userResponse[currentPendingRequest.id];
 		if (response) {
 			ctx.userInput.respond(currentPendingRequest.id, response);
-			// Clear the input
-			userQuestions[currentPendingRequest.id] = '';
+			userResponse[currentPendingRequest.id] = '';
 		}
 	}
 
@@ -157,6 +150,16 @@
 	function handleAgentCardClick(agentId: string) {
 		return () => selectAgent(agentId);
 	}
+
+	let scrollContainer: HTMLOListElement | null = $state(null);
+
+	$effect(() => {
+		if (scrollContainer) {
+			scrollContainer.scrollTop = scrollContainer.scrollHeight;
+		}
+	});
+
+	let searchTerm = $state('');
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -176,13 +179,11 @@
 </header>
 
 <section class="grid h-full grid-cols-2 gap-3 p-4 md:grid-cols-3 lg:grid-cols-4">
-	<!-- Agent List Sidebar -->
 	<section class="flex h-full w-full flex-col gap-4">
 		<nav class="flex w-full flex-col gap-2 p-1">
 			<h1 class="text-lg font-medium">{agentList.length} Agents</h1>
 			<section class="flex w-full gap-2">
-				<Input placeholder="Search agents" class="grow" />
-				<Button class="">Search</Button>
+				<Input placeholder="Filter agents" class="grow" bind:value={searchTerm} />
 			</section>
 		</nav>
 
@@ -191,17 +192,18 @@
 				No agents have requested user input.
 			</p>
 		{:else}
-			{#each agentList as agent (agent.agentId)}
+			{#each agentList.filter((agent) => agent.agentId
+					.toLowerCase()
+					.includes(searchTerm.toLowerCase())) as agent (agent.agentId)}
 				<Card.Root
-					class="hover:bg-muted/50 cursor-pointer transition-colors {selectedAgentId ===
-					agent.agentId
+					class="hover:bg-muted cursor-pointer transition-colors {selectedAgentId === agent.agentId
 						? 'bg-muted'
 						: ''}"
 					onclick={handleAgentCardClick(agent.agentId)}
 					role="button"
 					tabindex={0}
 				>
-					<Card.Content class="flex w-full flex-col gap-2 p-3">
+					<Card.Content class="flex w-full flex-col gap-2 ">
 						<div class="flex w-full items-center gap-2">
 							<div
 								class="flex h-12 min-w-12 items-center justify-center rounded-md"
@@ -212,11 +214,13 @@
 							<section class="flex w-full min-w-0 flex-col gap-1">
 								<span class="flex w-full items-center">
 									<span class="grow truncate font-medium">{agent.agentId}</span>
-									<!-- spot for a badge  -->
+									{#if agent.latestRequest.userQuestion === undefined}
+										<Badge>waiting for response</Badge>
+									{/if}
 								</span>
 								<div class="flex items-center justify-between">
 									<p class="text-muted-foreground flex-1 truncate text-sm">
-										{agent.latestRequest}
+										{agent.latestRequest.agentRequest}
 									</p>
 									<span class="text-muted-foreground ml-2 text-xs">
 										{formatTimestamp(agent.latestTimestamp)}
@@ -230,7 +234,6 @@
 		{/if}
 	</section>
 
-	<!-- Chat Interface -->
 	<section class="relative col-span-3 min-h-0 w-full">
 		{#if selectedAgentId}
 			<Card.Root class="absolute top-0 right-0 left-0 flex h-full flex-col overflow-hidden">
@@ -252,18 +255,18 @@
 				<Separator />
 
 				<Card.Content class="flex-1 overflow-y-auto">
-					<ol class="flex flex-col gap-4 p-4">
+					<ol class="flex flex-col gap-4 p-4" bind:this={scrollContainer}>
 						{#each selectedAgentMessages as request, i (request.id)}
 							<li
 								class="border-card flex h-min flex-col gap-2 rounded-e-md border-l-2 transition-colors {request.id ===
 								currentPendingRequest?.id
-									? 'bg-primary border-primary-foreground '
-									: 'hover:bg-primary rounded-s-md '}"
+									? 'bg-muted border-muted-foreground '
+									: 'hover:bg-secondary rounded-s-md '}"
 							>
-								<!-- Agent Request -->
 								<button
 									onclick={() => (currentPendingRequest = request)}
-									class="flex flex-col gap-2 p-4 {i !== 0 && !request.userQuestion
+									class="flex flex-col gap-2 p-4 {i !== selectedAgentMessages.length - 1 &&
+									!request.userQuestion
 										? 'opacity-50'
 										: ''} "
 								>
@@ -281,23 +284,6 @@
 											<span class="text-muted-foreground text-xs">
 												{formatTimestamp(request.timestamp)}
 											</span>
-										</div>
-										<div class="my-auto flex flex-col">
-											<span
-												class="text-muted-foreground text-xs {request.id ===
-													currentPendingRequest?.id &&
-												!request.userQuestion &&
-												i === 0
-													? ''
-													: ' hidden'}">Responding to</span
-											>
-											<IconArrow
-												class="mt-2 rotate-180 {request.id === currentPendingRequest?.id &&
-												!request.userQuestion &&
-												i === 0
-													? 'animate-pulse'
-													: ' hidden'}"
-											/>
 										</div>
 									</div>
 
@@ -318,7 +304,6 @@
 										</div>
 									{/if}
 
-									<!-- Agent Answer (if exists) -->
 									{#if request.agentAnswer}
 										<div class="flex gap-4">
 											<div
@@ -327,17 +312,17 @@
 											>
 												<IconRobot class="size-4 text-white" />
 											</div>
-											<div class="bg-muted min-h-8 max-w-[70%] rounded-md p-2">
+											<div class="bg-input min-h-8 max-w-[70%] rounded-md p-2">
 												<p class="text-sm">{request.agentAnswer}</p>
 											</div>
 										</div>
 									{/if}
 								</button>
 
-								{#if currentPendingRequest && request.id === currentPendingRequest.id && !request.userQuestion && i === 0}
+								{#if currentPendingRequest && request.id === currentPendingRequest.id && !request.userQuestion && i === selectedAgentMessages.length - 1}
 									<div class="flex flex-shrink-0 gap-2 p-4">
 										<Input
-											bind:value={userQuestions[currentPendingRequest.id]}
+											bind:value={userResponse[currentPendingRequest.id]}
 											placeholder="Enter your reply..."
 											class="w-full grow"
 											onkeydown={handleKeydown}
@@ -347,7 +332,7 @@
 								{:else if currentPendingRequest && request.id === currentPendingRequest.id && !request.userQuestion}
 									<div class="flex flex-shrink-0 gap-2 p-4">
 										<Input
-											bind:value={userQuestions[currentPendingRequest.id]}
+											bind:value={userResponse[currentPendingRequest.id]}
 											placeholder="This request is no longer active or has timed out"
 											class="w-full grow"
 											onkeydown={handleKeydown}
@@ -357,6 +342,7 @@
 									</div>
 								{/if}
 							</li>
+							<Separator class="w-1/2" />
 						{/each}
 					</ol>
 				</Card.Content>
