@@ -76,7 +76,7 @@
 					<Dialog.Header class="flex flex-col gap-4">
 						<Dialog.Title class="h-fit  font-[400]">Full Telemetry Data</Dialog.Title>
 						<span class="text-muted-foreground text-sm">{data.modelDescription} - {threadId}</span>
-						<Tabs.List class="h-11 border p-0.5">
+						<Tabs.List class="">
 							<Tabs.Trigger value="messages"><Chat /> Message Events</Tabs.Trigger>
 							<Tabs.Trigger value="details"><TextIndent /> Thread Details</Tabs.Trigger>
 							<Tabs.Trigger value="hyperparameters"><GlobeSimple /> Hyperparameters</Tabs.Trigger>

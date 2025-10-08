@@ -52,6 +52,7 @@
 	import { Plus, Send } from '@lucide/svelte';
 
 	import { supabase } from '$lib/supabaseClient';
+	import { goto } from '$app/navigation';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -308,8 +309,7 @@
 						<Tooltip.Trigger
 							disabled={error !== null || connecting === true}
 							onclick={() => {
-								createSessionOpen = true;
-								sessionSearcherOpen = false;
+								goto(`/sessions/create`);
 							}}
 							class="button p-0 {buttonVariants({
 								variant: 'ghost'
