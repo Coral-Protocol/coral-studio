@@ -38,8 +38,6 @@
 	import { socketCtx } from '$lib/socket.svelte';
 	import { toggleMode } from 'mode-watcher';
 
-	import { CreateSession } from '$lib/components/dialogs/create-session';
-
 	import ServerSwitcher from './server-switcher.svelte';
 	import NavBundle from './nav-bundle.svelte';
 	import SidebarLink from './sidebar-link.svelte';
@@ -150,8 +148,6 @@
 </script>
 
 <Quickswitch {sessCtx} {agents} {threads} />
-
-<CreateSession bind:open={createSessionOpen} registry={sessCtx.registry ?? []} />
 
 <Tour
 	open={tourOpen}
