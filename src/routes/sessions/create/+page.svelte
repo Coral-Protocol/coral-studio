@@ -2,18 +2,18 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
-	import IconCrane from 'phosphor-icons-svelte/IconCraneRegular.svelte';
+	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconPrompt from 'phosphor-icons-svelte/IconChatCircleDotsRegular.svelte';
+	import IconListRegular from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
+	import IconCheck from 'phosphor-icons-svelte/IconCheckRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 
-	import * as Select from '$lib/components/ui/select';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Collapsible from '$lib/components/ui/collapsible';
-	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Toggle } from '$lib/components/ui/toggle';
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -22,6 +22,7 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Label } from '$lib/components/ui/label';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import * as Table from '$lib/components/ui/table/index.js';
 
 	// TODO: change these icons
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
@@ -59,12 +60,10 @@
 	import type { paths, components } from '$generated/api';
 	import SidebarMenuAction from '$lib/components/ui/sidebar/sidebar-menu-action.svelte';
 	import FormField from '$lib/components/ui/form/form-field.svelte';
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	import { socketCtx } from '$lib/socket.svelte';
 	import { toggleMode } from 'mode-watcher';
-
-	let sessCtx = sessionCtx.get();
 
 	type CreateSessionRequest = components['schemas']['SessionRequest'];
 
@@ -72,8 +71,6 @@
 	type Complete<T> = {
 		[P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : T[P] | undefined;
 	};
-
-	let ctx = sessionCtx.get();
 
 	const inputTypes: {
 		[K in PublicRegistryAgent['options'][string]['type']]: HTMLInputTypeAttribute;
@@ -83,7 +80,40 @@
 		secret: 'password'
 	};
 
+	onMount(() => {});
+
+	let sessCtx = sessionCtx.get();
+	let conn = $derived(sessCtx.session);
+
+	let connecting = $state(false);
+	let error: string | null = $state(null);
+
+	let tourOpen = $state(false);
 	let registryRaw = sessCtx.registry ?? [];
+
+	const refreshAgents = async () => {
+		if (!sessCtx.connection) return;
+		try {
+			const client = createClient<paths>({
+				baseUrl: `${location.protocol}//${sessCtx.connection.host}`
+			});
+
+			connecting = true;
+			error = null;
+			sessCtx.registry = null;
+			const agents = (await client.GET('/api/v1/agents')).data!;
+			sessCtx.registry = agents;
+			sessCtx.sessions = (await client.GET('/api/v1/sessions')).data!;
+
+			connecting = false;
+			return agents;
+		} catch (e) {
+			connecting = false;
+			sessCtx.registry = null;
+			error = `${e}`;
+			throw e;
+		}
+	};
 
 	let registry = $derived(Object.fromEntries(registryRaw.map((a) => [idAsKey(a.id), a])));
 
@@ -98,12 +128,12 @@
 					toast.error('Please fix all errors in the form.');
 					return;
 				}
-				if (!ctx.connection) {
+				if (!sessCtx.connection) {
 					throw new Error('Invalid connection to server!');
 				}
 				try {
 					const client = createClient<paths>({
-						baseUrl: `${location.protocol}//${ctx.connection.host}`
+						baseUrl: `${location.protocol}//${sessCtx.connection.host}`
 					});
 					const res = await client.POST('/api/v1/sessions', {
 						body: asJson
@@ -119,10 +149,10 @@
 						return;
 					}
 					if (res.data) {
-						if (!ctx.sessions) ctx.sessions = [];
-						ctx.sessions.push(res.data.sessionId);
-						ctx.session = new Session({
-							...ctx.connection,
+						if (!sessCtx.sessions) sessCtx.sessions = [];
+						sessCtx.sessions.push(res.data.sessionId);
+						sessCtx.session = new Session({
+							...sessCtx.connection,
 							session: res.data.sessionId
 						});
 					} else {
@@ -165,6 +195,7 @@
 		return {
 			privacyKey: $formData.privacyKey,
 			applicationId: $formData.applicationId,
+			sessionId: $formData.sessionId,
 			agentGraphRequest: {
 				agents: $formData.agents.map((agent) => {
 					return {
@@ -202,6 +233,7 @@
 	});
 
 	let selectedAgent: number | null = $state(null);
+	let accordian: string = $state('');
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -219,332 +251,309 @@
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 </header>
-<main class="flex grow flex-col items-center justify-center">
+<form method="POST" use:enhance class="flex grow flex-col items-center justify-center">
 	<Resizable.PaneGroup direction="vertical" class="min-h-[200px] w-full  ">
-		<Resizable.Pane defaultSize={25}>
-			<div class="flex h-full items-center justify-center p-6">
-				<span class="font-semibold">session details</span>
+		<Resizable.Pane defaultSize={15}>
+			<div class="flex h-full flex-col items-center justify-between p-6">
+				<h1 class="text-2xl font-semibold">Create a new session</h1>
+				<section class="flex w-full items-end gap-4">
+					<section class="flex flex-col gap-2">
+						<Form.Field {form} name="sessionId">
+							<Form.Control>
+								{#snippet children({ props })}
+									<Form.Label>Session name</Form.Label>
+									<Input {...props} bind:value={$formData.sessionId} />
+								{/snippet}
+							</Form.Control>
+						</Form.Field>
+						<section class="flex gap-2">
+							<Form.Field {form} name="applicationId">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Form.Label>Application ID</Form.Label>
+										<Input {...props} bind:value={$formData.applicationId} />
+									{/snippet}
+								</Form.Control>
+							</Form.Field>
+							<Form.Field {form} name="privacyKey">
+								<Form.Control>
+									{#snippet children({ props })}
+										<Form.Label>Privacy Key</Form.Label>
+										<Input {...props} type="password" bind:value={$formData.privacyKey} />
+									{/snippet}
+								</Form.Control>
+							</Form.Field>
+						</section>
+					</section>
+					<ClipboardImportDialog onImport={importFromJson}>
+						{#snippet child({ props })}
+							<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
+						{/snippet}
+					</ClipboardImportDialog>
+					<Button variant="outline" class="w-fit">Export</Button>
+					<Form.Button>Create</Form.Button>
+				</section>
 			</div>
 		</Resizable.Pane>
 		<Resizable.Handle />
 		<Resizable.Pane defaultSize={75}>
 			<Resizable.PaneGroup direction="horizontal" class="min-h-[200px] w-full  ">
 				<Resizable.Pane defaultSize={25} class="m-4 flex flex-col gap-4">
-					<Accordion.Root type="single">
-						<Accordion.Item value="item-1">
-							<Accordion.Trigger>Agent creator</Accordion.Trigger>
+					<Combobox
+						side="top"
+						align="center"
+						options={registryRaw.map((a) => ({
+							label: `${a.id.name} ${a.id.version}`,
+							key: idAsKey(a.id),
+							value: a.id
+						}))}
+						searchPlaceholder="Search agents..."
+						onValueChange={(id) => {
+							const count = $formData.agents.filter((agent) => agent.id.name === id.name).length;
+							const runtime = registry[idAsKey(id)]?.runtimes?.at(-1) ?? 'executable';
+							$formData.agents.push({
+								id: id,
+								provider: {
+									type: 'local',
+									runtime: runtime !== 'function' ? runtime : 'executable'
+								},
+								systemPrompt: undefined,
+								blocking: true,
+								name: id.name + (count > 0 ? `-${count + 1}` : ''),
+								options: {},
+								customToolAccess: new Set()
+							});
+							$formData.agents = $formData.agents;
+							selectedAgent = $formData.agents.length - 1;
+							accordian = 'agent-editor';
+						}}
+					>
+						{#snippet trigger({ props })}
+							<Button {...props} size="icon" class="w-full gap-1 px-3">New agent<PlusIcon /></Button
+							>{/snippet}
+						{#snippet option({ option })}
+							{option.label}
+						{/snippet}
+					</Combobox>
+					<Accordion.Root type="single" value={accordian}>
+						<Accordion.Item value="agent-editor">
+							<Accordion.Trigger>Agent editor</Accordion.Trigger>
 							<Accordion.Content>
-								<Tabs.Root value="agents" class="grow overflow-hidden">
-									<Tabs.List class=" w-full">
-										<Tabs.Trigger value="agents"><IconMenu class="size-6" />Specs</Tabs.Trigger>
-										<Tabs.Trigger value="groups"><IconPrompt class="size-6" />Prompt</Tabs.Trigger>
-										<Tabs.Trigger value="export"
-											><IconWrenchRegular class="size-6" />Tools</Tabs.Trigger
-										>
-									</Tabs.List>
-									<Tabs.Content
-										value="agents"
-										class="grid grow grid-cols-4  gap-1 gap-x-2 overflow-hidden"
-									>
-										<aside class="row-span-full flex min-h-0 grow flex-col gap-2 overflow-hidden">
-											<Combobox
-												side="top"
-												align="center"
-												options={registryRaw.map((a) => ({
-													label: `${a.id.name} ${a.id.version}`,
-													key: idAsKey(a.id),
-													value: a.id
-												}))}
-												searchPlaceholder="Search agents..."
-												onValueChange={(id) => {
-													const count = $formData.agents.filter(
-														(agent) => agent.id.name === id.name
-													).length;
-													const runtime = registry[idAsKey(id)]?.runtimes?.at(-1) ?? 'executable';
-													$formData.agents.push({
-														id: id,
-														provider: {
-															type: 'local',
-															runtime: runtime !== 'function' ? runtime : 'executable'
-														},
-														systemPrompt: undefined,
-														blocking: true,
-														name: id.name + (count > 0 ? `-${count + 1}` : ''),
-														options: {},
-														customToolAccess: new Set()
-													});
-													$formData.agents = $formData.agents;
-													selectedAgent = $formData.agents.length - 1;
-												}}
+								{#if selectedAgent !== null && $formData.agents.length > selectedAgent}
+									{@const agent = $formData.agents[selectedAgent]!}
+									{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
+									<Tabs.Root value="setup" class="grow overflow-hidden">
+										<Tabs.List class=" w-full">
+											<Tabs.Trigger value="setup"><IconMenu class="size-6" />Setup</Tabs.Trigger>
+											<Tabs.Trigger value="prompt"><IconPrompt class="size-6" />Prompt</Tabs.Trigger
 											>
-												{#snippet trigger({ props })}
-													<Button {...props} size="icon" class="w-full gap-1 px-3"
-														>New agent<PlusIcon /></Button
-													>{/snippet}
-												{#snippet option({ option })}
-													{option.label}
-												{/snippet}
-											</Combobox>
-											<ScrollArea
-												class="bg-card text-card-foreground row-span-full flex h-full min-h-0 grow flex-col gap-6 overflow-scroll rounded-md border shadow-sm"
+											<Tabs.Trigger value="tools"
+												><IconWrenchRegular class="size-6" />Tools</Tabs.Trigger
 											>
-												<ul
-													class="flex h-full min-h-0 w-full grow flex-col content-stretch gap-1 p-1"
+										</Tabs.List>
+										<Tabs.Content value="setup" class="flex min-h-0 flex-col gap-2 overflow-scroll">
+											{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
+												<Form.ElementField
+													{form}
+													name="agents[{selectedAgent}].name"
+													class="flex items-center gap-2"
 												>
-													{#each $formData.agents as agent, i}
-														<li class="contents">
-															<Toggle
-																class="flex justify-start pr-0"
-																bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
+													<Form.Control>
+														{#snippet children({ props })}
+															<TooltipLabel
+																tooltip={'Name of the agent in this session'}
+																class="m-0">Name</TooltipLabel
 															>
-																<p class="grow">{agent.name}</p>
-																<TwostepButton
-																	class="size-9"
-																	variant="outline"
-																	onclick={() => {
-																		$formData.agents.splice(i, 1);
+															<Input
+																{...props}
+																bind:value={$formData.agents[selectedAgent!]!.name}
+															/>
+														{/snippet}
+													</Form.Control>
+												</Form.ElementField>
+												<Form.ElementField
+													{form}
+													name="agents[{selectedAgent}].id.name"
+													class="flex items-center gap-2"
+												>
+													<Form.Control>
+														{#snippet children({ props })}
+															{@const id = $formData.agents[selectedAgent!]!.id}
+															<TooltipLabel tooltip={'Type of this agent'} class="m-0"
+																>Type</TooltipLabel
+															>
+															<Combobox
+																{...props}
+																class="w-auto grow pr-[2px]"
+																side="right"
+																align="start"
+																bind:selected={
+																	() => ({
+																		label: `${id.name} ${id.version}`,
+																		key: idAsKey(id),
+																		value: id
+																	}),
+																	() => {}
+																}
+																options={registryRaw.map((a) => ({
+																	label: `${a.id.name} ${a.id.version}`,
+																	key: idAsKey(a.id),
+																	value: a.id
+																}))}
+																searchPlaceholder="Search types..."
+																onValueChange={(value) => {
+																	$formData.agents[selectedAgent!]!.id = value;
+																	$formData.agents = $formData.agents;
+																	tick().then(() => {
+																		for (const name in $formData.agents[selectedAgent!]!.options) {
+																			if (!(name in availableOptions)) {
+																				delete $formData.agents[selectedAgent!]!.options[name];
+																			}
+																		}
 																		$formData.agents = $formData.agents;
-																		selectedAgent =
-																			selectedAgent &&
-																			Math.min(selectedAgent, $formData.agents.length - 1);
-																	}}><TrashIcon /></TwostepButton
-																>
-															</Toggle>
-														</li>
-													{/each}
-													{#if $formData.agents.length == 0}
-														<li class="contents">
-															<p
-																class="text-muted-foreground flex h-9 grow items-center justify-center text-sm"
-															>
-																No agents added.
-															</p>
-														</li>
-													{:else}
-														<li class="grow"></li>
-													{/if}
-												</ul>
-											</ScrollArea>
-										</aside>
-										{#if selectedAgent !== null && $formData.agents.length > selectedAgent}
-											{@const agent = $formData.agents[selectedAgent]!}
-											{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
-											<Tabs.Root value="options" class="col-span-3 min-h-0 overflow-hidden">
-												<Tabs.List>
-													<Tabs.Trigger value="options">Options</Tabs.Trigger>
-													<Tabs.Trigger value="prompt">Prompt</Tabs.Trigger>
-													<Tabs.Trigger value="tools">Tools</Tabs.Trigger>
-												</Tabs.List>
-
-												<Tabs.Content
-													value="options"
-													class="flex min-h-0 flex-col gap-2 overflow-scroll"
+																	});
+																}}
+															/>
+														{/snippet}
+													</Form.Control>
+												</Form.ElementField>
+												<Form.ElementField
+													{form}
+													name="agents[{selectedAgent}].provider.runtime"
+													class="flex items-center gap-2"
 												>
-													{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
-														<Form.ElementField
-															{form}
-															name="agents[{selectedAgent}].name"
-															class="flex items-center gap-2"
-														>
-															<Form.Control>
-																{#snippet children({ props })}
-																	<TooltipLabel
-																		tooltip={'Name of the agent in this session'}
-																		class="m-0">Name</TooltipLabel
-																	>
-																	<Input
-																		{...props}
-																		bind:value={$formData.agents[selectedAgent!]!.name}
-																	/>
-																{/snippet}
-															</Form.Control>
-														</Form.ElementField>
-														<Form.ElementField
-															{form}
-															name="agents[{selectedAgent}].id.name"
-															class="flex items-center gap-2"
-														>
-															<Form.Control>
-																{#snippet children({ props })}
-																	{@const id = $formData.agents[selectedAgent!]!.id}
-																	<TooltipLabel tooltip={'Type of this agent'} class="m-0"
-																		>Type</TooltipLabel
-																	>
-																	<Combobox
-																		{...props}
-																		class="w-auto grow pr-[2px]"
-																		side="right"
-																		align="start"
-																		bind:selected={
-																			() => ({
-																				label: `${id.name} ${id.version}`,
-																				key: idAsKey(id),
-																				value: id
-																			}),
-																			() => {}
-																		}
-																		options={registryRaw.map((a) => ({
-																			label: `${a.id.name} ${a.id.version}`,
-																			key: idAsKey(a.id),
-																			value: a.id
-																		}))}
-																		searchPlaceholder="Search agents..."
-																		onValueChange={(value) => {
-																			$formData.agents[selectedAgent!]!.id = value;
-																			$formData.agents = $formData.agents;
-																			tick().then(() => {
-																				for (const name in $formData.agents[selectedAgent!]!
-																					.options) {
-																					if (!(name in availableOptions)) {
-																						delete $formData.agents[selectedAgent!]!.options[name];
-																					}
-																				}
-																				$formData.agents = $formData.agents;
-																			});
-																		}}
-																	/>
-																{/snippet}
-															</Form.Control>
-														</Form.ElementField>
-														<Form.ElementField
-															{form}
-															name="agents[{selectedAgent}].provider.runtime"
-															class="flex items-center gap-2"
-														>
-															<Form.Control>
-																{#snippet children({ props })}
-																	{@const runtime =
-																		$formData.agents[selectedAgent!]!.provider.runtime}
-																	<TooltipLabel
-																		tooltip={'What runtime to use for this agent.'}
-																		class="m-0">Runtime</TooltipLabel
-																	>
-																	<Combobox
-																		{...props}
-																		class="w-auto grow pr-[2px]"
-																		side="right"
-																		align="start"
-																		options={(
-																			(registry[idAsKey(agent.id)]?.runtimes as any) ?? []
-																		).map((value: string) => ({
-																			key: value,
-																			label: value,
-																			value
-																		}))}
-																		searchPlaceholder="Search agents..."
-																		bind:selected={
-																			() => ({ key: runtime, label: runtime, value: runtime }),
-																			(selected) => {
-																				$formData.agents[selectedAgent!]!.provider.runtime =
-																					selected.value;
-																			}
-																		}
-																	/>
-																{/snippet}
-															</Form.Control>
-														</Form.ElementField>
-														<Separator />
-														{#each Object.entries(availableOptions) as [name, opt] (name)}
-															<Form.ElementField
-																{form}
-																name="agents[{selectedAgent}].options.{name}.value"
+													<Form.Control>
+														{#snippet children({ props })}
+															{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
+															<TooltipLabel
+																tooltip={'What runtime to use for this agent.'}
+																class="m-0">Runtime</TooltipLabel
 															>
-																<Form.Control>
-																	{#snippet children({ props })}
-																		<TooltipLabel tooltip={opt.description} class="gap-1">
-																			{name}
-																			{#if !('default' in opt) || opt.default === undefined}
-																				<span class="text-destructive">*</span>
-																			{/if}
-																		</TooltipLabel>
-																		<Input
-																			{...props}
-																			type={inputTypes[opt.type]}
-																			bind:value={
-																				() =>
-																					$formData.agents[selectedAgent!]!.options[name]?.value,
-																				(value) => {
-																					$formData.agents[selectedAgent!]!.options[name] = {
-																						type: opt.type,
-																						value
-																					} as any; // FIXME: !!
-																				}
-																			}
-																			placeholder={'default' in opt
-																				? opt.default?.toString()
-																				: undefined}
-																		/>
-																	{/snippet}
-																</Form.Control>
-															</Form.ElementField>
-														{/each}
-													{/if}
-												</Tabs.Content>
-												<Tabs.Content value="prompt" class="overflow-scroll">
+															<Combobox
+																{...props}
+																class="w-auto grow pr-[2px]"
+																side="right"
+																align="start"
+																options={((registry[idAsKey(agent.id)]?.runtimes as any) ?? []).map(
+																	(value: string) => ({
+																		key: value,
+																		label: value,
+																		value
+																	})
+																)}
+																searchPlaceholder="Search runtimes..."
+																bind:selected={
+																	() => ({ key: runtime, label: runtime, value: runtime }),
+																	(selected) => {
+																		$formData.agents[selectedAgent!]!.provider.runtime =
+																			selected.value;
+																	}
+																}
+															/>
+														{/snippet}
+													</Form.Control>
+												</Form.ElementField>
+												<Separator />
+												{#each Object.entries(availableOptions) as [name, opt] (name)}
 													<Form.ElementField
 														{form}
-														class="flex h-full flex-col gap-2"
-														name="agents[{selectedAgent}].systemPrompt"
+														name="agents[{selectedAgent}].options.{name}.value"
 													>
 														<Form.Control>
 															{#snippet children({ props })}
-																<Form.Label class=" text-muted-foreground mb-0 leading-tight"
-																	>Additional system prompt to add to this agent.</Form.Label
-																>
-																<Textarea
+																<TooltipLabel tooltip={opt.description} class="gap-1">
+																	{name}
+																	{#if !('default' in opt) || opt.default === undefined}
+																		<span class="text-destructive">*</span>
+																	{/if}
+																</TooltipLabel>
+																<Input
 																	{...props}
-																	class="grow resize-none"
-																	bind:value={$formData.agents[selectedAgent!]!.systemPrompt}
+																	type={inputTypes[opt.type]}
+																	bind:value={
+																		() => $formData.agents[selectedAgent!]!.options[name]?.value,
+																		(value) => {
+																			$formData.agents[selectedAgent!]!.options[name] = {
+																				type: opt.type,
+																				value
+																			} as any; // FIXME: !!
+																		}
+																	}
+																	placeholder={'default' in opt
+																		? opt.default?.toString()
+																		: undefined}
 																/>
 															{/snippet}
 														</Form.Control>
 													</Form.ElementField>
-												</Tabs.Content>
-												<Tabs.Content value="tools">
-													<Form.Fieldset {form} name="agents[{selectedAgent}].customToolAccess">
-														<ul class="flex flex-col gap-2">
-															{#each Object.keys(tools) as tool (tool)}
-																<li class="flex gap-2">
-																	<Form.Control>
-																		{#snippet children({ props })}
-																			<Checkbox
-																				{...props}
-																				value={tool}
-																				bind:checked={
-																					() =>
-																						$formData.agents[selectedAgent!]?.customToolAccess?.has(
-																							tool
-																						) ?? false,
-																					() => {}
-																				}
-																				onCheckedChange={(checked) => {
-																					if (
-																						selectedAgent === null ||
-																						!$formData.agents[selectedAgent]
-																					)
-																						return;
-																					if (checked)
-																						$formData.agents[selectedAgent!]!.customToolAccess.add(
-																							tool
-																						);
-																					else
-																						$formData.agents[
-																							selectedAgent!
-																						]!.customToolAccess.delete(tool);
-																					$formData.agents = $formData.agents;
-																				}}
-																			/>
-																			<Form.Label>{tool}</Form.Label>
-																		{/snippet}
-																	</Form.Control>
-																</li>{/each}
-														</ul>
-													</Form.Fieldset>
-												</Tabs.Content>
-											</Tabs.Root>
-										{/if}
-									</Tabs.Content>
-								</Tabs.Root>
+												{/each}
+											{/if}
+										</Tabs.Content>
+										<Tabs.Content value="prompt" class="overflow-scroll">
+											<Form.ElementField
+												{form}
+												class="flex h-full flex-col gap-2"
+												name="agents[{selectedAgent}].systemPrompt"
+											>
+												<Form.Control>
+													{#snippet children({ props })}
+														<Form.Label class=" text-muted-foreground mb-0 leading-tight"
+															>Additional system prompt to add to this agent.</Form.Label
+														>
+														<Textarea
+															{...props}
+															class="grow resize-none"
+															bind:value={$formData.agents[selectedAgent!]!.systemPrompt}
+														/>
+													{/snippet}
+												</Form.Control>
+											</Form.ElementField>
+										</Tabs.Content>
+										<Tabs.Content value="tools">
+											<Form.Fieldset {form} name="agents[{selectedAgent}].customToolAccess">
+												<ul class="flex flex-col gap-2">
+													{#each Object.keys(tools) as tool (tool)}
+														<li class="flex gap-2">
+															<Form.Control>
+																{#snippet children({ props })}
+																	<Checkbox
+																		{...props}
+																		value={tool}
+																		bind:checked={
+																			() =>
+																				$formData.agents[selectedAgent!]?.customToolAccess?.has(
+																					tool
+																				) ?? false,
+																			() => {}
+																		}
+																		onCheckedChange={(checked) => {
+																			if (
+																				selectedAgent === null ||
+																				!$formData.agents[selectedAgent]
+																			)
+																				return;
+																			if (checked)
+																				$formData.agents[selectedAgent!]!.customToolAccess.add(
+																					tool
+																				);
+																			else
+																				$formData.agents[selectedAgent!]!.customToolAccess.delete(
+																					tool
+																				);
+																			$formData.agents = $formData.agents;
+																		}}
+																	/>
+																	<Form.Label>{tool}</Form.Label>
+																{/snippet}
+															</Form.Control>
+														</li>{/each}
+												</ul>
+											</Form.Fieldset>
+										</Tabs.Content>
+									</Tabs.Root>
+								{:else}
+									Select an agent to begin editing.
+								{/if}
 							</Accordion.Content>
 						</Accordion.Item>
 					</Accordion.Root>
@@ -556,17 +565,85 @@
 					</Accordion.Root>
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
-				<Resizable.Pane defaultSize={75}>
-					<div class="flex h-full items-center justify-center p-6">
-						<span class="font-semibold">
-							<img
-								src="https://miro.medium.com/v2/resize:fit:800/0*gp15qj6JZpF0tn38.png"
-								alt="coral logo"
-							/>
-						</span>
-					</div>
+				<Resizable.Pane defaultSize={75} class="relative">
+					<Tabs.Root value="nodes">
+						<Tabs.List class=" mx-auto my-4 flex w-fit ">
+							<Tabs.Trigger value="list"><IconListRegular /> List</Tabs.Trigger>
+							<Tabs.Trigger value="nodes"><IconGraph />Nodes</Tabs.Trigger>
+						</Tabs.List>
+						<Tabs.Content value="list">
+							<Table.Root>
+								<Table.Caption>Agents</Table.Caption>
+								<Table.Header>
+									<Table.Row>
+										<Table.Head>Name</Table.Head>
+										<Table.Head>Runtime</Table.Head>
+										<Table.Head>Provider Type</Table.Head>
+										<Table.Head>Agent Type</Table.Head>
+										<Table.Head>Agent Version</Table.Head>
+										<Table.Head class="text-right "></Table.Head>
+									</Table.Row>
+								</Table.Header>
+								<Table.Body>
+									{#each $formData.agents as agent, i}
+										<Table.Row
+											onclick={() => (selectedAgent = i)}
+											class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
+										>
+											<Table.Cell class="font-medium">
+												<p class="grow">{agent.name}</p>
+											</Table.Cell>
+											<Table.Cell>{agent.provider.runtime}</Table.Cell>
+											<Table.Cell>{agent.provider.type}</Table.Cell>
+											<Table.Cell>{agent.id.name}</Table.Cell>
+											<Table.Cell>{agent.id.version}</Table.Cell>
+											<Table.Cell>
+												<TwostepButton
+													variant="ghost"
+													size="icon"
+													onclick={() => {
+														$formData.agents.splice(i, 1);
+														$formData.agents = $formData.agents;
+														selectedAgent =
+															selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
+													}}><IconTrash /></TwostepButton
+												></Table.Cell
+											>
+										</Table.Row>
+									{/each}
+								</Table.Body>
+							</Table.Root>
+						</Tabs.Content>
+						<Tabs.Content value="nodes">
+							<div class="flex h-full items-center justify-center p-6">
+								<ul class="flex gap-4">
+									{#each $formData.agents as agent, i}
+										<li class="relative flex flex-col items-center gap-2">
+											<TwostepButton
+												variant="link"
+												size="sm"
+												class="text-destructive absolute top-0 right-0 -m-2 h-4 w-4 "
+												onclick={() => {
+													$formData.agents.splice(i, 1);
+													$formData.agents = $formData.agents;
+													selectedAgent =
+														selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
+												}}>x</TwostepButton
+											>
+											<Toggle
+												bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
+												class="bg-muted  h-16 w-16 rounded-full"
+											>
+												<p class="grow text-xs">{agent.name}</p>
+											</Toggle>
+										</li>
+									{/each}
+								</ul>
+							</div>
+						</Tabs.Content>
+					</Tabs.Root>
 				</Resizable.Pane>
 			</Resizable.PaneGroup>
 		</Resizable.Pane>
 	</Resizable.PaneGroup>
-</main>
+</form>
