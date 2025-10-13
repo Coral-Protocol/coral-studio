@@ -13,6 +13,7 @@
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
+	import * as Select from '$lib/components/ui/select';
 
 	import { Toggle } from '$lib/components/ui/toggle';
 	import * as Form from '$lib/components/ui/form';
@@ -256,7 +257,7 @@
 		<Resizable.Pane defaultSize={15}>
 			<div class="flex h-full flex-col items-center justify-between p-6">
 				<h1 class="text-2xl font-semibold">Create a new session</h1>
-				<section class="flex w-full items-end gap-4">
+				<section class="flex w-full justify-between gap-4">
 					<section class="flex flex-col gap-2">
 						<Form.Field {form} name="sessionId">
 							<Form.Control>
@@ -285,20 +286,34 @@
 							</Form.Field>
 						</section>
 					</section>
-					<ClipboardImportDialog onImport={importFromJson}>
-						{#snippet child({ props })}
-							<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
-						{/snippet}
-					</ClipboardImportDialog>
-					<Button variant="outline" class="w-fit">Export</Button>
-					<Form.Button>Create</Form.Button>
+
+					<section class="flex h-full flex-col gap-2">
+						<section>
+							<ClipboardImportDialog onImport={importFromJson}>
+								{#snippet child({ props })}
+									<Button {...props} variant="outline" class="w-fit"
+										>Import <ClipboardCopy /></Button
+									>
+								{/snippet}
+							</ClipboardImportDialog>
+							<Button variant="outline" class="w-fit">Export</Button>
+							<Form.Button>Create</Form.Button>
+						</section>
+						<p class="text-xs">
+							{#if error}
+								Error
+							{:else if sessCtx.registry}
+								{Object.keys(sessCtx.registry).length} agent configurations found
+							{/if}
+						</p>
+					</section>
 				</section>
 			</div>
 		</Resizable.Pane>
 		<Resizable.Handle />
 		<Resizable.Pane defaultSize={75}>
-			<Resizable.PaneGroup direction="horizontal" class="min-h-[200px] w-full  ">
-				<Resizable.Pane defaultSize={25} class="m-4 flex flex-col gap-4">
+			<Resizable.PaneGroup direction="horizontal" class="min-h-[200px] w-full   ">
+				<Resizable.Pane defaultSize={25} class="m-4 flex flex-col gap-4 ">
 					<Combobox
 						side="top"
 						align="center"
@@ -351,7 +366,7 @@
 												><IconWrenchRegular class="size-6" />Tools</Tabs.Trigger
 											>
 										</Tabs.List>
-										<Tabs.Content value="setup" class="flex min-h-0 flex-col gap-2 overflow-scroll">
+										<Tabs.Content value="setup" class="flex min-h-0 flex-col gap-4 overflow-scroll">
 											{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
 												<Form.ElementField
 													{form}
@@ -502,7 +517,7 @@
 														>
 														<Textarea
 															{...props}
-															class="grow resize-none"
+															class="min-h-32 grow"
 															bind:value={$formData.agents[selectedAgent!]!.systemPrompt}
 														/>
 													{/snippet}
@@ -560,18 +575,58 @@
 					<Accordion.Root type="single">
 						<Accordion.Item value="item-1">
 							<Accordion.Trigger>Groups</Accordion.Trigger>
-							<Accordion.Content>bosh</Accordion.Content>
+							<Accordion.Content>
+								<p class="text-muted-foreground text-sm leading-tight">
+									Define a list of groups, where each agent in a group can all interact.
+								</p>
+								<ul class="mt-2 flex flex-col gap-1">
+									{#each $formData.groups as link, i}
+										<Select.Root
+											type="multiple"
+											value={link}
+											onValueChange={(value) => {
+												$formData.groups[i] = value;
+												$formData.groups = $formData.groups;
+											}}
+										>
+											<Select.Trigger>
+												{#if link.length == 0}
+													<span class="text-muted-foreground text-sm italic">Empty Group</span>
+												{:else}
+													{link.join(', ')}
+												{/if}
+											</Select.Trigger>
+											<Select.Content>
+												{#if $formData.agents.length == 0}
+													<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
+												{/if}
+												{#each new Set($formData.agents.map((agent) => agent.name)) as id}
+													<Select.Item value={id}>{id}</Select.Item>
+												{/each}
+											</Select.Content>
+										</Select.Root>
+									{/each}
+									<Button
+										size="icon"
+										class="w-fit gap-1 px-3"
+										disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
+										onclick={() => {
+											$formData.groups = [...$formData.groups, []];
+										}}>New group<PlusIcon /></Button
+									>
+								</ul>
+							</Accordion.Content>
 						</Accordion.Item>
 					</Accordion.Root>
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
 				<Resizable.Pane defaultSize={75} class="relative">
 					<Tabs.Root value="nodes">
-						<Tabs.List class=" mx-auto my-4 flex w-fit ">
-							<Tabs.Trigger value="list"><IconListRegular /> List</Tabs.Trigger>
+						<Tabs.List class=" mx-auto mt-4 flex w-fit ">
+							<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
 							<Tabs.Trigger value="nodes"><IconGraph />Nodes</Tabs.Trigger>
 						</Tabs.List>
-						<Tabs.Content value="list">
+						<Tabs.Content value="table">
 							<Table.Root>
 								<Table.Caption>Agents</Table.Caption>
 								<Table.Header>
@@ -619,17 +674,6 @@
 								<ul class="flex gap-4">
 									{#each $formData.agents as agent, i}
 										<li class="relative flex flex-col items-center gap-2">
-											<TwostepButton
-												variant="link"
-												size="sm"
-												class="text-destructive absolute top-0 right-0 -m-2 h-4 w-4 "
-												onclick={() => {
-													$formData.agents.splice(i, 1);
-													$formData.agents = $formData.agents;
-													selectedAgent =
-														selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-												}}>x</TwostepButton
-											>
 											<Toggle
 												bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
 												class="bg-muted  h-16 w-16 rounded-full"
