@@ -288,7 +288,14 @@
 					</section>
 
 					<section class="flex h-full flex-col gap-2">
-						<section>
+						<p class="grow text-right text-xs">
+							{#if error}
+								Error
+							{:else if sessCtx.registry}
+								{Object.keys(sessCtx.registry).length} agent configurations found
+							{/if}
+						</p>
+						<section class="">
 							<ClipboardImportDialog onImport={importFromJson}>
 								{#snippet child({ props })}
 									<Button {...props} variant="outline" class="w-fit"
@@ -299,13 +306,6 @@
 							<Button variant="outline" class="w-fit">Export</Button>
 							<Form.Button>Create</Form.Button>
 						</section>
-						<p class="text-xs">
-							{#if error}
-								Error
-							{:else if sessCtx.registry}
-								{Object.keys(sessCtx.registry).length} agent configurations found
-							{/if}
-						</p>
 					</section>
 				</section>
 			</div>
