@@ -19,9 +19,7 @@
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 
-	import ScrollArea from '$lib/components/ui/scroll-area/scroll-area.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
-	import { Label } from '$lib/components/ui/label';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table/index.js';
 
@@ -30,14 +28,7 @@
 	import { ClipboardCopy, PlusIcon, TrashIcon } from '@lucide/svelte';
 
 	import { cn } from '$lib/utils';
-	import {
-		idAsKey,
-		sessionCtx,
-		type CustomTool,
-		type GraphAgentRequest,
-		type PublicRegistryAgent,
-		type Registry
-	} from '$lib/threads';
+	import { idAsKey, sessionCtx, type PublicRegistryAgent } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
 	import { tools } from '$lib/mcptools';
 
@@ -55,16 +46,13 @@
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
 	import * as schemas from './schemas';
-	import Card from '$lib/components/ui/card/card.svelte';
+
 	import type { HTMLInputTypeAttribute } from 'svelte/elements';
 	import createClient from 'openapi-fetch';
 	import type { paths, components } from '$generated/api';
-	import SidebarMenuAction from '$lib/components/ui/sidebar/sidebar-menu-action.svelte';
-	import FormField from '$lib/components/ui/form/form-field.svelte';
 	import { onMount, tick } from 'svelte';
 
-	import { socketCtx } from '$lib/socket.svelte';
-	import { toggleMode } from 'mode-watcher';
+	import Graph from './Graph.svelte';
 
 	type CreateSessionRequest = components['schemas']['SessionRequest'];
 
@@ -81,91 +69,69 @@
 		secret: 'password'
 	};
 
-	onMount(() => {});
-
 	let sessCtx = sessionCtx.get();
-	let conn = $derived(sessCtx.session);
 
-	let connecting = $state(false);
 	let error: string | null = $state(null);
 
-	let tourOpen = $state(false);
-	let registryRaw = sessCtx.registry ?? [];
-
-	const refreshAgents = async () => {
-		if (!sessCtx.connection) return;
-		try {
-			const client = createClient<paths>({
-				baseUrl: `${location.protocol}//${sessCtx.connection.host}`
-			});
-
-			connecting = true;
-			error = null;
-			sessCtx.registry = null;
-			const agents = (await client.GET('/api/v1/agents')).data!;
-			sessCtx.registry = agents;
-			sessCtx.sessions = (await client.GET('/api/v1/sessions')).data!;
-
-			connecting = false;
-			return agents;
-		} catch (e) {
-			connecting = false;
-			sessCtx.registry = null;
-			error = `${e}`;
-			throw e;
-		}
-	};
-
-	let registry = $derived(Object.fromEntries(registryRaw.map((a) => [idAsKey(a.id), a])));
+	let registryRaw = $derived(sessCtx.registry ?? []);
+	let registry = $derived(
+		Object.fromEntries((sessCtx.registry ?? []).map((a) => [idAsKey(a.id), a]))
+	);
 
 	let formSchema = $derived(schemas.makeFormSchema(registry));
-	let form = $derived(
-		superForm(defaults(zod4(formSchema)), {
-			SPA: true,
-			dataType: 'json',
-			validators: zod4(formSchema),
-			async onUpdate({ form: f }) {
-				if (!f.valid) {
-					toast.error('Please fix all errors in the form.');
+
+	// svelte-ignore state_referenced_locally
+	let form = superForm(defaults(zod4(formSchema)), {
+		SPA: true,
+		dataType: 'json',
+		// svelte-ignore state_referenced_locally
+		validators: zod4(formSchema),
+		async onUpdate({ form: f }) {
+			if (!f.valid) {
+				toast.error('Please fix all errors in the form.');
+				return;
+			}
+			if (!sessCtx.connection) {
+				throw new Error('Invalid connection to server!');
+			}
+			try {
+				const client = createClient<paths>({
+					baseUrl: `${location.protocol}//${sessCtx.connection.host}`
+				});
+				const res = await client.POST('/api/v1/sessions', {
+					body: asJson
+				});
+
+				if (res.error) {
+					// todo @alan there should probably be an api class where we can generic-ify the handling of this error
+					// with a proper type implementation too..!
+					let error: { message?: string; stackTrace: string[] } = res.error;
+					console.error(error.stackTrace);
+
+					toast.error(`Failed to create session: ${error.message}`);
 					return;
 				}
-				if (!sessCtx.connection) {
-					throw new Error('Invalid connection to server!');
-				}
-				try {
-					const client = createClient<paths>({
-						baseUrl: `${location.protocol}//${sessCtx.connection.host}`
+				if (res.data) {
+					if (!sessCtx.sessions) sessCtx.sessions = [];
+					sessCtx.sessions.push(res.data.sessionId);
+					sessCtx.session = new Session({
+						...sessCtx.connection,
+						session: res.data.sessionId
 					});
-					const res = await client.POST('/api/v1/sessions', {
-						body: asJson
-					});
-
-					if (res.error) {
-						// todo @alan there should probably be an api class where we can generic-ify the handling of this error
-						// with a proper type implementation too..!
-						let error: { message?: string; stackTrace: string[] } = res.error;
-						console.error(error.stackTrace);
-
-						toast.error(`Failed to create session: ${error.message}`);
-						return;
-					}
-					if (res.data) {
-						if (!sessCtx.sessions) sessCtx.sessions = [];
-						sessCtx.sessions.push(res.data.sessionId);
-						sessCtx.session = new Session({
-							...sessCtx.connection,
-							session: res.data.sessionId
-						});
-					} else {
-						throw new Error('no data received');
-					}
-				} catch (e) {
-					console.log(e);
-					toast.error(`Failed to create session: ${e}`);
+				} else {
+					throw new Error('no data received');
 				}
+			} catch (e) {
+				console.log(e);
+				toast.error(`Failed to create session: ${e}`);
 			}
-		})
-	);
+		}
+	});
+
+	// This is a workaround for not being able to call superForm in a $derived
+	$effect(() => {
+		form.options.validators = zod4(formSchema);
+	});
 
 	let { form: formData, errors, enhance } = $derived(form);
 
@@ -621,10 +587,10 @@
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
 				<Resizable.Pane defaultSize={75} class="relative">
-					<Tabs.Root value="nodes">
+					<Tabs.Root value="graph" class="size-full">
 						<Tabs.List class=" mx-auto mt-4 flex w-fit ">
 							<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
-							<Tabs.Trigger value="nodes"><IconGraph />Nodes</Tabs.Trigger>
+							<Tabs.Trigger value="graph"><IconGraph />Graph</Tabs.Trigger>
 						</Tabs.List>
 						<Tabs.Content value="table">
 							<Table.Root>
@@ -669,21 +635,8 @@
 								</Table.Body>
 							</Table.Root>
 						</Tabs.Content>
-						<Tabs.Content value="nodes">
-							<div class="flex h-full items-center justify-center p-6">
-								<ul class="flex gap-4">
-									{#each $formData.agents as agent, i}
-										<li class="relative flex flex-col items-center gap-2">
-											<Toggle
-												bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
-												class="bg-muted  h-16 w-16 rounded-full"
-											>
-												<p class="grow text-xs">{agent.name}</p>
-											</Toggle>
-										</li>
-									{/each}
-								</ul>
-							</div>
+						<Tabs.Content value="graph" class="h-full">
+							<Graph agents={$formData.agents} groups={$formData.groups} />
 						</Tabs.Content>
 					</Tabs.Root>
 				</Resizable.Pane>
