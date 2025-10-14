@@ -237,15 +237,7 @@
 							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
 						>
 							{#snippet child({ props })}
-								<Button
-									variant="outline"
-									disabled={error !== null || connecting === true}
-									{...props}
-									onclick={() => {
-										createSessionOpen = true;
-										sessionSearcherOpen = false;
-									}}
-								>
+								<Button variant="outline" disabled>
 									{sessCtx.session && sessCtx.session.connected
 										? sessCtx.session.session
 										: 'Select Session'}
@@ -307,11 +299,11 @@
 							onclick={() => {
 								goto(`/sessions/create`);
 							}}
-							class="button p-0 {buttonVariants({
-								variant: 'ghost'
-							})} aspect-square"
+							class="button {buttonVariants({
+								variant: 'outline'
+							})} "
 						>
-							<Plus />
+							Session creator
 						</Tooltip.Trigger>
 						<Tooltip.Content>Create a new session</Tooltip.Content>
 					</Tooltip.Root>
