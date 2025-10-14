@@ -636,7 +636,7 @@
 							</Table.Root>
 						</Tabs.Content>
 						<Tabs.Content value="graph" class="h-full">
-							<Graph agents={$formData.agents} groups={$formData.groups} />
+							<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
 						</Tabs.Content>
 					</Tabs.Root>
 				</Resizable.Pane>
