@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { Accordion as AccordionPrimitive } from "bits-ui";
-	import { cn, type WithoutChild } from "$lib/utils.js";
+	import { Accordion as AccordionPrimitive } from 'bits-ui';
+	import { Separator } from '$lib/components/ui/separator/index.js';
+	import { cn, type WithoutChild } from '$lib/utils.js';
 
 	let {
 		ref = $bindable(null),
@@ -16,7 +17,8 @@
 	class="data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down overflow-hidden text-sm"
 	{...restProps}
 >
-	<div class={cn("pb-4 pt-0", className)}>
+	<div class={cn('pt-0 pb-4', className)}>
+		<Separator class="from-accent to-secondary mb-4 bg-gradient-to-r" />
 		{@render children?.()}
 	</div>
 </AccordionPrimitive.Content>

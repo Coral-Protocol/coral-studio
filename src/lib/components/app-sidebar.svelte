@@ -38,8 +38,6 @@
 	import { socketCtx } from '$lib/socket.svelte';
 	import { toggleMode } from 'mode-watcher';
 
-	import { CreateSession } from '$lib/components/dialogs/create-session';
-
 	import ServerSwitcher from './server-switcher.svelte';
 	import NavBundle from './nav-bundle.svelte';
 	import SidebarLink from './sidebar-link.svelte';
@@ -52,6 +50,7 @@
 	import { Plus, Send } from '@lucide/svelte';
 
 	import { supabase } from '$lib/supabaseClient';
+	import { goto } from '$app/navigation';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -150,8 +149,6 @@
 
 <Quickswitch {sessCtx} {agents} {threads} />
 
-<CreateSession bind:open={createSessionOpen} registry={sessCtx.registry ?? []} />
-
 <Tour
 	open={tourOpen}
 	items={[
@@ -240,15 +237,7 @@
 							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
 						>
 							{#snippet child({ props })}
-								<Button
-									variant="outline"
-									disabled={error !== null || connecting === true}
-									{...props}
-									onclick={() => {
-										createSessionOpen = true;
-										sessionSearcherOpen = false;
-									}}
-								>
+								<Button variant="outline" disabled>
 									{sessCtx.session && sessCtx.session.connected
 										? sessCtx.session.session
 										: 'Select Session'}
@@ -308,14 +297,13 @@
 						<Tooltip.Trigger
 							disabled={error !== null || connecting === true}
 							onclick={() => {
-								createSessionOpen = true;
-								sessionSearcherOpen = false;
+								goto(`/sessions/create`);
 							}}
-							class="button p-0 {buttonVariants({
-								variant: 'ghost'
-							})} aspect-square"
+							class="button {buttonVariants({
+								variant: 'outline'
+							})} "
 						>
-							<Plus />
+							Session creator
 						</Tooltip.Trigger>
 						<Tooltip.Content>Create a new session</Tooltip.Content>
 					</Tooltip.Root>

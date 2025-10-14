@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Accordion as AccordionPrimitive } from "bits-ui";
+	import { Accordion as AccordionPrimitive } from 'bits-ui';
 
 	let {
 		ref = $bindable(null),
@@ -13,4 +13,5 @@
 	bind:value={value as never}
 	data-slot="accordion"
 	{...restProps}
+	class="bg-sidebar rounded-2xl px-4 font-[Urbanist] shadow"
 />
