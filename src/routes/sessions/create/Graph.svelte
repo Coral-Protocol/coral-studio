@@ -4,11 +4,21 @@
 
 	import { VisSingleContainer, VisGraph } from '@unovis/svelte';
 	import { idAsKey } from '$lib/threads';
+	import { Graph, type GraphNode } from '@unovis/ts';
+	import { untrack } from 'svelte';
 
+	type Id = z.infer<FormSchema>['agents'][number]['id'];
 	let {
 		agents,
-		groups
-	}: { agents: z.infer<FormSchema>['agents']; groups: z.infer<FormSchema>['groups'] } = $props();
+		groups,
+		selectedAgent = $bindable(undefined),
+		onSelect
+	}: {
+		agents: z.infer<FormSchema>['agents'];
+		groups: z.infer<FormSchema>['groups'];
+		selectedAgent?: number | null;
+		onSelect?: (idx: number) => void;
+	} = $props();
 
 	type NodeDatum = {
 		id?: string;
@@ -41,12 +51,41 @@
 		);
 	};
 
-	let data: GraphData = $derived({
-		nodes: agents.map((agent) => ({ id: agent.name })),
-		links: edgesFromGroups(groups)
+	let reactiveHack = $state(false);
+	let data: GraphData = $derived.by(() => {
+		let g = reactiveHack ? groups.concat([]) : groups;
+		return {
+			nodes: agents.map((agent) => ({ id: agent.name })),
+			links: edgesFromGroups(g)
+		};
 	});
+
+	const nodeLabel = (n: NodeDatum, i: number) => agents[i]?.name;
+	const nodeSubLabel = (n: NodeDatum, i: number) => agents[i]?.id.name;
+
+	let selectedNodeId = $derived(
+		selectedAgent !== null && selectedAgent !== undefined ? agents[selectedAgent]?.name : undefined
+	);
+	$effect(() => {
+		selectedNodeId;
+		reactiveHack = !untrack(() => reactiveHack);
+	});
+
+	let graphRef = $state();
+	$inspect(selectedNodeId);
+	const events = {
+		[Graph.selectors.node]: {
+			click: (d: GraphNode) => {
+				selectedAgent = d._index;
+				console.log(d._index);
+				onSelect?.(d._index);
+				// Set the selected node id here, e.g.: config.selectedNodeId = d.id
+				// and trigger the component update if required by your UI framework
+			}
+		}
+	};
 </script>
 
 <VisSingleContainer {data} class="size-full">
-	<VisGraph />
+	<VisGraph bind:this={graphRef} {nodeLabel} {nodeSubLabel} {events} {selectedNodeId} />
 </VisSingleContainer>
