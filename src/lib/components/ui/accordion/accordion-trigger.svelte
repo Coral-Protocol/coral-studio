@@ -26,7 +26,7 @@
 	>
 		{@render children?.()}
 		<ChevronDownIcon
-			class="text-primary bg-accent  pointer-events-none size-8 shrink-0 translate-y-0.5 rounded-full p-1  transition-transform duration-200"
+			class="text-primary bg-accent  pointer-events-none size-6 shrink-0 translate-y-0.5 rounded-full p-1  transition-transform duration-200"
 		/>
 	</AccordionPrimitive.Trigger>
 </AccordionPrimitive.Header>
