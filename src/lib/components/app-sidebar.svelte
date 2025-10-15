@@ -113,7 +113,7 @@
 			feedbackVisible = false;
 		}
 	}
-  
+
 	$effect(() => {
 		const hasNewRequest = Object.values(tools.userInput.requests).some(
 			(req) => req.userQuestion === undefined
@@ -131,9 +131,6 @@
 			});
 		}
 	});
-</script>
-
-<CreateSession bind:open={createSessionOpen} registry={sessCtx.registry ?? []} />
 
 	let sessionSearcherOpen = $state(false);
 	let value = $state('');
