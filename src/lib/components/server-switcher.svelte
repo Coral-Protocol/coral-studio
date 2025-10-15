@@ -4,7 +4,7 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { toast } from 'svelte-sonner';
 
-	import CheckIcon from 'phosphor-icons-svelte/IconCheckRegular.svelte';
+	import IconX from 'phosphor-icons-svelte/IconXRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 
 	import Logo from '$lib/icons/logo.svelte';
@@ -17,6 +17,7 @@
 	import type { WithElementRef } from 'bits-ui';
 	import type { paths } from '../../generated/api';
 	import createClient from 'openapi-fetch';
+	import Badge from './ui/badge/badge.svelte';
 
 	let servers = new PersistedState<string[]>('servers', []);
 	let selected = new PersistedState<string | null>('selectedServer', null);
@@ -37,7 +38,7 @@
 	});
 
 	let dialogOpen = $state(false);
-	let testState: 'success' | 'fail' | 'outdated' | null = $state(null);
+	let testState: 'success' | 'fail' | 'outdated' | 'dupe' | null = $state(null);
 	let testing = $state(false);
 
 	let host = $state('127.0.0.1:5555');
@@ -52,9 +53,21 @@
 		}
 	};
 
+	const checkForDupe = (s: string) => {
+		if (servers.current.indexOf(s) !== -1) {
+			testState = 'dupe';
+			return true;
+		}
+		return false;
+	};
+
 	const debouncedTest = useDebounce(async () => {
 		testState = null;
 		testing = true;
+		if (checkForDupe(hostSanitized)) {
+			testing = false;
+			return;
+		}
 		try {
 			const client = createClient<paths>({
 				baseUrl: `${location.protocol}//${hostSanitized}`
@@ -70,7 +83,6 @@
 		} catch {
 			await tick();
 			testState = 'fail';
-			await checkForOld();
 		}
 		testing = false;
 	}, 250);
@@ -82,12 +94,12 @@
 	};
 
 	const pushServerAndClose = () => {
+		dialogOpen = false;
 		servers.current.push(hostSanitized);
 		selected.current = hostSanitized;
-		dialogOpen = false;
 		testState = null;
-		host = '';
 		toast.success('Server added to list.');
+		host = '127.0.0.1:5555';
 	};
 
 	$effect(() => {
@@ -146,9 +158,14 @@
 						}}
 					>
 						{server}
-						{#if server === selected.current}
-							<CheckIcon class="ml-auto" />
-						{/if}
+
+						<Badge
+							variant="outline"
+							class="ml-auto
+							{selected.current === server ? '' : 'hidden'}"
+						>
+							Selected
+						</Badge>
 					</DropdownMenu.Item>
 				{/each}
 				<DropdownMenu.Separator />
@@ -160,42 +177,87 @@
 
 <Dialog.Root bind:open={dialogOpen}>
 	<Dialog.Content>
-		<Dialog.Header>
-			<Dialog.Title>Add a server</Dialog.Title>
-		</Dialog.Header>
-		<form>
+		<form class=" grid w-full gap-4">
+			<Dialog.Header>
+				<Dialog.Title>Add a server</Dialog.Title>
+			</Dialog.Header>
 			<section class="grid grid-cols-2">
 				<TooltipLabel>Host</TooltipLabel>
-				<Input placeholder="localhost:5555" bind:value={host} />
+				<Input
+					placeholder="localhost:5555"
+					bind:value={host}
+					disabled={testing}
+					oninput={() => {
+						testState = null;
+						testing = false;
+						checkForDupe(hostSanitized);
+					}}
+				/>
 			</section>
-		</form>
-		<Dialog.Footer class="items-center">
-			{#if testState !== 'success' && testState !== null}
-				<p class="text-destructive text-sm" transition:fade>
+			<Dialog.Footer class="items-center">
+				<p class="text-destructive mr-auto text-sm" transition:fade>
 					{#if testState === 'outdated'}
 						This server is outdated. See <a
 							class="hover:text-background hover:bg-destructive underline"
 							href="https://github.com/Coral-Protocol/coral-server/#readme">coral-server's README</a
-						> for help using the latest version.
-					{:else}
-						Connection failed, add anyway?{/if}
+						>
+						for help using the latest version.
+					{:else if testState === 'dupe'}
+						This server has already been added.
+					{:else if testState === 'fail'}
+						Connection failed, add anyway?
+					{/if}
 				</p>
-				<Button
-					variant="outline"
-					onclick={() => {
-						pushServerAndClose();
-					}}>Add Anyway</Button
-				>
-			{/if}
-			<Button
-				disabled={testing}
-				onclick={(e) => {
-					e.preventDefault();
-					testState = null;
-					testing = true;
-					testConnection();
-				}}>Connect</Button
-			>
-		</Dialog.Footer>
+				{#if testState === 'dupe'}
+					<Button
+						variant="outline"
+						onclick={() => {
+							selected.current = hostSanitized;
+							dialogOpen = false;
+							toast.info(`Switched to existing server ${hostSanitized}`);
+						}}>Use</Button
+					>
+				{:else if testState !== null}
+					<Button
+						variant="outline"
+						onclick={() => {
+							pushServerAndClose();
+						}}>Yes</Button
+					>
+				{/if}
+				{#if testState !== 'dupe'}
+					<Button
+						type="submit"
+						disabled={testing}
+						onclick={(e) => {
+							testState = null;
+							testing = true;
+							testConnection();
+						}}
+					>
+						<span class={!testing && testState === null ? '' : 'opacity-0'}>Connect</span>
+						<span class="{testing && testState === null ? '' : 'opacity-0'} absolute m-auto"
+							>Loading</span
+						>
+						<span class="{testState !== null && testing ? '' : 'opacity-0'} absolute m-auto"
+							>Validating</span
+						>
+						<span class="{testState !== null && !testing ? '' : 'opacity-0'} absolute m-auto"
+							>Retry</span
+						>
+					</Button>
+				{:else}
+					<Button
+						onclick={() => {
+							testState = null;
+							testing = false;
+							host = '';
+						}}
+					>
+						Clear
+					</Button>
+				{/if}
+			</Dialog.Footer>
+		</form>
 	</Dialog.Content>
 </Dialog.Root>

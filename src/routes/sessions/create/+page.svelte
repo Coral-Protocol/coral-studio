@@ -1,36 +1,36 @@
 <script lang="ts">
+	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
+	import * as Sidebar from '$lib/components/ui/sidebar';
+	import { Separator } from '$lib/components/ui/separator';
+	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconPrompt from 'phosphor-icons-svelte/IconChatCircleDotsRegular.svelte';
+	import IconListRegular from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
+	import IconCheck from 'phosphor-icons-svelte/IconCheckRegular.svelte';
+	import * as Resizable from '$lib/components/ui/resizable/index.js';
+	import * as Accordion from '$lib/components/ui/accordion/index.js';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
+	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Collapsible from '$lib/components/ui/collapsible';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as Tabs from '$lib/components/ui/tabs';
+
 	import { Toggle } from '$lib/components/ui/toggle';
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 
-	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import ScrollArea from '$lib/components/ui/scroll-area/scroll-area.svelte';
 	import Input from '$lib/components/ui/input/input.svelte';
-	import { Label } from '$lib/components/ui/label';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import * as Table from '$lib/components/ui/table/index.js';
 
 	// TODO: change these icons
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { ClipboardCopy, PlusIcon, TrashIcon } from '@lucide/svelte';
 
 	import { cn } from '$lib/utils';
-	import {
-		idAsKey,
-		sessionCtx,
-		type CustomTool,
-		type GraphAgentRequest,
-		type PublicRegistryAgent,
-		type Registry
-	} from '$lib/threads';
+	import { idAsKey, sessionCtx, type PublicRegistryAgent } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
 	import { tools } from '$lib/mcptools';
-
-	import ClipboardImportDialog from '../clipboard-import-dialog.svelte';
 
 	import Combobox from '$lib/components/combobox.svelte';
 	import CodeBlock from '$lib/components/code-block.svelte';
@@ -46,13 +46,13 @@
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
 	import * as schemas from './schemas';
-	import Card from '$lib/components/ui/card/card.svelte';
+
 	import type { HTMLInputTypeAttribute } from 'svelte/elements';
 	import createClient from 'openapi-fetch';
-	import type { paths, components } from '../../../../generated/api';
-	import SidebarMenuAction from '$lib/components/ui/sidebar/sidebar-menu-action.svelte';
-	import FormField from '$lib/components/ui/form/form-field.svelte';
-	import { tick } from 'svelte';
+	import type { paths, components } from '$generated/api';
+	import { onMount, tick } from 'svelte';
+
+	import Graph from './Graph.svelte';
 
 	type CreateSessionRequest = components['schemas']['SessionRequest'];
 
@@ -60,8 +60,6 @@
 	type Complete<T> = {
 		[P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : T[P] | undefined;
 	};
-
-	let ctx = sessionCtx.get();
 
 	const inputTypes: {
 		[K in PublicRegistryAgent['options'][string]['type']]: HTMLInputTypeAttribute;
@@ -71,60 +69,69 @@
 		secret: 'password'
 	};
 
-	let { open = $bindable(false), registry: registryRaw }: { open: boolean; registry: Registry } =
-		$props();
+	let sessCtx = sessionCtx.get();
 
-	let registry = $derived(Object.fromEntries(registryRaw.map((a) => [idAsKey(a.id), a])));
+	let error: string | null = $state(null);
+
+	let registryRaw = $derived(sessCtx.registry ?? []);
+	let registry = $derived(
+		Object.fromEntries((sessCtx.registry ?? []).map((a) => [idAsKey(a.id), a]))
+	);
 
 	let formSchema = $derived(schemas.makeFormSchema(registry));
-	let form = $derived(
-		superForm(defaults(zod4(formSchema)), {
-			SPA: true,
-			dataType: 'json',
-			validators: zod4(formSchema),
-			async onUpdate({ form: f }) {
-				if (!f.valid) {
-					toast.error('Please fix all errors in the form.');
+
+	// svelte-ignore state_referenced_locally
+	let form = superForm(defaults(zod4(formSchema)), {
+		SPA: true,
+		dataType: 'json',
+		// svelte-ignore state_referenced_locally
+		validators: zod4(formSchema),
+		async onUpdate({ form: f }) {
+			if (!f.valid) {
+				toast.error('Please fix all errors in the form.');
+				return;
+			}
+			if (!sessCtx.connection) {
+				throw new Error('Invalid connection to server!');
+			}
+			try {
+				const client = createClient<paths>({
+					baseUrl: `${location.protocol}//${sessCtx.connection.host}`
+				});
+				const res = await client.POST('/api/v1/sessions', {
+					body: asJson
+				});
+
+				if (res.error) {
+					// todo @alan there should probably be an api class where we can generic-ify the handling of this error
+					// with a proper type implementation too..!
+					let error: { message?: string; stackTrace: string[] } = res.error;
+					console.error(error.stackTrace);
+
+					toast.error(`Failed to create session: ${error.message}`);
 					return;
 				}
-				if (!ctx.connection) {
-					throw new Error('Invalid connection to server!');
-				}
-				try {
-					const client = createClient<paths>({
-						baseUrl: `${location.protocol}//${ctx.connection.host}`
+				if (res.data) {
+					if (!sessCtx.sessions) sessCtx.sessions = [];
+					sessCtx.sessions.push(res.data.sessionId);
+					sessCtx.session = new Session({
+						...sessCtx.connection,
+						session: res.data.sessionId
 					});
-					const res = await client.POST('/api/v1/sessions', {
-						body: asJson
-					});
-
-					if (res.error) {
-						// todo @alan there should probably be an api class where we can generic-ify the handling of this error
-						// with a proper type implementation too..!
-						let error: { message?: string; stackTrace: string[] } = res.error;
-						console.error(error.stackTrace);
-
-						toast.error(`Failed to create session: ${error.message}`);
-						return;
-					}
-					if (res.data) {
-						if (!ctx.sessions) ctx.sessions = [];
-						ctx.sessions.push(res.data.sessionId);
-						ctx.session = new Session({
-							...ctx.connection,
-							session: res.data.sessionId
-						});
-						open = false;
-					} else {
-						throw new Error('no data received');
-					}
-				} catch (e) {
-					console.log(e);
-					toast.error(`Failed to create session: ${e}`);
+				} else {
+					throw new Error('no data received');
 				}
+			} catch (e) {
+				console.log(e);
+				toast.error(`Failed to create session: ${e}`);
 			}
-		})
-	);
+		}
+	});
+
+	// This is a workaround for not being able to call superForm in a $derived
+	$effect(() => {
+		form.options.validators = zod4(formSchema);
+	});
 
 	let { form: formData, errors, enhance } = $derived(form);
 
@@ -155,6 +162,7 @@
 		return {
 			privacyKey: $formData.privacyKey,
 			applicationId: $formData.applicationId,
+			sessionId: $formData.sessionId,
 			agentGraphRequest: {
 				agents: $formData.agents.map((agent) => {
 					return {
@@ -192,113 +200,135 @@
 	});
 
 	let selectedAgent: number | null = $state(null);
+	let accordian: string = $state('');
 </script>
 
-{#if ctx.connection}
-	<Dialog.Root bind:open>
-		<Dialog.Content
-			class="3xl:w-[45%] flex h-[60%] w-full !max-w-full flex-col sm:w-[75%] md:w-[70%] lg:w-[80%] xl:w-[70%] 2xl:w-[55%]"
+<header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+	<Sidebar.Trigger class="-ml-1" />
+	<Separator orientation="vertical" class="mr-2 h-4" />
+	<Breadcrumb.Root class="flex-grow">
+		<Breadcrumb.List>
+			<Breadcrumb.Item class="hidden md:block">
+				<Breadcrumb.Link>Sessions</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator />
+			<Breadcrumb.Item class="hidden md:block">
+				<Breadcrumb.Link>Create</Breadcrumb.Link>
+			</Breadcrumb.Item>
+		</Breadcrumb.List>
+	</Breadcrumb.Root>
+</header>
+<form method="POST" use:enhance class="flex h-full flex-col overflow-hidden">
+	<div class="flex h-1/6 w-full flex-col items-center justify-between border-b p-6">
+		<h1 class="text-2xl font-semibold">Create a new session</h1>
+		<section class="flex w-full justify-between gap-4">
+			<section class="flex flex-col gap-2">
+				<Form.Field {form} name="sessionId">
+					<Form.Control>
+						{#snippet children({ props })}
+							<Form.Label>Session name</Form.Label>
+							<Input {...props} bind:value={$formData.sessionId} />
+						{/snippet}
+					</Form.Control>
+				</Form.Field>
+				<section class="flex gap-2">
+					<Form.Field {form} name="applicationId">
+						<Form.Control>
+							{#snippet children({ props })}
+								<Form.Label>Application ID</Form.Label>
+								<Input {...props} bind:value={$formData.applicationId} />
+							{/snippet}
+						</Form.Control>
+					</Form.Field>
+					<Form.Field {form} name="privacyKey">
+						<Form.Control>
+							{#snippet children({ props })}
+								<Form.Label>Privacy Key</Form.Label>
+								<Input {...props} type="password" bind:value={$formData.privacyKey} />
+							{/snippet}
+						</Form.Control>
+					</Form.Field>
+				</section>
+			</section>
+
+			<section class="flex h-full flex-col gap-2">
+				<p class="grow text-right text-xs">
+					{#if error}
+						Error
+					{:else if sessCtx.registry}
+						{Object.keys(sessCtx.registry).length} agent configurations found
+					{/if}
+				</p>
+				<section class="">
+					<ClipboardImportDialog onImport={importFromJson}>
+						{#snippet child({ props })}
+							<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
+						{/snippet}
+					</ClipboardImportDialog>
+					<Button variant="outline" class="w-fit">Export</Button>
+					<Form.Button>Create</Form.Button>
+				</section>
+			</section>
+		</section>
+	</div>
+	<Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1 overflow-hidden">
+		<Resizable.Pane
+			defaultSize={25}
+			minSize={15}
+			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
 		>
-			<form method="POST" use:enhance class="flex grow flex-col gap-2 overflow-hidden">
-				<Tabs.Root value="agents" class="grow overflow-hidden">
-					<Dialog.Header>
-						<Dialog.Title>New Session</Dialog.Title>
-						<Dialog.Description>Create a new session.</Dialog.Description>
-						<Tabs.List class=" w-full">
-							<Tabs.Trigger value="agents">Agents</Tabs.Trigger>
-							<Tabs.Trigger value="groups">Groups</Tabs.Trigger>
-							<Tabs.Trigger value="export">Export</Tabs.Trigger>
-						</Tabs.List>
-					</Dialog.Header>
-					<Tabs.Content value="agents" class="grid grow grid-cols-4  gap-1 gap-x-2 overflow-hidden">
-						<aside class="row-span-full flex min-h-0 grow flex-col gap-2 overflow-hidden">
-							<Combobox
-								side="top"
-								align="center"
-								options={registryRaw.map((a) => ({
-									label: `${a.id.name} ${a.id.version}`,
-									key: idAsKey(a.id),
-									value: a.id
-								}))}
-								searchPlaceholder="Search agents..."
-								onValueChange={(id) => {
-									const count = $formData.agents.filter(
-										(agent) => agent.id.name === id.name
-									).length;
-									const runtime = registry[idAsKey(id)]?.runtimes?.at(-1) ?? 'executable';
-									$formData.agents.push({
-										id: id,
-										provider: {
-											type: 'local',
-											runtime: runtime !== 'function' ? runtime : 'executable'
-										},
-										systemPrompt: undefined,
-										blocking: true,
-										name: id.name + (count > 0 ? `-${count + 1}` : ''),
-										options: {},
-										customToolAccess: new Set()
-									});
-									$formData.agents = $formData.agents;
-									selectedAgent = $formData.agents.length - 1;
-								}}
-							>
-								{#snippet trigger({ props })}
-									<Button {...props} size="icon" class="w-full gap-1 px-3"
-										>New agent<PlusIcon /></Button
-									>{/snippet}
-								{#snippet option({ option })}
-									{option.label}
-								{/snippet}
-							</Combobox>
-							<ScrollArea
-								class="bg-card text-card-foreground row-span-full flex h-full min-h-0 grow flex-col gap-6 overflow-scroll rounded-md border shadow-sm"
-							>
-								<ul class="flex h-full min-h-0 w-full grow flex-col content-stretch gap-1 p-1">
-									{#each $formData.agents as agent, i}
-										<li class="contents">
-											<Toggle
-												class="flex justify-start pr-0"
-												bind:pressed={() => selectedAgent === i, () => (selectedAgent = i)}
-											>
-												<p class="grow">{agent.name}</p>
-												<TwostepButton
-													class="size-9"
-													variant="outline"
-													onclick={() => {
-														$formData.agents.splice(i, 1);
-														$formData.agents = $formData.agents;
-														selectedAgent =
-															selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-													}}><TrashIcon /></TwostepButton
-												>
-											</Toggle>
-										</li>
-									{/each}
-									{#if $formData.agents.length == 0}
-										<li class="contents">
-											<p
-												class="text-muted-foreground flex h-9 grow items-center justify-center text-sm"
-											>
-												No agents added.
-											</p>
-										</li>
-									{:else}
-										<li class="grow"></li>
-									{/if}
-								</ul>
-							</ScrollArea>
-						</aside>
+			<Combobox
+				side="top"
+				align="center"
+				options={registryRaw.map((a) => ({
+					label: `${a.id.name} ${a.id.version}`,
+					key: idAsKey(a.id),
+					value: a.id
+				}))}
+				searchPlaceholder="Search agents..."
+				onValueChange={(id) => {
+					const count = $formData.agents.filter((agent) => agent.id.name === id.name).length;
+					const runtime = registry[idAsKey(id)]?.runtimes?.at(-1) ?? 'executable';
+					$formData.agents.push({
+						id: id,
+						provider: {
+							type: 'local',
+							runtime: runtime !== 'function' ? runtime : 'executable'
+						},
+						systemPrompt: undefined,
+						blocking: true,
+						name: id.name + (count > 0 ? `-${count + 1}` : ''),
+						options: {},
+						customToolAccess: new Set()
+					});
+					$formData.agents = $formData.agents;
+					selectedAgent = $formData.agents.length - 1;
+					accordian = 'agent-editor';
+				}}
+			>
+				{#snippet trigger({ props })}
+					<Button {...props} size="icon" class="w-full gap-1 px-3">New agent<PlusIcon /></Button
+					>{/snippet}
+				{#snippet option({ option })}
+					{option.label}
+				{/snippet}
+			</Combobox>
+			<Accordion.Root type="single" value={accordian}>
+				<Accordion.Item value="agent-editor">
+					<Accordion.Trigger>Agent editor</Accordion.Trigger>
+					<Accordion.Content class="b-8 min-h-0 flex-1 overflow-auto">
 						{#if selectedAgent !== null && $formData.agents.length > selectedAgent}
 							{@const agent = $formData.agents[selectedAgent]!}
 							{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
-							<Tabs.Root value="options" class="col-span-3 min-h-0 overflow-hidden">
-								<Tabs.List>
-									<Tabs.Trigger value="options">Options</Tabs.Trigger>
-									<Tabs.Trigger value="prompt">Prompt</Tabs.Trigger>
-									<Tabs.Trigger value="tools">Tools</Tabs.Trigger>
+							<Tabs.Root value="setup" class="grow overflow-hidden">
+								<Tabs.List class=" w-full">
+									<Tabs.Trigger value="setup"><IconMenu class="size-6" />Setup</Tabs.Trigger>
+									<Tabs.Trigger value="prompt"><IconPrompt class="size-6" />Prompt</Tabs.Trigger>
+									<Tabs.Trigger value="tools"
+										><IconWrenchRegular class="size-6" />Tools</Tabs.Trigger
+									>
 								</Tabs.List>
-
-								<Tabs.Content value="options" class="flex min-h-0 flex-col gap-2 overflow-scroll">
+								<Tabs.Content value="setup" class="flex min-h-0 flex-col gap-4 overflow-scroll">
 									{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
 										<Form.ElementField
 											{form}
@@ -343,7 +373,7 @@
 															key: idAsKey(a.id),
 															value: a.id
 														}))}
-														searchPlaceholder="Search agents..."
+														searchPlaceholder="Search types..."
 														onValueChange={(value) => {
 															$formData.agents[selectedAgent!]!.id = value;
 															$formData.agents = $formData.agents;
@@ -383,7 +413,7 @@
 																value
 															})
 														)}
-														searchPlaceholder="Search agents..."
+														searchPlaceholder="Search runtimes..."
 														bind:selected={
 															() => ({ key: runtime, label: runtime, value: runtime }),
 															(selected) => {
@@ -438,7 +468,7 @@
 												>
 												<Textarea
 													{...props}
-													class="grow resize-none"
+													class="min-h-32 grow"
 													bind:value={$formData.agents[selectedAgent!]!.systemPrompt}
 												/>
 											{/snippet}
@@ -480,14 +510,15 @@
 								</Tabs.Content>
 							</Tabs.Root>
 						{:else}
-							<p
-								class="text-muted-foreground col-span-3 flex h-full grow items-center justify-center text-sm"
-							>
-								Add your first agent to begin.
-							</p>
+							Select an agent to begin editing.
 						{/if}
-					</Tabs.Content>
-					<Tabs.Content value="groups">
+					</Accordion.Content>
+				</Accordion.Item>
+			</Accordion.Root>
+			<Accordion.Root type="single">
+				<Accordion.Item value="item-1">
+					<Accordion.Trigger>Groups</Accordion.Trigger>
+					<Accordion.Content>
 						<p class="text-muted-foreground text-sm leading-tight">
 							Define a list of groups, where each agent in a group can all interact.
 						</p>
@@ -527,44 +558,68 @@
 								}}>New group<PlusIcon /></Button
 							>
 						</ul>
-					</Tabs.Content>
-					<Tabs.Content value="export" class="flex min-h-0 flex-col">
-						<CodeBlock
-							text={JSON.stringify(asJson, null, 2)}
-							orientation="both"
-							class="whitespace-pre-wrap"
-							containerClass="h-full"
-							language="json"
-						/>
-					</Tabs.Content>
-				</Tabs.Root>
-				<Dialog.Footer>
-					<section class="flex items-end gap-4">
-						<Form.Field {form} name="applicationId">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Application ID</Form.Label>
-									<Input {...props} bind:value={$formData.applicationId} />
-								{/snippet}
-							</Form.Control>
-						</Form.Field>
-						<Form.Field {form} name="privacyKey">
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label>Privacy Key</Form.Label>
-									<Input {...props} type="password" bind:value={$formData.privacyKey} />
-								{/snippet}
-							</Form.Control>
-						</Form.Field>
-						<ClipboardImportDialog onImport={importFromJson}>
-							{#snippet child({ props })}
-								<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
-							{/snippet}
-						</ClipboardImportDialog>
-						<Form.Button>Create</Form.Button>
-					</section>
-				</Dialog.Footer>
-			</form>
-		</Dialog.Content>
-	</Dialog.Root>
-{/if}
+					</Accordion.Content>
+				</Accordion.Item>
+			</Accordion.Root>
+		</Resizable.Pane>
+		<Resizable.Handle withHandle />
+		<Resizable.Pane
+			defaultSize={75}
+			minSize={50}
+			class="relative flex min-h-0 flex-col overflow-hidden"
+		>
+			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
+				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
+					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
+					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
+				</Tabs.List>
+				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto px-8 py-4">
+					<Table.Root class="w-full">
+						<Table.Caption>Agents</Table.Caption>
+						<Table.Header>
+							<Table.Row>
+								<Table.Head>Name</Table.Head>
+								<Table.Head>Runtime</Table.Head>
+								<Table.Head>Provider Type</Table.Head>
+								<Table.Head>Agent Type</Table.Head>
+								<Table.Head>Agent Version</Table.Head>
+								<Table.Head class="text-right "></Table.Head>
+							</Table.Row>
+						</Table.Header>
+						<Table.Body>
+							{#each $formData.agents as agent, i}
+								<Table.Row
+									onclick={() => (selectedAgent = i)}
+									class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
+								>
+									<Table.Cell class="font-medium">
+										<p class="grow">{agent.name}</p>
+									</Table.Cell>
+									<Table.Cell>{agent.provider.runtime}</Table.Cell>
+									<Table.Cell>{agent.provider.type}</Table.Cell>
+									<Table.Cell>{agent.id.name}</Table.Cell>
+									<Table.Cell>{agent.id.version}</Table.Cell>
+									<Table.Cell>
+										<TwostepButton
+											variant="ghost"
+											size="icon"
+											onclick={() => {
+												$formData.agents.splice(i, 1);
+												$formData.agents = $formData.agents;
+												selectedAgent =
+													selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
+											}}><IconTrash /></TwostepButton
+										></Table.Cell
+									>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				</Tabs.Content>
+				<Tabs.Content value="graph" class="b-8 min-h-0 flex-1 overflow-auto">
+					<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
+				</Tabs.Content>
+			</Tabs.Root>
+		</Resizable.Pane>
+	</Resizable.PaneGroup>
+</form>

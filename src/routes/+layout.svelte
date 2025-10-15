@@ -6,9 +6,7 @@
 	import '../app.css';
 	import { AgentLogs, logContext } from '$lib/logs.svelte';
 	import { watch } from 'runed';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Separator } from '$lib/components/ui/separator';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 
 	let { children } = $props();

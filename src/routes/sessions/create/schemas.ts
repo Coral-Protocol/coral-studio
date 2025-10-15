@@ -1,9 +1,10 @@
 import type { PublicRegistryAgent } from '$lib/threads';
-import { registry, z } from 'zod/v4';
+import { z } from 'zod/v4';
 
 const formSchema = z.object({
-	applicationId: z.string().nonempty().default('default'),
-	privacyKey: z.string().nonempty().default('default'),
+	sessionId: z.string().optional(),
+	applicationId: z.string().nonempty(),
+	privacyKey: z.string().nonempty(),
 	agents: z.array(
 		z.object({
 			id: z.object({
