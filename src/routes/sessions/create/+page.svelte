@@ -2,20 +2,17 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
-	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconPrompt from 'phosphor-icons-svelte/IconChatCircleDotsRegular.svelte';
 	import IconListRegular from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
-	import IconCheck from 'phosphor-icons-svelte/IconCheckRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
 
-	import { Toggle } from '$lib/components/ui/toggle';
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 
@@ -23,24 +20,16 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table/index.js';
 
-	// TODO: change these icons
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
-	import { ClipboardCopy, PlusIcon, TrashIcon } from '@lucide/svelte';
-
 	import { cn } from '$lib/utils';
 	import { idAsKey, sessionCtx, type PublicRegistryAgent } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
 	import { tools } from '$lib/mcptools';
 
 	import Combobox from '$lib/components/combobox.svelte';
-	import CodeBlock from '$lib/components/code-block.svelte';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
-	import ModalCollapsible from '$lib/components/modal-collapsible.svelte';
 
 	import { toast } from 'svelte-sonner';
-	import { watch } from 'runed';
-	import { SvelteSet } from 'svelte/reactivity';
 	import { Textarea } from '$lib/components/ui/textarea';
 
 	import { superForm, defaults } from 'sveltekit-superforms';
@@ -53,6 +42,7 @@
 	import { onMount, tick } from 'svelte';
 
 	import Graph from './Graph.svelte';
+	import IconCopyRegular from 'phosphor-icons-svelte/IconCopyRegular.svelte';
 
 	type CreateSessionRequest = components['schemas']['SessionRequest'];
 
@@ -219,7 +209,7 @@
 	</Breadcrumb.Root>
 </header>
 <form method="POST" use:enhance class="flex h-full flex-col overflow-hidden">
-	<div class="flex h-1/6 w-full flex-col items-center justify-between border-b p-6">
+	<div class="flex w-full flex-col items-center justify-between border-b p-6">
 		<h1 class="text-2xl font-semibold">Create a new session</h1>
 		<section class="flex w-full justify-between gap-4">
 			<section class="flex flex-col gap-2">
@@ -259,13 +249,22 @@
 						{Object.keys(sessCtx.registry).length} agent configurations found
 					{/if}
 				</p>
-				<section class="">
+				<section class="flex gap-2">
 					<ClipboardImportDialog onImport={importFromJson}>
 						{#snippet child({ props })}
-							<Button {...props} variant="outline" class="w-fit">Import <ClipboardCopy /></Button>
+							<Button {...props} variant="outline" class="w-fit">Import</Button>
 						{/snippet}
 					</ClipboardImportDialog>
-					<Button variant="outline" class="w-fit">Export</Button>
+					<Button
+						variant="outline"
+						class="w-fit"
+						onclick={() => {
+							navigator.clipboard.writeText(JSON.stringify(asJson, null, 2));
+							toast.success('Session JSON copied to clipboard');
+						}}
+					>
+						Export <IconCopyRegular />
+					</Button>
 					<Form.Button>Create</Form.Button>
 				</section>
 			</section>
@@ -274,7 +273,7 @@
 	<Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1 overflow-hidden">
 		<Resizable.Pane
 			defaultSize={25}
-			minSize={15}
+			minSize={21}
 			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
 		>
 			<Combobox
@@ -307,8 +306,24 @@
 				}}
 			>
 				{#snippet trigger({ props })}
-					<Button {...props} size="icon" class="w-full gap-1 px-3">New agent<PlusIcon /></Button
-					>{/snippet}
+					<section class="flex justify-between gap-2">
+						<Button {...props} class="grow">Add agent</Button>
+						<TwostepButton
+							disabled={selectedAgent === null}
+							variant="destructive"
+							class="grow"
+							onclick={() => {
+								if (selectedAgent === null) return;
+								const idx = selectedAgent;
+								$formData.agents.splice(idx, 1);
+								$formData.agents = $formData.agents;
+								selectedAgent = Math.min(idx, $formData.agents.length - 1);
+								selectedAgent = null;
+							}}>Remove agent</TwostepButton
+						>
+					</section>
+				{/snippet}
+
 				{#snippet option({ option })}
 					{option.label}
 				{/snippet}
@@ -320,15 +335,16 @@
 						{#if selectedAgent !== null && $formData.agents.length > selectedAgent}
 							{@const agent = $formData.agents[selectedAgent]!}
 							{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
-							<Tabs.Root value="setup" class="grow overflow-hidden">
+							<Tabs.Root value="options" class="grow overflow-hidden">
 								<Tabs.List class=" w-full">
-									<Tabs.Trigger value="setup"><IconMenu class="size-6" />Setup</Tabs.Trigger>
+									<Tabs.Trigger value="options"><IconMenu class="size-6" />Options</Tabs.Trigger>
 									<Tabs.Trigger value="prompt"><IconPrompt class="size-6" />Prompt</Tabs.Trigger>
 									<Tabs.Trigger value="tools"
 										><IconWrenchRegular class="size-6" />Tools</Tabs.Trigger
 									>
 								</Tabs.List>
-								<Tabs.Content value="setup" class="flex min-h-0 flex-col gap-4 overflow-scroll">
+
+								<Tabs.Content value="options" class="flex min-h-0 flex-col gap-4 overflow-scroll">
 									{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
 										<Form.ElementField
 											{form}
@@ -555,7 +571,7 @@
 								disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
 								onclick={() => {
 									$formData.groups = [...$formData.groups, []];
-								}}>New group<PlusIcon /></Button
+								}}>Create group</Button
 							>
 						</ul>
 					</Accordion.Content>
@@ -573,17 +589,15 @@
 					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
 					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
 				</Tabs.List>
-				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto px-8 py-4">
+				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto  py-4">
 					<Table.Root class="w-full">
-						<Table.Caption>Agents</Table.Caption>
 						<Table.Header>
 							<Table.Row>
 								<Table.Head>Name</Table.Head>
+								<Table.Head>Type</Table.Head>
 								<Table.Head>Runtime</Table.Head>
 								<Table.Head>Provider Type</Table.Head>
-								<Table.Head>Agent Type</Table.Head>
 								<Table.Head>Agent Version</Table.Head>
-								<Table.Head class="text-right "></Table.Head>
 							</Table.Row>
 						</Table.Header>
 						<Table.Body>
@@ -595,28 +609,16 @@
 									<Table.Cell class="font-medium">
 										<p class="grow">{agent.name}</p>
 									</Table.Cell>
+									<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
 									<Table.Cell>{agent.provider.runtime}</Table.Cell>
 									<Table.Cell>{agent.provider.type}</Table.Cell>
-									<Table.Cell>{agent.id.name}</Table.Cell>
 									<Table.Cell>{agent.id.version}</Table.Cell>
-									<Table.Cell>
-										<TwostepButton
-											variant="ghost"
-											size="icon"
-											onclick={() => {
-												$formData.agents.splice(i, 1);
-												$formData.agents = $formData.agents;
-												selectedAgent =
-													selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-											}}><IconTrash /></TwostepButton
-										></Table.Cell
-									>
 								</Table.Row>
 							{/each}
 						</Table.Body>
 					</Table.Root>
 				</Tabs.Content>
-				<Tabs.Content value="graph" class="b-8 min-h-0 flex-1 overflow-auto">
+				<Tabs.Content value="graph" class=" min-h-0 flex-1 overflow-hidden ">
 					<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
 				</Tabs.Content>
 			</Tabs.Root>
