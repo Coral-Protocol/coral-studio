@@ -189,34 +189,36 @@
 				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
 				>Server</span
 			>
-			<Tooltip.Provider delayDuration={0}>
-				<Tooltip.Root>
-					<Tooltip.Trigger disabled={error === null}>
-						<span
-							class={cn(
-								'text-muted-foreground font-mono text-xs font-normal',
-								error && 'text-destructive'
-							)}
-						>
-							{#if error}
-								disconnected
-							{:else if sessCtx.registry}
-								connected
-							{/if}
-						</span>
-					</Tooltip.Trigger>
-					<Tooltip.Content><p>{error}</p></Tooltip.Content>
-				</Tooltip.Root>
-			</Tooltip.Provider>
-			<Button
-				size="icon"
-				variant="ghost"
-				class="mx	-1 size-7"
-				disabled={connecting}
-				onclick={() => refreshAgents()}
-			>
-				<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
-			</Button>
+			{#if sessCtx.connection}
+				<Tooltip.Provider delayDuration={0}>
+					<Tooltip.Root>
+						<Tooltip.Trigger disabled={error === null}>
+							<span
+								class={cn(
+									'text-muted-foreground font-mono text-xs font-normal',
+									error && 'text-destructive'
+								)}
+							>
+								{#if error}
+									disconnected
+								{:else if sessCtx.registry}
+									connected
+								{/if}
+							</span>
+						</Tooltip.Trigger>
+						<Tooltip.Content><p>{error}</p></Tooltip.Content>
+					</Tooltip.Root>
+				</Tooltip.Provider>
+				<Button
+					size="icon"
+					variant="ghost"
+					class="mx	-1 size-7"
+					disabled={connecting}
+					onclick={() => refreshAgents()}
+				>
+					<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
+				</Button>
+			{/if}
 		</Sidebar.GroupLabel>
 		<Sidebar.GroupContent>
 			<Sidebar.Menu>
@@ -245,87 +247,61 @@
 		<Sidebar.Group class="">
 			<Sidebar.GroupContent>
 				<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
-				<div class="group/session flex max-w-[23rem] justify-between gap-2">
-					<Popover.Root bind:open={sessionSearcherOpen}>
-						{#if sessCtx.sessions && sessCtx.sessions.length === 0}
-							<Popover.Trigger
-								class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-								bind:ref={sessionSwitcher}
-								aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
+				<Sidebar.GroupAction
+					title="Create new session"
+					onclick={() => {
+						goto(`/sessions/create`);
+					}}
+					bind:ref={sessionSwitcher}
+				>
+					<Plus /> <span class="sr-only">Create new session</span>
+				</Sidebar.GroupAction>
+				<Popover.Root bind:open={sessionSearcherOpen}>
+					<Popover.Trigger
+						class="bg-sidebar ring-border ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive w-full flex-1  grow justify-between truncate border border-none shadow-none ring "
+						aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
+					>
+						{#snippet child({ props })}
+							<Button
+								variant="outline"
+								{...props}
+								role="combobox"
+								aria-expanded={sessionSearcherOpen}
+								disabled={sessCtx.sessions && sessCtx.sessions.length === 0}
 							>
-								{#snippet child({ props })}
-									<Button variant="outline" disabled>
-										{sessCtx.session && sessCtx.session.connected
-											? sessCtx.session.session
-											: 'Select Session'}
-										<CaretUpDown />
-									</Button>
-								{/snippet}
-							</Popover.Trigger>
-						{:else}
-							<Popover.Trigger
-								class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-								bind:ref={sessionSwitcher}
-								aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
-							>
-								{#snippet child({ props })}
-									<Button
-										variant="outline"
-										{...props}
-										role="combobox"
-										aria-expanded={sessionSearcherOpen}
-									>
-										{sessCtx.session && sessCtx.session.connected
-											? sessCtx.session.session
-											: 'Select Session'}
-										<CaretUpDown />
-									</Button>
-								{/snippet}
-							</Popover.Trigger>
-						{/if}
+								{sessCtx.session && sessCtx.session.connected
+									? sessCtx.session.session
+									: 'Select Session'}
+								<CaretUpDown />
+							</Button>
+						{/snippet}
+					</Popover.Trigger>
 
-						<Popover.Content align="center" class="w-[20em]">
-							<Command.Root>
-								<Command.Input placeholder="Search" />
-								<Command.List>
-									<Command.Empty>No sessions found</Command.Empty>
-									{#if sessCtx.sessions && sessCtx.sessions.length > 0}
-										<Command.Group>
-											{#each sessCtx.sessions as session}
-												<Command.Item
-													onSelect={() => {
-														value = session;
-														closeAndFocusTrigger();
-														if (!sessCtx.connection) return;
-														sessCtx.session = new Session({ ...sessCtx.connection, session });
-													}}
-												>
-													{session}
-												</Command.Item>
-											{/each}
-										</Command.Group>
-									{/if}
-								</Command.List>
-							</Command.Root>
-						</Popover.Content>
-					</Popover.Root>
-					<Tooltip.Provider>
-						<Tooltip.Root>
-							<Tooltip.Trigger
-								disabled={error !== null || connecting === true}
-								onclick={() => {
-									goto(`/sessions/create`);
-								}}
-								class="button {buttonVariants({
-									variant: 'outline'
-								})} "
-							>
-								Session creator
-							</Tooltip.Trigger>
-							<Tooltip.Content>Create a new session</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-				</div>
+					<Popover.Content align="center" class="">
+						<Command.Root>
+							<Command.Input placeholder="Search" />
+							<Command.List>
+								<Command.Empty>No sessions found</Command.Empty>
+								{#if sessCtx.sessions && sessCtx.sessions.length > 0}
+									<Command.Group>
+										{#each sessCtx.sessions as session}
+											<Command.Item
+												onSelect={() => {
+													value = session;
+													closeAndFocusTrigger();
+													if (!sessCtx.connection) return;
+													sessCtx.session = new Session({ ...sessCtx.connection, session });
+												}}
+											>
+												{session}
+											</Command.Item>
+										{/each}
+									</Command.Group>
+								{/if}
+							</Command.List>
+						</Command.Root>
+					</Popover.Content>
+				</Popover.Root>
 				<NavBundle
 					items={[
 						{
@@ -354,7 +330,14 @@
 						}
 					]}
 				/>
-				<SidebarLink url="/tools/user-input" icon={IconChats} title="Input Requests" />
+				<SidebarLink
+					url="/tools/user-input"
+					icon={IconChats}
+					title="Input Requests"
+					badge={Object.values(tools.userInput.requests).filter(
+						(req) => req.userQuestion === undefined
+					).length}
+				/>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
 
