@@ -65,4 +65,7 @@
 			{@render content()}
 		</Sidebar.MenuButton>
 	{/if}
+	{#if badge}
+		<Sidebar.MenuBadge>{badge}</Sidebar.MenuBadge>
+	{/if}
 </Sidebar.MenuItem>
