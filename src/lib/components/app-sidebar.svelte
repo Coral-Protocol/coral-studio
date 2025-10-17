@@ -26,6 +26,8 @@
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import IconToolbox from 'phosphor-icons-svelte/IconToolboxRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
+	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
+	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
@@ -182,175 +184,178 @@
 				});
 			}}
 		/>
+		<Sidebar.GroupLabel class="pr-0">
+			<span
+				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
+				>Server</span
+			>
+			<Tooltip.Provider delayDuration={0}>
+				<Tooltip.Root>
+					<Tooltip.Trigger disabled={error === null}>
+						<span
+							class={cn(
+								'text-muted-foreground font-mono text-xs font-normal',
+								error && 'text-destructive'
+							)}
+						>
+							{#if error}
+								disconnected
+							{:else if sessCtx.registry}
+								connected
+							{/if}
+						</span>
+					</Tooltip.Trigger>
+					<Tooltip.Content><p>{error}</p></Tooltip.Content>
+				</Tooltip.Root>
+			</Tooltip.Provider>
+			<Button
+				size="icon"
+				variant="ghost"
+				class="mx	-1 size-7"
+				disabled={connecting}
+				onclick={() => refreshAgents()}
+			>
+				<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
+			</Button>
+		</Sidebar.GroupLabel>
+		<Sidebar.GroupContent>
+			<Sidebar.Menu>
+				<SidebarLink url="/registry" icon={IconPackage} title="Agent Registry" />
+				<SidebarLink url="/logs" icon={IconNotepad} title="Logs" />
+			</Sidebar.Menu>
+		</Sidebar.GroupContent>
 	</Sidebar.Header>
 	<Sidebar.Content class="gap-0 overflow-hidden">
 		<Sidebar.Group>
+			<Sidebar.Separator />
+
 			<Sidebar.GroupLabel class="text-sidebar-foreground flex flex-row gap-1 pr-0 text-sm">
 				<span class="text-muted-foreground grow font-sans font-medium tracking-wide select-none"
-					>Server</span
+					>Finance</span
 				>
-				<Tooltip.Provider delayDuration={0}>
-					<Tooltip.Root>
-						<Tooltip.Trigger disabled={error === null}>
-							<span
-								class={cn(
-									'text-muted-foreground font-mono text-xs font-normal',
-									error && 'text-destructive'
-								)}
-							>
-								{#if error}
-									disconnected
-								{:else if sessCtx.registry}
-									connected
-								{/if}
-							</span>
-						</Tooltip.Trigger>
-						<Tooltip.Content><p>{error}</p></Tooltip.Content>
-					</Tooltip.Root>
-				</Tooltip.Provider>
-				<Button
-					size="icon"
-					variant="ghost"
-					class="size-7"
-					disabled={connecting}
-					onclick={() => refreshAgents()}
-				>
-					<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
-				</Button>
 			</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					<SidebarLink url="/registry" icon={IconPackage} title="Agent Registry" />
-					<SidebarLink url="/logs" icon={IconNotepad} title="Logs" />
+					<SidebarLink url="/wallet" icon={IconWallet} title="Wallet" />
+					<SidebarLink url="/dashboard" icon={IconDashboard} title="Dashboard" />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
 		<Sidebar.Separator class="sticky top-0" />
-		<Sidebar.Group class="overflow-x-hidden overflow-y-scroll">
-			<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
-			<div class="group/session flex max-w-[23rem] justify-between gap-2">
-				<Popover.Root bind:open={sessionSearcherOpen}>
-					{#if sessCtx.sessions && sessCtx.sessions.length === 0}
-						<Popover.Trigger
-							class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-							bind:ref={sessionSwitcher}
-							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
-						>
-							{#snippet child({ props })}
-								<Button variant="outline" disabled>
-									{sessCtx.session && sessCtx.session.connected
-										? sessCtx.session.session
-										: 'Select Session'}
-									<CaretUpDown />
-								</Button>
-							{/snippet}
-						</Popover.Trigger>
-					{:else}
-						<Popover.Trigger
-							class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-							bind:ref={sessionSwitcher}
-							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
-						>
-							{#snippet child({ props })}
-								<Button
-									variant="outline"
-									{...props}
-									role="combobox"
-									aria-expanded={sessionSearcherOpen}
-								>
-									{sessCtx.session && sessCtx.session.connected
-										? sessCtx.session.session
-										: 'Select Session'}
-									<CaretUpDown />
-								</Button>
-							{/snippet}
-						</Popover.Trigger>
-					{/if}
+		<Sidebar.Group class="">
+			<Sidebar.GroupContent>
+				<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
+				<div class="group/session flex max-w-[23rem] justify-between gap-2">
+					<Popover.Root bind:open={sessionSearcherOpen}>
+						{#if sessCtx.sessions && sessCtx.sessions.length === 0}
+							<Popover.Trigger
+								class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
+								bind:ref={sessionSwitcher}
+								aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
+							>
+								{#snippet child({ props })}
+									<Button variant="outline" disabled>
+										{sessCtx.session && sessCtx.session.connected
+											? sessCtx.session.session
+											: 'Select Session'}
+										<CaretUpDown />
+									</Button>
+								{/snippet}
+							</Popover.Trigger>
+						{:else}
+							<Popover.Trigger
+								class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
+								bind:ref={sessionSwitcher}
+								aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
+							>
+								{#snippet child({ props })}
+									<Button
+										variant="outline"
+										{...props}
+										role="combobox"
+										aria-expanded={sessionSearcherOpen}
+									>
+										{sessCtx.session && sessCtx.session.connected
+											? sessCtx.session.session
+											: 'Select Session'}
+										<CaretUpDown />
+									</Button>
+								{/snippet}
+							</Popover.Trigger>
+						{/if}
 
-					<Popover.Content align="center" class="w-[20em]">
-						<Command.Root>
-							<Command.Input placeholder="Search" />
-							<Command.List>
-								<Command.Empty>No sessions found</Command.Empty>
-								{#if sessCtx.sessions && sessCtx.sessions.length > 0}
-									<Command.Group>
-										{#each sessCtx.sessions as session}
-											<Command.Item
-												onSelect={() => {
-													value = session;
-													closeAndFocusTrigger();
-													if (!sessCtx.connection) return;
-													sessCtx.session = new Session({ ...sessCtx.connection, session });
-												}}
-											>
-												{session}
-											</Command.Item>
-										{/each}
-									</Command.Group>
-								{/if}
-							</Command.List>
-						</Command.Root>
-					</Popover.Content>
-				</Popover.Root>
-				<Tooltip.Provider>
-					<Tooltip.Root>
-						<Tooltip.Trigger
-							disabled={error !== null || connecting === true}
-							onclick={() => {
-								goto(`/sessions/create`);
-							}}
-							class="button {buttonVariants({
-								variant: 'outline'
-							})} "
-						>
-							Session creator
-						</Tooltip.Trigger>
-						<Tooltip.Content>Create a new session</Tooltip.Content>
-					</Tooltip.Root>
-				</Tooltip.Provider>
-			</div>
-			<NavBundle
-				items={[
-					{
-						title: 'Threads',
-						icon: IconChats,
-						sumBadges: true,
-						items: conn
-							? Object.values(conn.threads).map((thread) => ({
-									id: thread.id,
-									title: thread.name,
-									url: `/thread/${thread.id}`,
-									badge: thread.unread
-								}))
-							: []
-					},
-					{
-						title: 'Agents',
-						icon: IconRobot,
-						items: conn
-							? Object.entries(conn.agents).map(([title, agent]) => ({
-									title,
-									url: `/agent/${title}`,
-									state: agent.state ?? 'disconnected'
-								}))
-							: []
-					},
-					{
-						title: 'Tools',
-						icon: IconToolbox,
-						sumBadges: true,
-						items: [
-							{
-								title: 'User Input',
-								url: '/tools/user-input',
-								badge: Object.values(tools.userInput.requests).filter(
-									(req) => req.userQuestion === undefined
-								).length
-							}
-						]
-					}
-				]}
-			/>
+						<Popover.Content align="center" class="w-[20em]">
+							<Command.Root>
+								<Command.Input placeholder="Search" />
+								<Command.List>
+									<Command.Empty>No sessions found</Command.Empty>
+									{#if sessCtx.sessions && sessCtx.sessions.length > 0}
+										<Command.Group>
+											{#each sessCtx.sessions as session}
+												<Command.Item
+													onSelect={() => {
+														value = session;
+														closeAndFocusTrigger();
+														if (!sessCtx.connection) return;
+														sessCtx.session = new Session({ ...sessCtx.connection, session });
+													}}
+												>
+													{session}
+												</Command.Item>
+											{/each}
+										</Command.Group>
+									{/if}
+								</Command.List>
+							</Command.Root>
+						</Popover.Content>
+					</Popover.Root>
+					<Tooltip.Provider>
+						<Tooltip.Root>
+							<Tooltip.Trigger
+								disabled={error !== null || connecting === true}
+								onclick={() => {
+									goto(`/sessions/create`);
+								}}
+								class="button {buttonVariants({
+									variant: 'outline'
+								})} "
+							>
+								Session creator
+							</Tooltip.Trigger>
+							<Tooltip.Content>Create a new session</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+				</div>
+				<NavBundle
+					items={[
+						{
+							title: 'Threads',
+							icon: IconChats,
+							sumBadges: true,
+							items: conn
+								? Object.values(conn.threads).map((thread) => ({
+										id: thread.id,
+										title: thread.name,
+										url: `/thread/${thread.id}`,
+										badge: thread.unread
+									}))
+								: []
+						},
+						{
+							title: 'Agents',
+							icon: IconRobot,
+							items: conn
+								? Object.entries(conn.agents).map(([title, agent]) => ({
+										title,
+										url: `/agent/${title}`,
+										state: agent.state ?? 'disconnected'
+									}))
+								: []
+						}
+					]}
+				/>
+				<SidebarLink url="/tools/user-input" icon={IconChats} title="Input Requests" />
+			</Sidebar.GroupContent>
 		</Sidebar.Group>
 
 		<form
