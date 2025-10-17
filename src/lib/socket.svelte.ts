@@ -31,6 +31,7 @@ export class UserInput {
 			agentRequest: string;
 			userQuestion?: string;
 			agentAnswer?: string;
+			timestamp?: number;
 		};
 	} = $state({});
 	constructor() {
