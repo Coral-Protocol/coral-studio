@@ -246,16 +246,15 @@
 		<Sidebar.Separator class="sticky top-0" />
 		<Sidebar.Group class="overflow-x-hidden overflow-y-scroll">
 			<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
-			<div class="group/session flex max-w-[23rem] justify-between gap-2">
+			<div class="group/session flex max-w-[23rem] gap-2">
 				<Popover.Root bind:open={sessionSearcherOpen}>
 					{#if sessCtx.sessions && sessCtx.sessions.length === 0}
 						<Popover.Trigger
 							class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-							bind:ref={sessionSwitcher}
 							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
 						>
 							{#snippet child({ props })}
-								<Button variant="outline" disabled>
+								<Button variant="outline" disabled class="grow">
 									{sessCtx.session && sessCtx.session.connected
 										? sessCtx.session.session
 										: 'Select Session'}
@@ -265,8 +264,7 @@
 						</Popover.Trigger>
 					{:else}
 						<Popover.Trigger
-							class="bg-sidebar ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring "
-							bind:ref={sessionSwitcher}
+							class="bg-sidebar  ring-offset-background aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive  flex-1 grow justify-between truncate border-none shadow-none aria-invalid:ring  "
 							aria-invalid={sessCtx.session === null || !sessCtx.session.connected}
 						>
 							{#snippet child({ props })}
@@ -313,6 +311,7 @@
 				<Tooltip.Provider>
 					<Tooltip.Root>
 						<Tooltip.Trigger
+							bind:ref={sessionSwitcher}
 							disabled={error !== null || connecting === true}
 							onclick={() => {
 								goto(`/sessions/create`);
@@ -321,7 +320,7 @@
 								variant: 'outline'
 							})} "
 						>
-							Session creator
+							New session
 						</Tooltip.Trigger>
 						<Tooltip.Content>Create a new session</Tooltip.Content>
 					</Tooltip.Root>

@@ -20,7 +20,6 @@
 	<Dialog.Content class="">
 		<Dialog.Header>
 			<Dialog.Title>Import from clipboard</Dialog.Title>
-			<Dialog.Description></Dialog.Description>
 		</Dialog.Header>
 		<Textarea bind:value autocomplete="off" class="max-h-[80svh] min-h-60" />
 		<Button

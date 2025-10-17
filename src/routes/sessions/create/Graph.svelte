@@ -72,7 +72,6 @@
 	});
 
 	let graphRef = $state();
-	$inspect(selectedNodeId);
 	const events = {
 		[Graph.selectors.node]: {
 			click: (d: GraphNode) => {
@@ -86,6 +85,17 @@
 	};
 </script>
 
-<VisSingleContainer {data} class="size-full">
-	<VisGraph bind:this={graphRef} {nodeLabel} {nodeSubLabel} {events} {selectedNodeId} />
+<VisSingleContainer {data} class="size-full ">
+	<VisGraph
+		bind:this={graphRef}
+		{nodeLabel}
+		{nodeSubLabel}
+		{events}
+		{selectedNodeId}
+		disableBrush={true}
+		layoutNonConnectedAside={true}
+		linkCurvature={1}
+		zoomScaleExtent={[0.25, 1.3]}
+		linkNeighborSpacing={30}
+	/>
 </VisSingleContainer>
