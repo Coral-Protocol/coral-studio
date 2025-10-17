@@ -37,7 +37,8 @@ const toolCalls: {
 			agentId,
 			agentRequest: body?.message as string,
 			userQuestion: undefined,
-			agentAnswer: undefined
+			agentAnswer: undefined,
+			timestamp: Date.now()
 		};
 
 		questions[`${sessionId}-${agentId}`] = q;
@@ -74,8 +75,10 @@ export const handle: Handle = async ({ event }) => {
 		.reduce((acc, part) => (part.length > 0 ? [...acc, part] : acc), [] as string[]);
 	console.log('svelte side handle', { tool, sessionId, agentId, extra });
 
-	const body = await event.request.json().catch((err) => null);
-
+	const body = await event.request.json().catch((err) => {
+		console.error('Failed to parse JSON body:', err);
+		return null;
+	});
 	if (!tool || !sessionId || !agentId || extra.length > 0)
 		return new Response('Not found', { status: 404 });
 

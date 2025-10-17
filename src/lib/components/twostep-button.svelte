@@ -15,7 +15,18 @@
 <Dialog.Root bind:open>
 	<Dialog.Trigger>
 		{#snippet child({ props: childProps })}
-			<Button {...childProps} {...props}>
+			<Button
+				{...childProps}
+				{...props}
+				onclick={(e) => {
+					if (e.shiftKey) {
+						e.preventDefault();
+						onclick?.();
+					} else {
+						open = true;
+					}
+				}}
+			>
 				{@render children?.()}
 			</Button>
 		{/snippet}

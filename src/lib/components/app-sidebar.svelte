@@ -116,6 +116,24 @@
 		}
 	}
 
+	$effect(() => {
+		const hasNewRequest = Object.values(tools.userInput.requests).some(
+			(req) => req.userQuestion === undefined
+		);
+		if (hasNewRequest) {
+			toast.info('New input request from an agent', {
+				duration: 4000,
+				id: 'new-user-input-message',
+				action: {
+					label: 'View',
+					onClick: () => {
+						goto('/tools/user-input');
+					}
+				}
+			});
+		}
+	});
+
 	let sessionSearcherOpen = $state(false);
 	let value = $state('');
 	let triggerRef = $state<HTMLButtonElement>(null!);
