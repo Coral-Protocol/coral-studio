@@ -31,9 +31,7 @@
 	<span class="font-sans font-medium tracking-wide">
 		{title}
 	</span>
-	{#if badge}
-		<Badge>{badge}</Badge>
-	{/if}
+
 	{#if collapsible}
 		<IconCaretRight
 			class="ml-auto transition-transform duration-200 group-aria-expanded/collapsible:rotate-90"
@@ -66,6 +64,6 @@
 		</Sidebar.MenuButton>
 	{/if}
 	{#if badge}
-		<Sidebar.MenuBadge>{badge}</Sidebar.MenuBadge>
+		<Sidebar.MenuBadge class="bg-accent">{badge}</Sidebar.MenuBadge>
 	{/if}
 </Sidebar.MenuItem>
