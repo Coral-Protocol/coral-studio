@@ -406,66 +406,10 @@
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
-
-		<form
-			onsubmit={handleSubmit}
-			class="mt-auto {feedbackVisible
-				? 'opacity-100'
-				: 'hidden opacity-0 select-none'} absolute bottom-20 left-0 mx-auto px-2 align-bottom transition-opacity duration-75"
-		>
-			<Card.Root>
-				<Card.Header class="flex items-baseline justify-between">
-					<Card.Title>Submit feedback</Card.Title>
-					<Button
-						variant="outline"
-						onclick={() => {
-							feedbackVisible = false;
-						}}>Close</Button
-					>
-				</Card.Header>
-				<Card.Content class="flex flex-col gap-2">
-					<p class="text-muted-foreground text-xs">
-						Limited from <span
-							class={content.length > 0 && content.length < 10 ? 'text-destructive' : ''}>10</span
-						>
-						to
-						<span class={content.length > 4999 ? 'text-destructive' : ''}>5,000 characters</span>,
-						for more detailed feedback, please visit our
-						<a href="https://discord.gg/fV7sTAQQkk" target="_blank" class="underline">Discord</a>
-					</p>
-					<Textarea
-						placeholder="Type your message here."
-						class="h-46"
-						minlength={10}
-						maxlength={5000}
-						bind:value={content}
-					/>
-
-					<Input type="email" placeholder="email (optional)" bind:value={user_email} />
-				</Card.Content>
-				<Card.Footer class="flex justify-between gap-4">
-					<Button variant="outline"
-						><a href="https://discord.gg/fV7sTAQQkk" target="_blank">Visit our Discord</a></Button
-					>
-					<Button
-						variant="secondary"
-						type="submit"
-						disabled={content.length < 10 || content.length > 5000}>Send</Button
-					>
-				</Card.Footer>
-			</Card.Root>
-		</form>
 	</Sidebar.Content>
 	<Sidebar.Footer>
 		<Sidebar.Menu>
 			<Sidebar.MenuItem class="flex justify-end gap-4">
-				<Button
-					variant="outline"
-					onclick={() => {
-						feedbackVisible = !feedbackVisible;
-					}}>Feedback</Button
-				>
-
 				<Button onclick={toggleMode} variant="outline" size="icon">
 					<SunIcon
 						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90"
