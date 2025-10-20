@@ -70,10 +70,7 @@
 	let createSessionOpen = $state(false);
 
 	const refreshAgents = async () => {
-		console.log('aaa');
-
 		if (!sessCtx.connection) return;
-		console.log('aaaa?');
 
 		try {
 			const client = createClient<paths>({
