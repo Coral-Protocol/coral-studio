@@ -58,8 +58,8 @@
 
 <Resizable.PaneGroup direction="horizontal">
 	<Resizable.Pane class="flex h-full">
-		<main class="flex flex-grow flex-col gap-0 p-4">
-			<ScrollArea class="flex-grow" bind:ref={root}>
+		<main class="relative flex flex-grow flex-col gap-0 overflow-scroll">
+			<ScrollArea class="flex-grow  p-4" bind:ref={root}>
 				<div class="flex flex-grow flex-col gap-0">
 					{#each filteredMessages as message, i (message.id)}
 						<div
@@ -68,52 +68,15 @@
 								i == (messages?.length ?? 0) - thread.unread && 'border-red-400'
 							)}
 						>
-							<Message session={ctx.session} {message} agentFilters={agentFilters.size > 0 ? agentFilters : undefined} />
+							<Message
+								session={ctx.session}
+								{message}
+								agentFilters={agentFilters.size > 0 ? agentFilters : undefined}
+							/>
 						</div>
 					{/each}
 				</div>
 			</ScrollArea>
-			<footer class="flex flex-row">
-				<Input
-					placeholder="send a message"
-					disabled={!thread ||
-						!conn?.appId ||
-						!conn?.host ||
-						!conn?.privKey ||
-						!conn?.session ||
-						!conn?.agentId}
-					bind:value={message}
-					onkeydown={(e) => {
-						if (
-							!thread ||
-							!conn?.appId ||
-							!conn?.host ||
-							!conn?.privKey ||
-							!conn?.session ||
-							!conn?.agentId
-						)
-							return;
-						if (e.key == 'Enter') {
-							fetch(
-								`http://${conn.host}/debug/${conn.appId}/${conn.privKey}/${conn.session}/${conn.agentId}/thread/sendMessage/`,
-								{
-									method: 'POST',
-									headers: {
-										'Content-Type': 'application/json'
-									},
-									body: JSON.stringify({
-										threadId: thread.id,
-										content: message,
-										mentions: thread.participants.filter((p) => p !== conn.agentId)
-									})
-								}
-							);
-							root && root.scrollTo({ top: root.scrollHeight, behavior: 'smooth' });
-							message = '';
-						}
-					}}
-				/>
-			</footer>
 		</main>
 	</Resizable.Pane>
 	{#if memberListOpen}
