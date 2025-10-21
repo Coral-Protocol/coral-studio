@@ -6,20 +6,10 @@
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	let { sessCtx, agents, threads } = $props();
+	let { sessCtx, agents, threads, open = $bindable() } = $props();
 
-	let open = $state(false);
 	let value = $state('');
-
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-			e.preventDefault();
-			open = true;
-		}
-	}
 </script>
-
-<svelte:document onkeydown={handleKeydown} />
 
 <Command.Dialog bind:open>
 	<Command.Input placeholder="Type a command or search..." bind:value />

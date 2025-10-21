@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Kbd from '$lib/components/ui/kbd/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -23,6 +23,7 @@
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import IconListMag from 'phosphor-icons-svelte/IconListMagnifyingGlassRegular.svelte';
+	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
 	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
@@ -31,6 +32,7 @@
 	import { tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as InputGroup from '$lib/components/ui/input-group/index.js';
 
 	import { cn } from '$lib/utils';
 	import { sessionCtx } from '$lib/threads';
@@ -50,6 +52,7 @@
 
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
+	import Shortcuts from './dialogs/shortcuts.svelte';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -163,9 +166,59 @@
 				}))
 			: []
 	);
+
+	let openQuickswitch = $state(false),
+		openShortcuts = $state(false);
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			openQuickswitch = !openQuickswitch;
+		}
+		if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			openShortcuts = !openShortcuts;
+		}
+		if (e.key === 'R' && e.shiftKey) {
+			e.preventDefault();
+			toast.promise(refreshAgents(), {
+				loading: `Refreshing agent configuration...`,
+				success: `Agent configuration refreshed`,
+				error: (err) => `Failed to refresh agent configuration, Error: ${err || err}`
+			});
+		}
+		// i should probably make make these tolowercase
+		if (e.key === 'N' && e.shiftKey) {
+			e.preventDefault();
+			if (sessCtx.connection) {
+				goto(`/sessions/create`);
+			} else {
+				toast.error(
+					"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
+				);
+			}
+		}
+	}
 </script>
 
-<Quickswitch {sessCtx} {agents} {threads} />
+<svelte:document onkeydown={handleKeydown} />
+
+<Quickswitch {sessCtx} {agents} {threads} bind:open={openQuickswitch} />
+<Shortcuts bind:open={openShortcuts} />
+
+<button
+	class="bg-primary fixed top-3 right-3 z-50 flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
+	onclick={() => (openQuickswitch = true)}
+>
+	<div class="text-muted-foreground flex items-center gap-2">
+		<IconSearch class="" />
+		<span class="text-sm">Search</span>
+	</div>
+	<Kbd.Group>
+		<Kbd.Root>CTRL</Kbd.Root>
+		<Kbd.Root>K</Kbd.Root>
+	</Kbd.Group>
+</button>
 
 <Tour
 	open={tourOpen}
