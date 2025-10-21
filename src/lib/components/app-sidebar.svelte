@@ -309,7 +309,7 @@
 											sessCtx.connection === null}
 										bind:ref={triggerRef}
 									>
-										<span class=" w-4/5 truncate overflow-hidden">
+										<span class=" w-4/5 grow truncate overflow-hidden">
 											{sessCtx.session && sessCtx.session.connected
 												? sessCtx.session.session
 												: 'Select a Session'}
@@ -319,7 +319,6 @@
 								{/snippet}
 							</Popover.Trigger>
 							<Button
-								variant="outline"
 								onclick={() => {
 									if (sessCtx.connection) {
 										goto(`/sessions/create`);
@@ -329,7 +328,7 @@
 										);
 									}
 								}}
-								bind:ref={sessionSwitcher}>Create</Button
+								bind:ref={sessionSwitcher}>New</Button
 							>
 							<Popover.Content align="center" class="">
 								<Command.Root>
