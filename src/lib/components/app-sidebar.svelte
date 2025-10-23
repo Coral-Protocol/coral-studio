@@ -29,6 +29,7 @@
 	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
 	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
+	import IconStorefront from 'phosphor-icons-svelte/IconStorefrontRegular.svelte';
 	import { tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -298,6 +299,12 @@
 					url="/server/registry"
 					icon={IconPackage}
 					title="Agent Registry"
+					disable={sessCtx.connection === null}
+				/>
+				<SidebarLink
+					url="/marketplace"
+					icon={IconStorefront}
+					title="Marketplace"
 					disable={sessCtx.connection === null}
 				/>
 				<SidebarLink
