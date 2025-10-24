@@ -27,10 +27,7 @@
 	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
 	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
-	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
-	import { tick } from 'svelte';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
+	import IconChartBar from 'phosphor-icons-svelte/IconChartBarRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { sessionCtx } from '$lib/threads';
@@ -203,7 +200,7 @@
 		/>
 		<Sidebar.GroupLabel class="pr-0">
 			<span
-				class="text-muted-foreground w-full grow select-none font-sans font-medium tracking-wide"
+				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
 				>Server</span
 			>
 			{#if sessCtx.connection}
@@ -261,24 +258,15 @@
 			<Sidebar.Separator />
 
 			<Sidebar.GroupLabel class="text-sidebar-foreground flex flex-row gap-1 pr-0 text-sm">
-				<span class="text-muted-foreground grow select-none font-sans font-medium tracking-wide"
+				<span class="text-muted-foreground grow font-sans font-medium tracking-wide select-none"
 					>Finance</span
 				>
 			</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					<SidebarLink
-						url="/finance/wallet"
-						icon={IconWallet}
-						title="Wallet"
-						disable={sessCtx.connection === null}
-					/>
-					<SidebarLink
-						url="/finance/dashboard"
-						icon={IconDashboard}
-						title="Dashboard"
-						disable={sessCtx.connection === null}
-					/>
+					<SidebarLink url="/registry" icon={IconPackage} title="Agent Registry" />
+					<SidebarLink url="/logs" icon={IconNotepad} title="Logs" />
+					<SidebarLink url="/statistics" icon={IconChartBar} title="Statistics" />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
@@ -291,7 +279,7 @@
 					<Popover.Root bind:open={sessionSearcherOpen}>
 						<section class="my-2 flex w-full gap-2">
 							<Popover.Trigger
-								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive border-1  relative w-full flex-1 grow justify-between truncate "
+								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive relative  w-full flex-1 grow justify-between truncate border-1 "
 								aria-invalid={(sessCtx?.sessions?.length !== 0 &&
 									sessCtx.session === null &&
 									sessCtx.connection !== null) ||
@@ -309,7 +297,7 @@
 											sessCtx.connection === null}
 										bind:ref={triggerRef}
 									>
-										<span class=" w-4/5 grow overflow-hidden truncate">
+										<span class=" w-4/5 grow truncate overflow-hidden">
 											{sessCtx.session && sessCtx.session.connected
 												? sessCtx.session.session
 												: 'Select a Session'}
@@ -408,10 +396,10 @@
 			<Sidebar.MenuItem class="flex justify-end gap-4">
 				<Button onclick={toggleMode} variant="outline" size="icon">
 					<SunIcon
-						class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"
+						class="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90"
 					/>
 					<MoonIcon
-						class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"
+						class="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0"
 					/>
 					<span class="sr-only">Toggle theme</span>
 				</Button>
