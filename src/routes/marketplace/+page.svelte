@@ -2,7 +2,7 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
-	import IconCrane from 'phosphor-icons-svelte/IconCraneRegular.svelte';
+	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
@@ -63,7 +63,6 @@
 	</Breadcrumb.Root>
 </header>
 <h1 class="py-8 text-center text-3xl">Coral Marketplace</h1>
-
 <section class="flex items-center gap-4 border-b p-4 px-32">
 	<Input type="text" placeholder="What do you need?" class="w-64 rounded-md border p-2" />
 	<Button>Smart Search</Button>
@@ -74,36 +73,83 @@
 
 	<Button class="ml-auto">A spare button</Button>
 </section>
-<section
-	class="grid h-full min-h-0 grow grid-cols-1 gap-4 overflow-scroll p-4 px-16 md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-4"
->
-	{#each Array(12)
-		.fill(agents)
-		.flatMap((x) => x) as item}
-		<Card.Root class="py-4 ">
-			<Card.Header class="flex px-4">
-				<img src={item.img} alt={item.name} class="overflow-clip rounded-md" />
-				<section class="flex h-full flex-col justify-between gap-1">
-					<Card.Title>{item.name}</Card.Title>
-					<Card.Description><a href="itemmakerprofile">{item.maker}</a></Card.Description>
-				</section>
-				<Button class="ml-auto" size="icon">
-					<IconDots />
-				</Button>
-			</Card.Header>
-			<Card.Content class="px-4">
-				<p class="text-sm">{item.desc}</p>
-			</Card.Content>
-			<Card.Footer class="mt-auto flex justify-between px-4 text-sm">
-				<section class="flex flex-col justify-between gap-2">
-					<p class="flex items-center gap-2"><IconCPU /> Framework:</p>
-					<p class="flex items-center gap-2"><IconBox /> Model:</p>
-				</section>
-				<section class="flex flex-col justify-between gap-2">
-					<p>{item.framework}</p>
-					<p>{item.model}</p>
-				</section>
-			</Card.Footer>
-		</Card.Root>
-	{/each}
-</section>
+<Tabs.Root value="v1" class="h-full min-h-0 grow overflow-scroll">
+	<Tabs.List class="m-0 h-8 w-8 border-0 pl-12">
+		<Tabs.Trigger value="v1">v1</Tabs.Trigger>
+		<Tabs.Trigger value="v2">v2</Tabs.Trigger>
+	</Tabs.List>
+	<Tabs.Content value="v1" class="h-full min-h-0 grow overflow-scroll">
+		<section
+			class="max-w-2/3q mx-auto grid h-full min-h-0 grow grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3"
+		>
+			{#each Array(12)
+				.fill(agents)
+				.flatMap((x) => x) as item}
+				<button>
+					<Card.Root class="hover:bg-primary/80 group h-full py-4 text-left transition-colors">
+						<Card.Header class="flex px-4">
+							<img src={item.img} alt={item.name} class="overflow-clip rounded-md" />
+							<section class="flex h-full flex-col justify-between gap-1">
+								<Card.Title>{item.name}</Card.Title>
+								<Card.Description><a href="itemmakerprofile">{item.maker}</a></Card.Description>
+							</section>
+							<section class="ml-auto flex gap-2"></section>
+						</Card.Header>
+						<Card.Content class="px-4">
+							<p class="text-muted-foreground group-hover:text-primary-foreground text-sm">
+								{item.desc}
+							</p>
+						</Card.Content>
+						<Card.Footer class="text-muted-foreground  mt-auto flex justify-between px-4 text-sm">
+							<section class="flex flex-col justify-between gap-2">
+								<p class="flex items-center gap-2"><IconCPU /> Framework:</p>
+								<p class="flex items-center gap-2"><IconBox /> Model:</p>
+							</section>
+							<section class="flex flex-col justify-between gap-2">
+								<p>{item.framework}</p>
+								<p>{item.model}</p>
+							</section>
+						</Card.Footer>
+					</Card.Root>
+				</button>
+			{/each}
+		</section>
+	</Tabs.Content>
+	<Tabs.Content value="v2">
+		<section
+			class="mx-auto grid h-full min-h-0 max-w-1/2 grow grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-1 xl:grid-cols-2"
+		>
+			{#each Array(12)
+				.fill(agents)
+				.flatMap((x) => x) as item}
+				<button>
+					<Card.Root
+						class="hover:bg-primary/80 bg-background h-full border-0 py-4 text-left transition-colors hover:shadow-md"
+					>
+						<Card.Header class="flex px-4">
+							<img src={item.img} alt={item.name} class="overflow-clip rounded-md" />
+							<section class="flex h-full flex-col justify-between gap-1">
+								<Card.Title>{item.name}</Card.Title>
+								<Card.Description
+									><a href="itemmakerprofile">{item.maker}</a> - {item.framework} - {item.model}</Card.Description
+								>
+							</section>
+							<section class="ml-auto flex gap-2">
+								<Button
+									variant="ghost"
+									size="icon"
+									class="group-hover:text-primary-foreground text-background		"
+								>
+									<IconDots />
+								</Button>
+							</section>
+						</Card.Header>
+						<Card.Content class="text-muted-foreground px-4 text-xs">
+							<p class="text-sm">{item.desc}</p>
+						</Card.Content>
+					</Card.Root>
+				</button>
+			{/each}
+		</section>
+	</Tabs.Content>
+</Tabs.Root>
