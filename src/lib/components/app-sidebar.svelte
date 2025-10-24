@@ -27,10 +27,7 @@
 	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
 	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
-	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
-	import { tick } from 'svelte';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
+	import IconChartBar from 'phosphor-icons-svelte/IconChartBarRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { sessionCtx } from '$lib/threads';
@@ -267,18 +264,9 @@
 			</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					<SidebarLink
-						url="/finance/wallet"
-						icon={IconWallet}
-						title="Wallet"
-						disable={sessCtx.connection === null}
-					/>
-					<SidebarLink
-						url="/finance/dashboard"
-						icon={IconDashboard}
-						title="Dashboard"
-						disable={sessCtx.connection === null}
-					/>
+					<SidebarLink url="/registry" icon={IconPackage} title="Agent Registry" />
+					<SidebarLink url="/logs" icon={IconNotepad} title="Logs" />
+					<SidebarLink url="/statistics" icon={IconChartBar} title="Statistics" />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
