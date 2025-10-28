@@ -100,16 +100,6 @@
 								{item.desc}
 							</p>
 						</Card.Content>
-						<Card.Footer class="text-muted-foreground  mt-auto flex justify-between px-4 text-sm">
-							<section class="flex flex-col justify-between gap-2">
-								<p class="flex items-center gap-2"><IconCPU /> Framework:</p>
-								<p class="flex items-center gap-2"><IconBox /> Model:</p>
-							</section>
-							<section class="flex flex-col justify-between gap-2">
-								<p>{item.framework}</p>
-								<p>{item.model}</p>
-							</section>
-						</Card.Footer>
 					</Card.Root>
 				</button>
 			{/each}
