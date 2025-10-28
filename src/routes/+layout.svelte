@@ -59,6 +59,10 @@
 	socketCtx.set(socket);
 </script>
 
+<svelte:head>
+	<title>Coral Studio</title>
+</svelte:head>
+
 <ModeWatcher />
 <Toaster />
 <Sidebar.Provider>
