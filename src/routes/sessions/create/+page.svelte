@@ -436,10 +436,7 @@
 											<Form.ElementField {form} name="agents[{selectedAgent}].options.{name}.value">
 												<Form.Control>
 													{#snippet children({ props })}
-														<TooltipLabel
-															tooltip={opt.description}
-															class="gap-1 {!f.valid ? 'text-destructive' : ''}"
-														>
+														<TooltipLabel tooltip={opt.description} class="gap-1">
 															{name}
 															{#if !('default' in opt) || opt.default === undefined}
 																<span class="text-destructive">*</span>
