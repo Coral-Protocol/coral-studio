@@ -11,7 +11,7 @@
 </script>
 
 <Tooltip.Provider>
-	<Tooltip.Root disabled={!tooltip}>
+	<Tooltip.Root disabled={!tooltip} delayDuration={100}>
 		<Tooltip.Trigger>
 			{#snippet child({ props })}
 				<Label {...props} class={className}>

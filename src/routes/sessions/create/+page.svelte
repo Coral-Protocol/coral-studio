@@ -12,6 +12,7 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
+	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -433,12 +434,40 @@
 												{/snippet}
 											</Form.Control>
 										</Form.ElementField>
+										<Form.ElementField
+											{form}
+											name="agents[{selectedAgent}].provider.runtime"
+											class="flex items-center gap-2"
+										>
+											<Form.Control>
+												{#snippet children({ props })}
+													{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
+													<TooltipLabel tooltip={'What runtime to use for this agent.'} class="m-0"
+														>Provider</TooltipLabel
+													>
+													<ToggleGroup.Root
+														type="single"
+														class="w-full"
+														bind:value={
+															() => $formData.agents[selectedAgent!]!.provider.type,
+															(value) => {
+																$formData.agents[selectedAgent!]!.provider.type = value;
+															}
+														}
+													>
+														<ToggleGroup.Item value="local">Local</ToggleGroup.Item>
+														<ToggleGroup.Item value="remote">Remote</ToggleGroup.Item>
+														<ToggleGroup.Item value="request_remote">Request</ToggleGroup.Item>
+													</ToggleGroup.Root>
+												{/snippet}
+											</Form.Control>
+										</Form.ElementField>
 										<Separator />
 										{#each Object.entries(availableOptions) as [name, opt] (name)}
 											<Form.ElementField {form} name="agents[{selectedAgent}].options.{name}.value">
 												<Form.Control>
 													{#snippet children({ props })}
-														<TooltipLabel tooltip={opt.description} class="gap-1">
+														<TooltipLabel tooltip={opt.description} class="w-fit gap-1">
 															{name}
 															{#if !('default' in opt) || opt.default === undefined}
 																<span class="text-destructive">*</span>
@@ -500,6 +529,7 @@
 								<Tabs.Content value="tools">
 									<Form.Fieldset {form} name="agents[{selectedAgent}].customToolAccess">
 										<ul class="flex flex-col gap-2">
+											Found {[Object.keys(tools).length]} available tools:
 											{#each Object.keys(tools) as tool (tool)}
 												<li class="flex gap-2">
 													<Form.Control>
