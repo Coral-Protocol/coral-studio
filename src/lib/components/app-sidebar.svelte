@@ -239,7 +239,7 @@
 		</Sidebar.GroupLabel>
 		<Sidebar.GroupContent>
 			<Sidebar.Menu>
-				<SidebarLink url="/" icon={IconHome} title="Home" />
+				<!-- <SidebarLink url="/" icon={IconHome} title="Home" /> -->
 
 				<SidebarLink
 					url="/server/registry"
@@ -257,7 +257,7 @@
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
 	<Sidebar.Content class="gap-0 overflow-hidden">
-		<Sidebar.Group>
+		<!-- <Sidebar.Group>
 			<Sidebar.Separator />
 
 			<Sidebar.GroupLabel class="text-sidebar-foreground flex flex-row gap-1 pr-0 text-sm">
@@ -281,7 +281,7 @@
 					/>
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
-		</Sidebar.Group>
+		</Sidebar.Group> -->
 		<Sidebar.Group class="">
 			<Sidebar.Separator />
 
@@ -356,12 +356,12 @@
 							</Popover.Content>
 						</section>
 					</Popover.Root>
-					<SidebarLink
+					<!-- <SidebarLink
 						url="/sessions/overview"
 						icon={IconListMag}
 						title="Session Overview"
 						disable={!sessCtx.session}
-					/>
+					/> -->
 					<SidebarLink
 						url="/tools/user-input"
 						icon={IconChats}
