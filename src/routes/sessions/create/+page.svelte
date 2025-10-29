@@ -203,7 +203,7 @@
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator />
 			<Breadcrumb.Item class="hidden md:block">
-				<Breadcrumb.Link>Create</Breadcrumb.Link>
+				<Breadcrumb.Page>Create</Breadcrumb.Page>
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>

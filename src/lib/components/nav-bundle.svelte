@@ -14,6 +14,7 @@
 		items
 	}: {
 		items: {
+			disabled?: boolean;
 			title: string;
 			icon?: Component;
 			sumBadges?: boolean;
@@ -46,7 +47,7 @@
 			: 0}
 		<Collapsible.Root open={activeSubitems.indexOf(true) != -1} class="group/collapsible">
 			{#snippet child({ props })}
-				<Collapsible.Trigger {...props} disabled={item.items.length === 0}>
+				<Collapsible.Trigger {...props} disabled={item.items.length === 0 || item.disabled}>
 					{#snippet child({ props })}
 						<SidebarLink
 							{...props}
