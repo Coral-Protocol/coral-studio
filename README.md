@@ -1,4 +1,7 @@
 # coral-studio
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Coral-Protocol/coral-studio)
+
 Create, manage & inspect agent sessions through [Coral Server](https://github.com/Coral-Protocol/coral-server/).
 
 ![thread view](./docs/static/thread-view.webp)
