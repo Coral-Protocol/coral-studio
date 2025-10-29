@@ -14,6 +14,7 @@
 	} from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
+	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
 
 	import IconFileArchive from 'phosphor-icons-svelte/IconFileArchiveRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
@@ -169,7 +170,8 @@
 	);
 
 	let openQuickswitch = $state(false),
-		openShortcuts = $state(false);
+		openShortcuts = $state(false),
+		debugToolsOpen = $state(false);
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
@@ -199,6 +201,10 @@
 				);
 			}
 		}
+		if (e.key === 'D' && e.shiftKey && e.altKey) {
+			e.preventDefault();
+			debugToolsOpen = !debugToolsOpen;
+		}
 	}
 </script>
 
@@ -206,6 +212,7 @@
 
 <Quickswitch {sessCtx} {agents} {threads} bind:open={openQuickswitch} />
 <Shortcuts bind:open={openShortcuts} />
+<DebugTools bind:open={debugToolsOpen} />
 
 <button
 	class="bg-primary fixed top-3 right-3 z-50 flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
