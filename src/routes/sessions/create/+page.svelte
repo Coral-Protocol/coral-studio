@@ -276,58 +276,49 @@
 			minSize={21}
 			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
 		>
-			<Combobox
-				side="top"
-				align="center"
-				options={registryRaw.map((a) => ({
-					label: `${a.id.name} ${a.id.version}`,
-					key: idAsKey(a.id),
-					value: a.id
-				}))}
-				searchPlaceholder="Search agents..."
-				onValueChange={(id) => {
-					const count = $formData.agents.filter((agent) => agent.id.name === id.name).length;
-					const runtime = registry[idAsKey(id)]?.runtimes?.at(-1) ?? 'executable';
-					$formData.agents.push({
-						id: id,
-						provider: {
-							type: 'local',
-							runtime: runtime !== 'function' ? runtime : 'executable'
-						},
-						systemPrompt: undefined,
-						blocking: true,
-						name: id.name + (count > 0 ? `-${count + 1}` : ''),
-						options: {},
-						customToolAccess: new Set()
-					});
-					$formData.agents = $formData.agents;
-					selectedAgent = $formData.agents.length - 1;
-					accordian = 'agent-editor';
-				}}
-			>
-				{#snippet trigger({ props })}
-					<section class="flex justify-between gap-2">
-						<Button {...props} class="grow">Add agent</Button>
-						<TwostepButton
-							disabled={selectedAgent === null}
-							variant="destructive"
-							class="grow"
-							onclick={() => {
-								if (selectedAgent === null) return;
-								const idx = selectedAgent;
-								$formData.agents.splice(idx, 1);
-								$formData.agents = $formData.agents;
-								selectedAgent = Math.min(idx, $formData.agents.length - 1);
-								selectedAgent = null;
-							}}>Remove agent</TwostepButton
-						>
-					</section>
-				{/snippet}
+			<section class="flex justify-between gap-2">
+				<Button
+					class="grow"
+					onclick={() => {
+						const runtime = 'executable';
+						$formData.agents.push({
+							id: {
+								name: registryRaw[0]?.id.name ?? 'placeholder-agent',
+								version: registryRaw[0]?.id.version ?? '1.0.0'
+							},
+							provider: {
+								type: 'local',
+								runtime: 'executable'
+							},
+							systemPrompt: undefined,
+							blocking: true,
+							name:
+								'Agent ' + ($formData.agents.length > 0 ? `${$formData.agents.length + 1}` : ''),
+							options: {},
+							customToolAccess: new Set()
+						});
+						$formData.agents = $formData.agents;
+						selectedAgent = $formData.agents.length - 1;
+						accordian = 'agent-editor';
+					}}
+				>
+					Add agent
+				</Button>
+				<TwostepButton
+					disabled={selectedAgent === null}
+					variant="destructive"
+					class="grow"
+					onclick={() => {
+						if (selectedAgent === null) return;
+						const idx = selectedAgent;
+						$formData.agents.splice(idx, 1);
+						$formData.agents = $formData.agents;
+						selectedAgent = Math.min(idx, $formData.agents.length - 1);
+						selectedAgent = null;
+					}}>Remove agent</TwostepButton
+				>
+			</section>
 
-				{#snippet option({ option })}
-					{option.label}
-				{/snippet}
-			</Combobox>
 			<Accordion.Root type="single" value={accordian}>
 				<Accordion.Item value="agent-editor">
 					<Accordion.Trigger>Agent editor</Accordion.Trigger>
@@ -445,7 +436,10 @@
 											<Form.ElementField {form} name="agents[{selectedAgent}].options.{name}.value">
 												<Form.Control>
 													{#snippet children({ props })}
-														<TooltipLabel tooltip={opt.description} class="gap-1">
+														<TooltipLabel
+															tooltip={opt.description}
+															class="gap-1 {!f.valid ? 'text-destructive' : ''}"
+														>
 															{name}
 															{#if !('default' in opt) || opt.default === undefined}
 																<span class="text-destructive">*</span>
@@ -469,6 +463,15 @@
 												</Form.Control>
 											</Form.ElementField>
 										{/each}
+									{:else}
+										<p>
+											No options available! This can happen if you have no agent registry, it's
+											empty, or there's no server connection.
+										</p>
+
+										<p>
+											Still need help? please <a class="underline" href="/helpme">click here</a>
+										</p>
 									{/if}
 								</Tabs.Content>
 								<Tabs.Content value="prompt" class="overflow-scroll">
