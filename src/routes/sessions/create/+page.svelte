@@ -76,6 +76,8 @@
 		dataType: 'json',
 		// svelte-ignore state_referenced_locally
 		validators: zod4(formSchema),
+		validationMethod: 'onsubmit',
+
 		async onUpdate({ form: f }) {
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
@@ -123,7 +125,7 @@
 		form.options.validators = zod4(formSchema);
 	});
 
-	let { form: formData, errors, enhance } = $derived(form);
+	let { form: formData, errors, allErrors, enhance } = $derived(form);
 
 	const importFromJson = (json: string) => {
 		const data: CreateSessionRequest = JSON.parse(json);
@@ -454,6 +456,10 @@
 																	} as any; // FIXME: !!
 																}
 															}
+															aria-invalid={$allErrors.length > 0 &&
+																($formData.agents[selectedAgent!]!.options[name]?.value ?? '') ===
+																	'' &&
+																!('default' in opt)}
 															placeholder={'default' in opt ? opt.default?.toString() : undefined}
 														/>
 													{/snippet}
