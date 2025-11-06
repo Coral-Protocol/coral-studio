@@ -1,5 +1,187 @@
 import type { PublicRegistryAgent } from '$lib/threads';
 import { z } from 'zod/v4';
+// RuntimeId
+export const RuntimeIdSchema = z.enum(['executable', 'docker', 'function']);
+export type RuntimeId = z.infer<typeof RuntimeIdSchema>;
+
+// GraphAgentServerAttributeType
+export const GraphAgentServerAttributeTypeSchema = z.enum(['geographic_location', 'attested_by']);
+export type GraphAgentServerAttributeType = z.infer<typeof GraphAgentServerAttributeTypeSchema>;
+
+// flat (flat weight)
+export const FlatSchema = z.object({
+	weight: z.number()
+});
+export type Flat = z.infer<typeof FlatSchema>;
+
+// GraphAgentServerScorerEffect
+export const GraphAgentServerScorerEffectSchema = z.object({
+	weight: z.number()
+});
+export type GraphAgentServerScorerEffect = z.infer<typeof GraphAgentServerScorerEffectSchema>;
+
+/* ---------------------------------------------
+   GraphAgentServerAttribute
+----------------------------------------------- */
+export const GraphAgentServerAttributeSchema = z
+	.discriminatedUnion('format', [
+		z.object({
+			format: z.literal('boolean'),
+			type: GraphAgentServerAttributeTypeSchema,
+			value: z.boolean()
+		}),
+		z.object({
+			format: z.literal('number'),
+			type: GraphAgentServerAttributeTypeSchema,
+			value: z.number()
+		}),
+		z.object({
+			format: z.literal('string'),
+			type: GraphAgentServerAttributeTypeSchema,
+			value: z.string()
+		})
+	])
+	.default({ format: 'string', type: 'attested_by', value: '' });
+export type GraphAgentServerAttribute = z.infer<typeof GraphAgentServerAttributeSchema>;
+
+/* ---------------------------------------------
+   GraphAgentServer
+----------------------------------------------- */
+export const GraphAgentServerSchema = z.object({
+	address: z.string(),
+	port: z.number().int().min(0).max(65535),
+	secure: z.boolean(),
+	attributes: z.array(GraphAgentServerAttributeSchema)
+});
+export type GraphAgentServer = z.infer<typeof GraphAgentServerSchema>;
+
+/* ---------------------------------------------
+   AgentClaimAmount
+----------------------------------------------- */
+// export const AgentClaimAmountSchema = z
+// 	.discriminatedUnion('type', [
+// 		z.object({ type: z.literal('coral'), amount: z.number() }),
+// 		z.object({ type: z.literal('micro_coral'), amount: z.number().int() }),
+// 		z.object({ type: z.literal('usd'), amount: z.number() })
+// 	])
+// 	.default({ type: 'micro_coral', amount: 1000 });
+// export type AgentClaimAmount = z.infer<typeof AgentClaimAmountSchema>;
+
+/* ---------------------------------------------
+   GraphAgentServerSource
+----------------------------------------------- */
+// export const GraphAgentServerSourceSchema = z
+// 	.discriminatedUnion('type', [
+// 		z.object({
+// 			type: z.literal(
+// 				'org.coralprotocol.coralserver.agent.graph.server.GraphAgentServerSource.Indexer'
+// 			),
+// 			indexer: z.string()
+// 		}),
+// 		z.object({
+// 			type: z.literal('servers'),
+// 			servers: z.array(GraphAgentServerSchema)
+// 		})
+// 	])
+// 	.default({ type: 'servers', servers: [] });
+// export type GraphAgentServerSource = z.infer<typeof GraphAgentServerSourceSchema>;
+// export type ServerType = 'indexer' | 'servers';
+
+/* ---------------------------------------------
+   GraphAgentServerScoring
+----------------------------------------------- */
+export const GraphAgentServerScoringSchema = z
+	.discriminatedUnion('type', [
+		z.object({
+			type: z.literal('custom'),
+			scorers: z.array(
+				z.discriminatedUnion('op', [
+					z.object({
+						op: z.literal('is_false'),
+						type: GraphAgentServerAttributeTypeSchema,
+						effect: FlatSchema
+					}),
+					z.object({
+						op: z.literal('is_not_present'),
+						type: GraphAgentServerAttributeTypeSchema,
+						effect: FlatSchema
+					}),
+					z.object({
+						op: z.literal('is_present'),
+						type: GraphAgentServerAttributeTypeSchema,
+						effect: GraphAgentServerScorerEffectSchema
+					}),
+					z.object({
+						op: z.literal('is_true'),
+						type: GraphAgentServerAttributeTypeSchema,
+						effect: FlatSchema
+					}),
+					z.object({
+						op: z.literal('string_equal'),
+						type: GraphAgentServerAttributeTypeSchema,
+						string: z.string(),
+						effect: FlatSchema
+					}),
+					z.object({
+						op: z.literal('string_not_equal'),
+						type: GraphAgentServerAttributeTypeSchema,
+						string: z.string(),
+						effect: FlatSchema
+					})
+				])
+			)
+		}),
+		z.object({ type: z.literal('default') })
+	])
+	.default({ type: 'default' });
+export type GraphAgentServerScoring = z.infer<typeof GraphAgentServerScoringSchema>;
+
+/* ---------------------------------------------
+   Provider schema
+----------------------------------------------- */
+
+const RemoteRequestProvider = z.object({
+	maxCost: z
+		.discriminatedUnion('type', [
+			z.object({ type: z.literal('coral'), amount: z.number() }),
+			z.object({ type: z.literal('micro_coral'), amount: z.number().int() }),
+			z.object({ type: z.literal('usd'), amount: z.number() })
+		])
+		.default({ type: 'micro_coral', amount: 1000 }),
+	serverSource:
+		// .discriminatedUnion('type', [
+		// z.object({
+		// 	type: z.literal(
+		// 		'org.coralprotocol.coralserver.agent.graph.server.GraphAgentServerSource.Indexer'
+		// 	),
+		// 	indexer: z.string()
+		// }),
+		z
+			.object({
+				type: z.literal('servers'),
+				servers: z.array(GraphAgentServerSchema)
+			})
+			// ])
+			.default({ type: 'servers', servers: [] }),
+	serverScoring: GraphAgentServerScoringSchema.optional()
+});
+
+export const ProviderSchema = z.object({
+	remote_request: RemoteRequestProvider,
+	runtime: RuntimeIdSchema
+});
+
+export type Provider = z.infer<typeof ProviderSchema>;
+export type ProviderType = 'remote_request' | 'local';
+
+/* ---------------------------------------------
+   AgentRegistryIdentifier
+----------------------------------------------- */
+export const AgentRegistryIdentifierSchema = z.object({
+	name: z.string(),
+	version: z.string()
+});
+export type AgentRegistryIdentifier = z.infer<typeof AgentRegistryIdentifierSchema>;
 
 const formSchema = z.object({
 	sessionId: z.string().optional(),
@@ -12,22 +194,20 @@ const formSchema = z.object({
 				version: z.string().nonempty()
 			}),
 			name: z.string().nonempty(),
-			provider: z.discriminatedUnion('type', [
-				z.object({
-					type: z.literal('local'),
-					runtime: z.union([z.literal('executable'), z.literal('docker')])
-				})
-			]),
+			provider: ProviderSchema,
+			providerType: z.string(),
 			systemPrompt: z.string().optional(),
 			customToolAccess: z.set(z.string()),
 			blocking: z.boolean(),
 			options: z.record(
 				z.string(),
-				z.discriminatedUnion('type', [
-					z.object({ type: z.literal('string'), value: z.string() }),
-					z.object({ type: z.literal('secret'), value: z.string() }),
-					z.object({ type: z.literal('number'), value: z.number() })
-				])
+				z
+					.discriminatedUnion('type', [
+						z.object({ type: z.literal('string'), value: z.string() }),
+						z.object({ type: z.literal('secret'), value: z.string() }),
+						z.object({ type: z.literal('number'), value: z.number() })
+					])
+					.default({ type: 'string', value: '' })
 			)
 		})
 	),
@@ -46,11 +226,12 @@ export const makeFormSchema = (registryAgents: { [agent: string]: PublicRegistry
 				});
 				return;
 			}
-			if (regAgent.runtimes.indexOf(agent.provider.runtime) === -1) {
+			const runtime = agent.provider.runtime;
+			if (runtime && regAgent.runtimes.indexOf(runtime) === -1) {
 				ctx.addIssue({
 					code: 'custom',
 					path: ['agent', i, 'provider', 'runtime'],
-					message: `Runtime ${agent.provider.runtime} not available for this agent.`
+					message: `Runtime ${runtime} not available for this agent.`
 				});
 			}
 			const options = Object.entries(regAgent.options ?? {});
