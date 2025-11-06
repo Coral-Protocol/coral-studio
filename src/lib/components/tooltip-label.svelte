@@ -14,12 +14,12 @@
 	<Tooltip.Root disabled={!tooltip} delayDuration={100}>
 		<Tooltip.Trigger>
 			{#snippet child({ props })}
-				<Label {...props} class={className}>
+				<Label {...props} class="{className} w-fit">
 					{@render labelChild?.()}
 				</Label>
 			{/snippet}
 		</Tooltip.Trigger>
-		<Tooltip.Content>
+		<Tooltip.Content class="w-fit max-w-96 wrap-break-word">
 			<p>{tooltip}</p>
 		</Tooltip.Content>
 	</Tooltip.Root>
