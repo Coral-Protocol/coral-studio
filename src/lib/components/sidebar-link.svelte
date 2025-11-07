@@ -14,6 +14,7 @@
 		badge,
 		collapsible = false,
 		class: className,
+		disable,
 		...props
 	}: ComponentProps<typeof Sidebar.MenuButton> & {
 		title: string;
@@ -21,6 +22,7 @@
 		icon?: Component;
 		badge?: number;
 		collapsible?: boolean;
+		disable?: boolean | null;
 	} = $props();
 </script>
 
@@ -31,9 +33,7 @@
 	<span class="font-sans font-medium tracking-wide">
 		{title}
 	</span>
-	{#if badge}
-		<Badge>{badge}</Badge>
-	{/if}
+
 	{#if collapsible}
 		<IconCaretRight
 			class="ml-auto transition-transform duration-200 group-aria-expanded/collapsible:rotate-90"
@@ -41,7 +41,7 @@
 	{/if}
 {/snippet}
 
-<Sidebar.MenuItem>
+<Sidebar.MenuItem class="{disable ? 'pointer-events-none opacity-50' : ''} transition-opacity">
 	{#if url}
 		<Sidebar.MenuButton
 			{...props}
@@ -64,5 +64,8 @@
 		>
 			{@render content()}
 		</Sidebar.MenuButton>
+	{/if}
+	{#if badge}
+		<Sidebar.MenuBadge class="bg-accent">{badge}</Sidebar.MenuBadge>
 	{/if}
 </Sidebar.MenuItem>

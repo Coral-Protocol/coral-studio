@@ -5,6 +5,7 @@
 	import { toast } from 'svelte-sonner';
 
 	import IconX from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconDot from 'phosphor-icons-svelte/IconDotRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 
 	import Logo from '$lib/icons/logo.svelte';
@@ -15,6 +16,7 @@
 	import { fade } from 'svelte/transition';
 	import { onMount, tick, untrack } from 'svelte';
 	import type { WithElementRef } from 'bits-ui';
+
 	import type { paths } from '../../generated/api';
 	import createClient from 'openapi-fetch';
 	import Badge from './ui/badge/badge.svelte';
@@ -100,6 +102,9 @@
 		testState = null;
 		toast.success('Server added to list.');
 		host = '127.0.0.1:5555';
+		onSelect?.(hostSanitized);
+		serverAdded?.(hostSanitized);
+		// TODO: why is this required? why doesnt the onSelect work... :(
 	};
 
 	$effect(() => {
@@ -109,11 +114,13 @@
 	let {
 		value = $bindable(null),
 		ref = $bindable(null),
-		onSelect
+		onSelect,
+		serverAdded
 	}: WithElementRef<
 		{
 			value?: string | null;
 			onSelect?: (server: string) => void;
+			serverAdded?: (server: string) => void;
 		},
 		HTMLButtonElement
 	> = $props();

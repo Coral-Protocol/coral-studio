@@ -11,7 +11,11 @@
 	<Breadcrumb.Root class="flex-grow">
 		<Breadcrumb.List>
 			<Breadcrumb.Item class="hidden md:block">
-				<Breadcrumb.Link>Logs</Breadcrumb.Link>
+				<Breadcrumb.Link>Server</Breadcrumb.Link>
+			</Breadcrumb.Item>
+			<Breadcrumb.Separator class="hidden md:block" />
+			<Breadcrumb.Item>
+				<Breadcrumb.Page>Logs</Breadcrumb.Page>
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
