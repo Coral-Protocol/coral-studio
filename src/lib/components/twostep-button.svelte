@@ -34,20 +34,24 @@
 	<Dialog.Content class="sm:max-w-xs">
 		<Dialog.Header>
 			<Dialog.Title>Are you sure?</Dialog.Title>
-			<Dialog.Description></Dialog.Description>
+			<Dialog.Description class="text-sm">Hold shift to skip this check</Dialog.Description>
 		</Dialog.Header>
 
-		<Button
-			onclick={() => {
-				onclick?.();
-				open = false;
-			}}>Yes</Button
-		>
-		<Button
-			variant="secondary"
-			onclick={() => {
-				open = false;
-			}}>No</Button
-		>
+		<section class="flex w-full justify-between gap-2">
+			<Button
+				class="grow"
+				onclick={() => {
+					onclick?.();
+					open = false;
+				}}>Yes</Button
+			>
+			<Button
+				class="grow"
+				variant="secondary"
+				onclick={() => {
+					open = false;
+				}}>No</Button
+			>
+		</section>
 	</Dialog.Content>
 </Dialog.Root>
