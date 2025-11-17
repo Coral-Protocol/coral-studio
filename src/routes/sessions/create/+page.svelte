@@ -446,7 +446,7 @@
 													{#snippet children({ props })}
 														<TooltipLabel tooltip={opt.description}>
 															{name}
-															{#if !('default' in opt) || opt.default === undefined}
+															{#if opt.required}
 																<span class="text-destructive">*</span>
 															{/if}
 														</TooltipLabel>
