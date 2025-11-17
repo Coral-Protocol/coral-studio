@@ -10,7 +10,8 @@
 		{ description: 'Open Shortcuts Dialog', keys: ['CTRL', '/'] },
 		{ description: 'Open Sidebar', keys: ['CTRL', 'B'] },
 		{ description: 'Refresh agent configuration', keys: ['SHIFT', 'R'] },
-		{ description: 'Create new session', keys: ['SHIFT', 'N'] }
+		{ description: 'Create new session', keys: ['SHIFT', 'N'] },
+		{ description: 'Debug tools', keys: ['SHIFT', 'D'] }
 	];
 </script>
 

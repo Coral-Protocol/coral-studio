@@ -6,7 +6,7 @@
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	let { sessCtx, agents, threads, open = $bindable() } = $props();
+	let { sessCtx, agents, threads, open = $bindable(), debugMenu = $bindable() } = $props();
 
 	let value = $state('');
 </script>
@@ -16,9 +16,22 @@
 	<Command.List>
 		<Command.Empty>No results found.</Command.Empty>
 		<Command.Group heading="Quick Actions">
-			<Command.Item keywords={['new']}>Create session</Command.Item>
+			<Command.Item keywords={['new']}
+				>Create session
+				<Command.Shortcut>SHIFT N</Command.Shortcut>
+			</Command.Item>
 			<Command.Item>Add server</Command.Item>
-			<Command.Item>Refresh agent config</Command.Item>
+			<Command.Item
+				>Refresh agent config
+				<Command.Shortcut>SHIFT R</Command.Shortcut>
+			</Command.Item>
+			<Command.Item
+				onSelect={() => {
+					(debugMenu = true), (open = false);
+				}}
+				>Debug tools
+				<Command.Shortcut>SHIFT D</Command.Shortcut></Command.Item
+			>
 		</Command.Group>
 		<Command.Group heading="Pages">
 			<Command.LinkItem href="/tools/user-input">User input</Command.LinkItem>

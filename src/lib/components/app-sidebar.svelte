@@ -55,6 +55,7 @@
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 	import Shortcuts from './dialogs/shortcuts.svelte';
+	import { PressedKeys } from 'runed';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -173,44 +174,72 @@
 		openShortcuts = $state(false),
 		debugToolsOpen = $state(false);
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-			e.preventDefault();
-			openQuickswitch = !openQuickswitch;
-		}
-		if (e.key === '/' && (e.metaKey || e.ctrlKey)) {
-			e.preventDefault();
-			openShortcuts = !openShortcuts;
-		}
-		if (e.key === 'R' && e.shiftKey) {
-			e.preventDefault();
-			toast.promise(refreshAgents(), {
-				loading: `Refreshing agent configuration...`,
-				success: `Agent configuration refreshed`,
-				error: (err) => `Failed to refresh agent configuration, Error: ${err || err}`
-			});
-		}
-		// i should probably make make these tolowercase
-		if (e.key === 'N' && e.shiftKey) {
-			e.preventDefault();
-			if (sessCtx.connection) {
-				goto(`/sessions/create`);
-			} else {
-				toast.error(
-					"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
-				);
+	const handleKeydown = (event: KeyboardEvent) => {
+		const target = event.target as HTMLElement | null;
+		if (target) {
+			const tag = target.tagName;
+			if (
+				tag === 'INPUT' ||
+				tag === 'TEXTAREA' ||
+				tag === 'SELECT' ||
+				(target.isContentEditable ?? false)
+			) {
+				return;
 			}
 		}
-		if (e.key === 'D' && e.shiftKey && e.altKey) {
-			e.preventDefault();
-			debugToolsOpen = !debugToolsOpen;
+
+		const mod = event.ctrlKey || event.metaKey; // support Cmd on macOS
+
+		if (mod && event.key.toLowerCase() === 'k') {
+			event.preventDefault();
+			openQuickswitch = !openQuickswitch;
+			return;
 		}
-	}
+
+		if (event.shiftKey) {
+			const k = event.key.toLowerCase();
+			if (k === 'd') {
+				debugToolsOpen = !debugToolsOpen;
+				return;
+			}
+			if (k === 'r') {
+				toast.promise(refreshAgents(), {
+					loading: `Refreshing agent configuration...`,
+					success: `Agent configuration refreshed`,
+					error: (err) => `Failed to refresh agent configuration, Error: ${err || err}`
+				});
+				return;
+			}
+			if (k === 'n') {
+				if (sessCtx.connection) {
+					if (window.location.pathname !== '/sessions/create') {
+						goto(`/sessions/create`);
+						toast.info('Navigated to session creation page');
+					}
+				} else {
+					toast.error(
+						"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
+					);
+				}
+				return;
+			}
+			if (k === '/') {
+				openShortcuts = !openShortcuts;
+				return;
+			}
+		}
+	};
 </script>
 
-<svelte:document onkeydown={handleKeydown} />
+<svelte:window on:keydown={handleKeydown} />
 
-<Quickswitch {sessCtx} {agents} {threads} bind:open={openQuickswitch} />
+<Quickswitch
+	{sessCtx}
+	{agents}
+	{threads}
+	bind:open={openQuickswitch}
+	bind:debugMenu={debugToolsOpen}
+/>
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
 
@@ -433,7 +462,10 @@
 						url="/tools/user-input"
 						icon={IconChats}
 						title="Input Requests"
-						disable={!sessCtx.session}
+						disable={!sessCtx.session &&
+							Object.values(tools.userInput.requests).filter(
+								(req) => req.userQuestion === undefined
+							).length === 0}
 						badge={Object.values(tools.userInput.requests).filter(
 							(req) => req.userQuestion === undefined
 						).length}

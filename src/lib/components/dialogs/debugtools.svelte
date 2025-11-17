@@ -2,9 +2,11 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import Button from '../ui/button/button.svelte';
 	import { invalidateAll, goto } from '$app/navigation';
-	import { applyAction, deserialize } from '$app/forms';
+	import { applyAction, deserialize, enhance } from '$app/forms';
 	import type { ActionResult } from '@sveltejs/kit';
 	import { Input } from '$lib/components/ui/input/index.js';
+	import { toast } from 'svelte-sonner';
+	import * as Card from '../ui/card';
 
 	let { open = $bindable(false) } = $props();
 
@@ -14,37 +16,13 @@
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ input: 'Sample input for testing' })
+			body: JSON.stringify({ message: message })
 		});
+		return res;
 	}
 
-	async function handleSubmit(
-		event: SubmitEvent & { currentTarget: EventTarget & HTMLFormElement }
-	) {
-		event.preventDefault();
-		const data = new FormData(event.currentTarget, event.submitter);
-
-		const response = await fetch(event.currentTarget.action, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({ input: 'Sample input for testing' })
-		});
-
-		const result: ActionResult = deserialize(await response.text());
-
-		if (result.type === 'success') {
-			// rerun all `load` functions, following the successful update
-			await invalidateAll();
-		}
-
-		applyAction(result);
-	}
-
-	let address = $state('localhost:5173');
-	let message = $state('test');
-	let agentName = $state('Debug Agent');
+	let message = $state('Test message from debug tools');
+	let agentName = $state('Agent');
 	let sessionId = $state(crypto.randomUUID());
 </script>
 
@@ -55,29 +33,40 @@
 			<Dialog.Description>
 				Tools and utilities for debugging and development purposes.
 			</Dialog.Description>
+			<Button>Quick Session</Button>
 		</Dialog.Header>
 		<ol>
 			<li>
-				Input tool tester
-				<form
-					method="POST"
-					action={`/api/mcp-tools/user-input-request/${sessionId}/${agentName}`}
-					class="mt-2 flex flex-col gap-2"
-				>
-					<label>
-						Session ID
-						<Input name="sessionid" type="text" bind:value={sessionId} />
-					</label>
-					<label>
-						Agent Name
-						<Input name="agentname" type="text" bind:value={agentName} />
-					</label>
-					<label>
-						Message
-						<Input name="message" type="text" bind:value={message} />
-					</label>
-					<button>Send</button>
-				</form>
+				<Card.Root>
+					<Card.Header>
+						<Card.Title>Input tool tester</Card.Title>
+						<Card.Description
+							>Sends a request to the user input tool endpoint to simulate user input requests.</Card.Description
+						>
+					</Card.Header>
+					<Card.Content>
+						<label>
+							Session ID
+							<Input name="sessionid" type="text" bind:value={sessionId} />
+						</label>
+						<label>
+							Agent Name
+							<Input name="agentname" type="text" bind:value={agentName} />
+						</label>
+						<label>
+							Message
+							<Input name="message" type="text" bind:value={message} />
+						</label>
+					</Card.Content>
+					<Card.Footer>
+						<Button
+							onclick={() => {
+								toast.info('Sent request to user input tool endpoint');
+								testInputTool();
+							}}>Send request</Button
+						>
+					</Card.Footer>
+				</Card.Root>
 			</li>
 			<li>Thread creator</li>
 			<li></li>
