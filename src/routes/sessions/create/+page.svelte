@@ -12,6 +12,8 @@
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
+	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
+	import { Label } from '$lib/components/ui/label/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -43,6 +45,9 @@
 
 	import Graph from './Graph.svelte';
 	import IconCopyRegular from 'phosphor-icons-svelte/IconCopyRegular.svelte';
+	import { includes } from 'zod';
+	import { id } from 'zod/v4/locales';
+	import type { Provider, ProviderType } from './schemas';
 
 	type CreateSessionRequest = components['schemas']['SessionRequest'];
 
@@ -76,6 +81,8 @@
 		dataType: 'json',
 		// svelte-ignore state_referenced_locally
 		validators: zod4(formSchema),
+		validationMethod: 'onsubmit',
+
 		async onUpdate({ form: f }) {
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
@@ -123,7 +130,21 @@
 		form.options.validators = zod4(formSchema);
 	});
 
-	let { form: formData, errors, enhance } = $derived(form);
+	let { form: formData, errors, allErrors, enhance } = $derived(form);
+
+	const defaultProvider = {
+		runtime: 'executable',
+		remote_request: {
+			maxCost: { amount: 10, type: 'coral' },
+			serverSource: {
+				type: 'servers',
+				servers: []
+			}
+		}
+	} satisfies Provider;
+
+	let newServerAddress: string = $state('');
+	let newServerPort: string = $state('');
 
 	const importFromJson = (json: string) => {
 		const data: CreateSessionRequest = JSON.parse(json);
@@ -131,16 +152,31 @@
 			groups: data.agentGraphRequest.groups ?? [],
 			applicationId: data.applicationId,
 			privacyKey: data.privacyKey,
-			agents: data.agentGraphRequest.agents
-				.filter((agent) => agent.provider.type === 'local')
-				.map((agent) => ({
-					id: agent.id,
-					name: agent.name,
-					provider: agent.provider as any, // FIXME: annoying hack since ts doesn't know we filtered for local providers
-					blocking: agent.blocking ?? true,
-					options: agent.options,
-					customToolAccess: new Set(agent.customToolAccess)
-				}))
+			agents: data.agentGraphRequest.agents.map((agent) => ({
+				id: agent.id,
+				name: agent.name,
+				provider: {
+					runtime: agent.provider.runtime,
+					remote_request:
+						agent.provider.type === 'remote_request'
+							? {
+									maxCost: agent.provider.maxCost,
+									// ensure serverSource is the "servers" variant expected by the form model
+									serverSource:
+										agent.provider.serverSource &&
+										typeof (agent.provider.serverSource as any).type === 'string' &&
+										(agent.provider.serverSource as any).type === 'servers'
+											? (agent.provider.serverSource as any)
+											: { type: 'servers', servers: [] },
+									serverScoring: agent.provider.serverScoring
+								}
+							: defaultProvider.remote_request
+				},
+				providerType: agent.provider.type,
+				blocking: agent.blocking ?? true,
+				options: agent.options,
+				customToolAccess: new Set(agent.customToolAccess)
+			}))
 		};
 		selectedAgent = $formData.agents.length > 0 ? 0 : null;
 	};
@@ -160,7 +196,11 @@
 						name: agent.name,
 						description: undefined,
 						coralPlugins: [],
-						provider: agent.provider,
+						provider: {
+							type: agent.providerType as ProviderType,
+							runtime: agent.provider.runtime,
+							...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
+						} as any,
 						blocking: agent.blocking,
 						options: agent.options as any, // FIXME: !!!
 						systemPrompt: agent.systemPrompt,
@@ -209,7 +249,7 @@
 	</Breadcrumb.Root>
 </header>
 <form method="POST" use:enhance class="flex h-full flex-col overflow-hidden">
-	<div class="flex w-full flex-col items-center justify-between border-b p-6">
+	<div class="flex w-full flex-col items-center justify-between border-b p-4">
 		<h1 class="text-2xl font-semibold">Create a new session</h1>
 		<section class="flex w-full justify-between gap-4">
 			<section class="flex flex-col gap-2">
@@ -246,7 +286,7 @@
 					{#if error}
 						Error
 					{:else if sessCtx.registry}
-						{Object.keys(sessCtx.registry).length} agent configurations found
+						Registry loaded: {Object.keys(sessCtx.registry).length} agent types found.
 					{/if}
 				</p>
 				<section class="flex gap-2">
@@ -276,64 +316,57 @@
 			minSize={21}
 			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
 		>
-			<Combobox
-				side="top"
-				align="center"
-				options={registryRaw.map((a) => ({
-					label: `${a.id.name} ${a.id.version}`,
-					key: idAsKey(a.id),
-					value: a.id
-				}))}
-				searchPlaceholder="Search agents..."
-				onValueChange={(id) => {
-					const count = $formData.agents.filter((agent) => agent.id.name === id.name).length;
-					const runtime = registry[idAsKey(id)]?.runtimes?.at(-1) ?? 'executable';
-					$formData.agents.push({
-						id: id,
-						provider: {
-							type: 'local',
-							runtime: runtime !== 'function' ? runtime : 'executable'
-						},
-						systemPrompt: undefined,
-						blocking: true,
-						name: id.name + (count > 0 ? `-${count + 1}` : ''),
-						options: {},
-						customToolAccess: new Set()
-					});
-					$formData.agents = $formData.agents;
-					selectedAgent = $formData.agents.length - 1;
-					accordian = 'agent-editor';
-				}}
-			>
-				{#snippet trigger({ props })}
-					<section class="flex justify-between gap-2">
-						<Button {...props} class="grow">Add agent</Button>
-						<TwostepButton
-							disabled={selectedAgent === null}
-							variant="destructive"
-							class="grow"
-							onclick={() => {
-								if (selectedAgent === null) return;
-								const idx = selectedAgent;
-								$formData.agents.splice(idx, 1);
-								$formData.agents = $formData.agents;
-								selectedAgent = Math.min(idx, $formData.agents.length - 1);
-								selectedAgent = null;
-							}}>Remove agent</TwostepButton
-						>
-					</section>
-				{/snippet}
+			<section class="flex justify-between gap-2">
+				<Button
+					class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
+						? ''
+						: 'border-accent/50'}"
+					onclick={() => {
+						const runtime = 'executable';
+						$formData.agents.push({
+							id: {
+								name: registryRaw[0]?.id.name ?? 'placeholder-agent',
+								version: registryRaw[0]?.id.version ?? '1.0.0'
+							},
+							provider: defaultProvider,
+							providerType: 'local',
+							systemPrompt: undefined,
+							blocking: true,
+							name:
+								'Agent' + ($formData.agents.length > 0 ? ` ${$formData.agents.length + 1}` : ''),
+							options: {},
+							customToolAccess: new Set()
+						});
+						$formData.agents = $formData.agents;
+						selectedAgent = $formData.agents.length - 1;
+						accordian = 'agent-editor';
+					}}
+				>
+					Add agent
+				</Button>
+				<TwostepButton
+					disabled={selectedAgent === null}
+					variant="destructive"
+					class="grow"
+					onclick={() => {
+						if (selectedAgent === null) return;
+						const idx = selectedAgent;
+						$formData.agents.splice(idx, 1);
+						$formData.agents = $formData.agents;
+						selectedAgent = Math.min(idx, $formData.agents.length - 1);
+						selectedAgent = null;
+					}}>Remove agent</TwostepButton
+				>
+			</section>
+			{#if selectedAgent !== null && $formData.agents.length !== 0}
+				{@const agent = $formData.agents[selectedAgent]!}
+				{@const agentProvider = agent.provider}
+				{@const providerType = agent.providerType as ProviderType}
 
-				{#snippet option({ option })}
-					{option.label}
-				{/snippet}
-			</Combobox>
-			<Accordion.Root type="single" value={accordian}>
-				<Accordion.Item value="agent-editor">
-					<Accordion.Trigger>Agent editor</Accordion.Trigger>
-					<Accordion.Content class="b-8 min-h-0 flex-1 overflow-auto">
-						{#if selectedAgent !== null && $formData.agents.length > selectedAgent}
-							{@const agent = $formData.agents[selectedAgent]!}
+				<Accordion.Root type="single" value={accordian}>
+					<Accordion.Item value="agent-editor">
+						<Accordion.Trigger>Agent settings</Accordion.Trigger>
+						<Accordion.Content class="b-8 min-h-0 flex-1 overflow-auto">
 							{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
 							<Tabs.Root value="options" class="grow overflow-hidden">
 								<Tabs.List class=" w-full">
@@ -406,46 +439,12 @@
 												{/snippet}
 											</Form.Control>
 										</Form.ElementField>
-										<Form.ElementField
-											{form}
-											name="agents[{selectedAgent}].provider.runtime"
-											class="flex items-center gap-2"
-										>
-											<Form.Control>
-												{#snippet children({ props })}
-													{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
-													<TooltipLabel tooltip={'What runtime to use for this agent.'} class="m-0"
-														>Runtime</TooltipLabel
-													>
-													<Combobox
-														{...props}
-														class="w-auto grow pr-[2px]"
-														side="right"
-														align="start"
-														options={((registry[idAsKey(agent.id)]?.runtimes as any) ?? []).map(
-															(value: string) => ({
-																key: value,
-																label: value,
-																value
-															})
-														)}
-														searchPlaceholder="Search runtimes..."
-														bind:selected={
-															() => ({ key: runtime, label: runtime, value: runtime }),
-															(selected) => {
-																$formData.agents[selectedAgent!]!.provider.runtime = selected.value;
-															}
-														}
-													/>
-												{/snippet}
-											</Form.Control>
-										</Form.ElementField>
 										<Separator />
 										{#each Object.entries(availableOptions) as [name, opt] (name)}
 											<Form.ElementField {form} name="agents[{selectedAgent}].options.{name}.value">
 												<Form.Control>
 													{#snippet children({ props })}
-														<TooltipLabel tooltip={opt.description} class="gap-1">
+														<TooltipLabel tooltip={opt.description}>
 															{name}
 															{#if !('default' in opt) || opt.default === undefined}
 																<span class="text-destructive">*</span>
@@ -463,12 +462,25 @@
 																	} as any; // FIXME: !!
 																}
 															}
+															aria-invalid={$allErrors.length > 0 &&
+																($formData.agents[selectedAgent!]!.options[name]?.value ?? '') ===
+																	'' &&
+																!('default' in opt)}
 															placeholder={'default' in opt ? opt.default?.toString() : undefined}
 														/>
 													{/snippet}
 												</Form.Control>
 											</Form.ElementField>
 										{/each}
+									{:else}
+										<p>
+											No options available! This can happen if you have no agent registry, it's
+											empty, or there's no server connection.
+										</p>
+
+										<p>
+											Still need help? please <a class="underline" href="/helpme">click here</a>
+										</p>
 									{/if}
 								</Tabs.Content>
 								<Tabs.Content value="prompt" class="overflow-scroll">
@@ -494,6 +506,7 @@
 								<Tabs.Content value="tools">
 									<Form.Fieldset {form} name="agents[{selectedAgent}].customToolAccess">
 										<ul class="flex flex-col gap-2">
+											Found {[Object.keys(tools).length]} available tools:
 											{#each Object.keys(tools) as tool (tool)}
 												<li class="flex gap-2">
 													<Form.Control>
@@ -525,13 +538,270 @@
 									</Form.Fieldset>
 								</Tabs.Content>
 							</Tabs.Root>
-						{:else}
-							Select an agent to begin editing.
-						{/if}
-					</Accordion.Content>
-				</Accordion.Item>
-			</Accordion.Root>
-			<Accordion.Root type="single">
+						</Accordion.Content>
+					</Accordion.Item>
+				</Accordion.Root>
+
+				<Accordion.Root type="single" value="item-1">
+					<Accordion.Item value="item-1">
+						<Accordion.Trigger>Provider settings</Accordion.Trigger>
+						<Accordion.Content class="flex min-h-0 flex-col gap-4 overflow-scroll">
+							<Form.ElementField
+								{form}
+								name="agents[{selectedAgent}].providerType"
+								class="flex items-center gap-2"
+							>
+								<Form.Control>
+									{#snippet children({ props })}
+										Provider Type
+										<Select.Root
+											type="single"
+											bind:value={$formData.agents[selectedAgent!]!.providerType}
+										>
+											<Select.Trigger class="w-full"
+												>{$formData.agents[selectedAgent!]!.providerType === 'local'
+													? 'Local'
+													: 'Remote'}</Select.Trigger
+											>
+											<Select.Content>
+												<Select.Item value="local">Local</Select.Item>
+												<Select.Item value="remote_request">Remote</Select.Item>
+											</Select.Content>
+										</Select.Root>
+									{/snippet}
+								</Form.Control>
+							</Form.ElementField>
+							<Form.ElementField
+								{form}
+								name="agents[{selectedAgent}].provider.runtime"
+								class="flex items-center gap-2"
+							>
+								<Form.Control>
+									{#snippet children({ props })}
+										{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
+										<TooltipLabel
+											tooltip={'Agent runtime, will only show available options for the selected agent type'}
+											class="m-0">Runtime</TooltipLabel
+										>
+										<Combobox
+											{...props}
+											class="w-auto grow pr-[2px]"
+											side="right"
+											align="start"
+											options={((registry[idAsKey(agent.id)]?.runtimes as any) ?? []).map(
+												(value: string) => ({
+													key: value,
+													label: value,
+													value
+												})
+											)}
+											searchPlaceholder="Search runtimes..."
+											bind:selected={
+												() => ({ key: runtime, label: runtime, value: runtime }),
+												(selected) => {
+													$formData.agents[selectedAgent!]!.provider.runtime = selected.value;
+												}
+											}
+										/>
+									{/snippet}
+								</Form.Control>
+							</Form.ElementField>
+							{#if selectedAgent !== null && $formData.agents.length > selectedAgent && agent.providerType === 'remote_request'}
+								<Form.ElementField
+									{form}
+									name="agents[{selectedAgent}].provider.remote_request.maxCost.amount"
+								>
+									<Form.Control>
+										{#snippet children({ props })}
+											<TooltipLabel tooltip={'The agents max cost'}>Agent budget</TooltipLabel>
+											{#if $formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type === 'micro_coral'}
+												<Input
+													type="number"
+													placeholder="0"
+													min="0"
+													pattern="[0-9]"
+													class="grow"
+													{...props}
+													bind:value={
+														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
+													}
+												/>
+											{:else}
+												<Input
+													type="number"
+													placeholder="0.00"
+													min="0"
+													class="grow"
+													{...props}
+													bind:value={
+														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
+													}
+												/>
+											{/if}
+										{/snippet}
+									</Form.Control>
+								</Form.ElementField>
+								<Form.ElementField
+									{form}
+									name="agents[{selectedAgent}].provider.remote_request.maxCost.type"
+								>
+									<Form.Control>
+										{#snippet children({ props })}
+											<TooltipLabel tooltip={'The currency of the agents max cost'}
+												>Budget Currency</TooltipLabel
+											>
+
+											<Select.Root
+												{...props}
+												type="single"
+												bind:value={
+													$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type
+												}
+											>
+												<Select.Trigger class="w-full"
+													>{$formData.agents[
+														selectedAgent!
+													]!.provider.remote_request.maxCost.type.charAt(0).toLocaleUpperCase() +
+														$formData.agents[
+															selectedAgent!
+														]!.provider.remote_request.maxCost.type.replace('_', ' ').slice(
+															1
+														)}</Select.Trigger
+												>
+
+												<Select.Content>
+													<Select.Item value="usd">USD</Select.Item>
+													<Select.Item value="micro_coral">Micro coral</Select.Item>
+													<Select.Item value="coral">Coral</Select.Item>
+												</Select.Content>
+											</Select.Root>
+										{/snippet}
+									</Form.Control>
+								</Form.ElementField>
+								<TooltipLabel tooltip={'Servers to use for remote requests'} class="m-0"
+									>Servers</TooltipLabel
+								>
+								{@const serverSource =
+									$formData.agents[selectedAgent!]!.provider.remote_request.serverSource}
+								{#if serverSource.type === 'servers'}
+									{#each serverSource.servers as server, i}
+										<p>
+											{server.address}{server.port ? `:${server.port}` : ''}{server.secure
+												? ' (secure)'
+												: ''}
+										</p>
+										<div class="flex flex-col gap-1 text-sm">
+											{#if server.attributes?.length}
+												<div class="text-muted-foreground text-xs">
+													Attributes: {JSON.stringify(server.attributes)}
+												</div>
+											{/if}
+										</div>
+									{/each}
+								{/if}
+								<div class="flex w-full max-w-sm items-center space-x-2">
+									<Input class="grow" placeholder="127.0.0.1" bind:value={newServerAddress} />
+									<Input class="w-24" placeholder="port" bind:value={newServerPort} />
+									<Button
+										onclick={() => {
+											if (selectedAgent === null) return;
+											const agentReq = $formData.agents[selectedAgent!]!.provider.remote_request;
+											const addr = (newServerAddress ?? '').trim();
+											const portRaw = newServerPort;
+											if (!addr) {
+												toast.error('Please enter an address');
+												return;
+											}
+											const port = portRaw === '' || portRaw === undefined ? 0 : Number(portRaw);
+											if (port !== undefined && Number.isNaN(port)) {
+												toast.error('Invalid port');
+												return;
+											}
+
+											agentReq.serverSource.servers = agentReq.serverSource.servers ?? [];
+											agentReq.serverSource.servers.push({
+												address: addr,
+												port,
+												secure: false,
+												attributes: []
+											});
+
+											// trigger reactivity
+											$formData.agents = $formData.agents;
+
+											// clear inputs
+											newServerAddress = '';
+											newServerPort = '';
+										}}
+									>
+										Add
+									</Button>
+								</div>
+							{/if}
+						</Accordion.Content>
+					</Accordion.Item>
+				</Accordion.Root>
+			{/if}
+		</Resizable.Pane>
+		<Resizable.Handle withHandle />
+		<Resizable.Pane
+			defaultSize={75}
+			minSize={50}
+			class="relative flex min-h-0 flex-col overflow-hidden"
+		>
+			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
+				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
+					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
+					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
+				</Tabs.List>
+				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto  py-4">
+					<Table.Root class="w-full">
+						<Table.Header>
+							<Table.Row>
+								<Table.Head>Name</Table.Head>
+								<Table.Head>Type</Table.Head>
+								<Table.Head>Runtime</Table.Head>
+								<Table.Head>Provider Type</Table.Head>
+								<Table.Head>Agent Version</Table.Head>
+							</Table.Row>
+						</Table.Header>
+						<Table.Body>
+							{#each $formData.agents as agent, i}
+								<Table.Row
+									onclick={() => (selectedAgent = i)}
+									class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
+								>
+									<Table.Cell class="font-medium">
+										<p class="grow">{agent.name}</p>
+									</Table.Cell>
+									<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
+									<Table.Cell>{agent.provider.runtime}</Table.Cell>
+									<Table.Cell>{agent.providerType}</Table.Cell>
+									<Table.Cell>{agent.id.version}</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				</Tabs.Content>
+				<Tabs.Content value="graph" class=" min-h-0 flex-1 overflow-hidden ">
+					{#if $formData.agents.length !== 0}
+						<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
+					{:else}
+						<div class="m-auto h-full w-full content-center text-center">
+							Add an agent to begin.
+						</div>
+					{/if}
+				</Tabs.Content>
+			</Tabs.Root>
+		</Resizable.Pane>
+		<Resizable.Handle withHandle />
+
+		<Resizable.Pane
+			defaultSize={25}
+			minSize={21}
+			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
+		>
+			<Accordion.Root type="single" value="item-1">
 				<Accordion.Item value="item-1">
 					<Accordion.Trigger>Groups</Accordion.Trigger>
 					<Accordion.Content>
@@ -577,51 +847,6 @@
 					</Accordion.Content>
 				</Accordion.Item>
 			</Accordion.Root>
-		</Resizable.Pane>
-		<Resizable.Handle withHandle />
-		<Resizable.Pane
-			defaultSize={75}
-			minSize={50}
-			class="relative flex min-h-0 flex-col overflow-hidden"
-		>
-			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
-				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
-					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
-					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
-				</Tabs.List>
-				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto  py-4">
-					<Table.Root class="w-full">
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>Name</Table.Head>
-								<Table.Head>Type</Table.Head>
-								<Table.Head>Runtime</Table.Head>
-								<Table.Head>Provider Type</Table.Head>
-								<Table.Head>Agent Version</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each $formData.agents as agent, i}
-								<Table.Row
-									onclick={() => (selectedAgent = i)}
-									class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
-								>
-									<Table.Cell class="font-medium">
-										<p class="grow">{agent.name}</p>
-									</Table.Cell>
-									<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
-									<Table.Cell>{agent.provider.runtime}</Table.Cell>
-									<Table.Cell>{agent.provider.type}</Table.Cell>
-									<Table.Cell>{agent.id.version}</Table.Cell>
-								</Table.Row>
-							{/each}
-						</Table.Body>
-					</Table.Root>
-				</Tabs.Content>
-				<Tabs.Content value="graph" class=" min-h-0 flex-1 overflow-hidden ">
-					<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
-				</Tabs.Content>
-			</Tabs.Root>
 		</Resizable.Pane>
 	</Resizable.PaneGroup>
 </form>
