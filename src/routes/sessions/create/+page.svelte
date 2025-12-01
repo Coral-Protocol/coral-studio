@@ -75,8 +75,8 @@
 		'list[f32]': 'number',
 		i32: 'number',
 		'list[i32]': 'number',
-		i64: 'number',
-		'list[i64]': 'number',
+		i64: 'text',
+		'list[i64]': 'text',
 		i16: 'number',
 		'list[i16]': 'number',
 		'list[string]': 'string',
@@ -84,8 +84,8 @@
 		'list[u8]': 'number',
 		u32: 'number',
 		'list[u32]': 'number',
-		u64: 'number',
-		'list[u64]': 'number',
+		u64: 'text',
+		'list[u64]': 'text',
 		u16: 'number',
 		'list[u16]': 'number'
 	};
@@ -667,6 +667,11 @@
 																	: undefined}
 																placeholder={'default' in opt ? opt.default?.toString() : undefined}
 															/>
+															<span
+																>{JSON.stringify(
+																	$errors?.agents?.[selectedAgent!]?.options?.[name]
+																)}</span
+															>
 														{/if}
 													{/snippet}
 												</Form.Control>

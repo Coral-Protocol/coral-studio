@@ -243,7 +243,14 @@ const formSchema = z.object({
 
 						z.object({
 							type: z.literal('i64'),
-							value: z.number()
+							value: z.string().refine(async (val) => {
+								try {
+									const n = BigInt(val);
+									return n >= -9223372036854775808n && n <= 9223372036854775808n;
+								} catch {
+									return false;
+								}
+							})
 						}),
 						z.object({
 							type: z.literal('list[i64]'),
@@ -279,7 +286,27 @@ const formSchema = z.object({
 
 						z.object({
 							type: z.literal('u64'),
-							value: z.number().min(0)
+							value: z
+								.string()
+								.refine(
+									(val) => {
+										try {
+											BigInt(val);
+											return true;
+										} catch {
+											return false;
+										}
+									},
+									{ error: 'Not a number', abort: true }
+								)
+								.refine((val) => BigInt(val) < 18446744073709551615n, {
+									error: 'Number cannot be greater than 18446744073709551615',
+									abort: true
+								})
+								.refine((val) => BigInt(val) > 0, {
+									error: 'Number cannot be less than 0',
+									abort: true
+								})
 						}),
 						z.object({
 							type: z.literal('list[u64]'),
