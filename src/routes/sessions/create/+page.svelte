@@ -7,12 +7,14 @@
 	import IconPrompt from 'phosphor-icons-svelte/IconChatCircleDotsRegular.svelte';
 	import IconListRegular from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
+	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
+	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 
 	import * as Form from '$lib/components/ui/form';
@@ -60,8 +62,32 @@
 		[K in PublicRegistryAgent['options'][string]['type']]: HTMLInputTypeAttribute;
 	} = {
 		string: 'text',
-		number: 'text',
-		secret: 'password'
+		number: 'number',
+		secret: 'password',
+		blob: 'file',
+		'list[blob]': 'file',
+		bool: 'number',
+		i8: 'number',
+		'list[i8]': 'number',
+		f64: 'number',
+		'list[f64]': 'number',
+		f32: 'number',
+		'list[f32]': 'number',
+		i32: 'number',
+		'list[i32]': 'number',
+		i64: 'number',
+		'list[i64]': 'number',
+		i16: 'number',
+		'list[i16]': 'number',
+		'list[string]': 'string',
+		u8: 'number',
+		'list[u8]': 'number',
+		u32: 'number',
+		'list[u32]': 'number',
+		u64: 'number',
+		'list[u64]': 'number',
+		u16: 'number',
+		'list[u16]': 'number'
 	};
 
 	let sessCtx = sessionCtx.get();
@@ -81,7 +107,7 @@
 		dataType: 'json',
 		// svelte-ignore state_referenced_locally
 		validators: zod4(formSchema),
-		validationMethod: 'onsubmit',
+		validationMethod: 'onblur',
 
 		async onUpdate({ form: f }) {
 			if (!f.valid) {
@@ -174,7 +200,7 @@
 				},
 				providerType: agent.provider.type,
 				blocking: agent.blocking ?? true,
-				options: agent.options,
+				options: agent.options as any,
 				customToolAccess: new Set(agent.customToolAccess)
 			}))
 		};
@@ -196,13 +222,34 @@
 						name: agent.name,
 						description: undefined,
 						coralPlugins: [],
+						x402Budgets: [],
 						provider: {
 							type: agent.providerType as ProviderType,
 							runtime: agent.provider.runtime,
 							...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
 						} as any,
 						blocking: agent.blocking,
-						options: agent.options as any, // FIXME: !!!
+						options: Object.fromEntries(
+							Object.entries(agent.options ?? {})
+								.filter(([name, opt]: [string, any]) => {
+									// find the registry entry for this agent type/version
+									const reg = registryRaw.find((r) => idAsKey(r.id) === idAsKey(agent.id));
+									const defaultVal = reg?.options?.[name]?.default;
+									// exclude options that are unset
+									if (!opt || opt.value === undefined) return false;
+									// include when value differs from registry default (deep compare via JSON)
+									try {
+										console.log(opt.value, defaultVal);
+
+										return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
+									} catch {
+										// if stringify fails, conservatively include the option
+										console.log('failed to stringify');
+										return true;
+									}
+								})
+								.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
+						) as any,
 						systemPrompt: agent.systemPrompt,
 						customToolAccess: Array.from(agent.customToolAccess)
 					} satisfies Complete<
@@ -248,7 +295,12 @@
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 </header>
-<form method="POST" use:enhance class="flex h-full flex-col overflow-hidden">
+<form
+	method="POST"
+	use:enhance
+	class="flex h-full flex-col overflow-hidden"
+	enctype="multipart/form-data"
+>
 	<div class="flex w-full flex-col items-center justify-between border-b p-4">
 		<h1 class="text-2xl font-semibold">Create a new session</h1>
 		<section class="flex w-full justify-between gap-4">
@@ -290,21 +342,12 @@
 					{/if}
 				</p>
 				<section class="flex gap-2">
-					<ClipboardImportDialog onImport={importFromJson}>
+					<ClipboardImportDialog onImport={importFromJson} asJson={JSON.stringify(asJson, null, 2)}>
 						{#snippet child({ props })}
-							<Button {...props} variant="outline" class="w-fit">Import</Button>
+							<Button {...props} variant="outline" class="w-fit">Edit raw</Button>
 						{/snippet}
 					</ClipboardImportDialog>
-					<Button
-						variant="outline"
-						class="w-fit"
-						onclick={() => {
-							navigator.clipboard.writeText(JSON.stringify(asJson, null, 2));
-							toast.success('Session JSON copied to clipboard');
-						}}
-					>
-						Export <IconCopyRegular />
-					</Button>
+
 					<Form.Button>Create</Form.Button>
 				</section>
 			</section>
@@ -322,10 +365,9 @@
 						? ''
 						: 'border-accent/50'}"
 					onclick={() => {
-						const runtime = 'executable';
 						$formData.agents.push({
 							id: {
-								name: registryRaw[0]?.id.name ?? 'placeholder-agent',
+								name: registryRaw[0]?.id.name ?? 'agent-name',
 								version: registryRaw[0]?.id.version ?? '1.0.0'
 							},
 							provider: defaultProvider,
@@ -334,7 +376,18 @@
 							blocking: true,
 							name:
 								'Agent' + ($formData.agents.length > 0 ? ` ${$formData.agents.length + 1}` : ''),
-							options: {},
+							options: registryRaw[0]
+								? Object.fromEntries(
+										Object.entries(registryRaw[0].options).map(([name, opt]) => [
+											name,
+											{
+												type: opt.type,
+												// initialize value from default when available, otherwise undefined
+												value: 'default' in opt ? (opt as any).default : undefined
+											} as any
+										])
+									)
+								: {},
 							customToolAccess: new Set()
 						});
 						$formData.agents = $formData.agents;
@@ -449,25 +502,172 @@
 															{#if opt.required}
 																<span class="text-destructive">*</span>
 															{/if}
+															<span class="text-muted-foreground ml-auto text-xs">
+																- {opt.type}</span
+															>
 														</TooltipLabel>
-														<Input
-															{...props}
-															type={inputTypes[opt.type]}
-															bind:value={
-																() => $formData.agents[selectedAgent!]!.options[name]?.value,
-																(value) => {
-																	$formData.agents[selectedAgent!]!.options[name] = {
-																		type: opt.type,
-																		value
-																	} as any; // FIXME: !!
+														{#if opt.type === 'blob'}
+															<Input
+																{...props}
+																type={inputTypes[opt.type]}
+																bind:value={
+																	() => $formData.agents[selectedAgent!]!.options[name]?.value,
+																	(value) => {
+																		$formData.agents[selectedAgent!]!.options[name] = {
+																			type: opt.type,
+																			value
+																		} as any; // FIXME: !!
+																	}
 																}
-															}
-															aria-invalid={$allErrors.length > 0 &&
-																($formData.agents[selectedAgent!]!.options[name]?.value ?? '') ===
-																	'' &&
-																!('default' in opt)}
-															placeholder={'default' in opt ? opt.default?.toString() : undefined}
-														/>
+																aria-invalid={$allErrors.length > 0 &&
+																	opt.required &&
+																	$formData.agents[selectedAgent!]!.options[name]?.value ===
+																		undefined}
+																placeholder={'default' in opt ? opt.default?.toString() : undefined}
+															/>
+														{:else if opt.type.includes('list')}
+															{@const list = Array.isArray(
+																$formData.agents[selectedAgent!]!.options[name]?.value
+															)
+																? ($formData.agents[selectedAgent!]!.options[name]!.value as any[])
+																: []}
+															<ol class="flex w-full flex-col gap-1 rounded-md">
+																{#each list, i}
+																	<li>
+																		<ButtonGroup.Root class="w-full">
+																			<Input
+																				type={inputTypes[opt.type]}
+																				bind:value={
+																					() => {
+																						const optObj =
+																							$formData.agents[selectedAgent!]!.options[name];
+																						const arr = Array.isArray(optObj?.value)
+																							? (optObj.value as any[])
+																							: undefined;
+																						return arr ? arr[i] : '';
+																					},
+																					(value) => {
+																						const optObj =
+																							$formData.agents[selectedAgent!]!.options[name];
+																						if (!optObj || !Array.isArray(optObj.value)) {
+																							// initialize as array and set the i'th element
+																							$formData.agents[selectedAgent!]!.options[name] = {
+																								type: opt.type,
+																								value: []
+																							} as any;
+																						}
+																						(
+																							$formData.agents[selectedAgent!]!.options[name]!
+																								.value as any[]
+																						)[i] = value;
+																						// trigger reactivity
+																						$formData.agents = $formData.agents;
+																					}
+																				}
+																			/>
+																			<Button
+																				variant="outline"
+																				size="icon"
+																				onclick={() => {
+																					const optObj =
+																						$formData.agents[selectedAgent!]!.options[name];
+																					if (optObj && Array.isArray(optObj.value)) {
+																						(optObj.value as string[]).splice(i, 1);
+																						// trigger reactivity
+																						$formData.agents = $formData.agents;
+																					}
+																				}}
+																			>
+																				<IconXRegular />
+																			</Button>
+																		</ButtonGroup.Root>
+																	</li>
+																{/each}
+															</ol>
+															<Button
+																onclick={() => {
+																	const optObj = $formData.agents[selectedAgent!]!.options[name];
+																	if (optObj && Array.isArray(optObj.value)) {
+																		(optObj.value as string[]).push('');
+																	} else {
+																		$formData.agents[selectedAgent!]!.options[name] = {
+																			type: opt.type,
+																			value: ['']
+																		} as any;
+																	}
+																	// trigger reactivity
+																	$formData.agents = $formData.agents;
+																}}>Add value</Button
+															>
+														{:else if opt.type === 'bool'}
+															<ButtonGroup.Root>
+																<Button
+																	class=" {$formData.agents[selectedAgent!]!.options[name]
+																		?.value === true ||
+																	($formData.agents[selectedAgent!]!.options[name]?.value ===
+																		undefined &&
+																		opt.default === true)
+																		? 'bg-accent text-accent-foreground'
+																		: ''}"
+																	onclick={() => {
+																		const optObj = $formData.agents[selectedAgent!]!.options[name];
+																		if (optObj) {
+																			optObj.value = true;
+																		} else {
+																			$formData.agents[selectedAgent!]!.options[name] = {
+																				type: opt.type,
+																				value: true
+																			} as any;
+																		}
+																		$formData.agents = $formData.agents;
+																	}}>True</Button
+																>
+																<Button
+																	class=" {$formData.agents[selectedAgent!]!.options[name]
+																		?.value === false ||
+																	($formData.agents[selectedAgent!]!.options[name]?.value ===
+																		undefined &&
+																		opt.default === false)
+																		? 'bg-accent text-accent-foreground'
+																		: ''}"
+																	onclick={() => {
+																		const optObj = $formData.agents[selectedAgent!]!.options[name];
+																		if (optObj) {
+																			optObj.value = false;
+																		} else {
+																			$formData.agents[selectedAgent!]!.options[name] = {
+																				type: opt.type,
+																				value: false
+																			} as any;
+																		}
+																		$formData.agents = $formData.agents;
+																	}}>False</Button
+																>
+															</ButtonGroup.Root>
+														{:else}
+															<Input
+																{...props}
+																type={inputTypes[opt.type]}
+																bind:value={
+																	() => $formData.agents[selectedAgent!]!.options[name]?.value,
+																	(value) => {
+																		$formData.agents[selectedAgent!]!.options[name] = {
+																			type: opt.type,
+																			value
+																		} as any; // FIXME: !!
+																	}
+																}
+																defaultValue={opt.default}
+																aria-invalid={($allErrors.length > 0 &&
+																	opt.required &&
+																	$formData.agents[selectedAgent!]!.options[name]?.value ===
+																		undefined) ||
+																$errors?.agents?.[selectedAgent!]?.options?.[name]
+																	? 'true'
+																	: undefined}
+																placeholder={'default' in opt ? opt.default?.toString() : undefined}
+															/>
+														{/if}
 													{/snippet}
 												</Form.Control>
 											</Form.ElementField>
@@ -844,6 +1044,24 @@
 								}}>Create group</Button
 							>
 						</ul>
+					</Accordion.Content>
+				</Accordion.Item>
+			</Accordion.Root>
+
+			<Accordion.Root type="single">
+				<Accordion.Item value="item-1">
+					<Accordion.Trigger>Errors</Accordion.Trigger>
+					<Accordion.Content>
+						{#if $allErrors.length}
+							<ul>
+								{#each $allErrors as error}
+									<li>
+										<b>{error.path}:</b>
+										{error.messages.join('. ')}
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					</Accordion.Content>
 				</Accordion.Item>
 			</Accordion.Root>
