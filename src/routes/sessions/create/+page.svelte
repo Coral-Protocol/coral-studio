@@ -1061,6 +1061,8 @@
 									</li>
 								{/each}
 							</ul>
+						{:else}
+							No errors!
 						{/if}
 					</Accordion.Content>
 				</Accordion.Item>
