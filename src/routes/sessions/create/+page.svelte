@@ -658,19 +658,21 @@
 																	}
 																}
 																defaultValue={opt.default}
-																aria-invalid={($allErrors.length > 0 &&
-																	opt.required &&
-																	$formData.agents[selectedAgent!]!.options[name]?.value ===
-																		undefined) ||
-																$errors?.agents?.[selectedAgent!]?.options?.[name]
-																	? 'true'
-																	: undefined}
+																aria-invalid={(() => {
+																	const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
+																	if (error && JSON.stringify(error).includes('{}'))
+																		return undefined;
+																	else if (error) return true;
+																	else return undefined;
+																})()}
 																placeholder={'default' in opt ? opt.default?.toString() : undefined}
 															/>
 															<span
-																>{JSON.stringify(
-																	$errors?.agents?.[selectedAgent!]?.options?.[name]
-																)}</span
+																>{#if JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name]) !== '{}'}
+																	{$errors?.agents?.[selectedAgent!]?.options?.[name]?.value
+																		? $errors?.agents?.[selectedAgent!]?.options?.[name]?.value
+																		: $errors?.agents?.[selectedAgent!]?.options?.[name]}
+																{/if}</span
 															>
 														{/if}
 													{/snippet}

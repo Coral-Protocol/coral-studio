@@ -356,7 +356,7 @@ export const makeFormSchema = (registryAgents: { [agent: string]: PublicRegistry
 					ctx.addIssue({
 						code: 'custom',
 						path: ['agents', i, 'options', name],
-						message: `Missing required option: ${name}`
+						message: `Missing required option`
 					});
 				}
 			}
