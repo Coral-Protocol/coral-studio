@@ -278,6 +278,18 @@
 
 	let selectedAgent: number | null = $state(null);
 	let accordian: string = $state('');
+
+	let isMobile = $state(false);
+
+	const updateIsMobile = () => {
+		isMobile = window.innerWidth < 768; // Tailwind "md" breakpoint
+	};
+
+	onMount(() => {
+		updateIsMobile();
+		window.addEventListener('resize', updateIsMobile);
+		return () => window.removeEventListener('resize', updateIsMobile);
+	});
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -301,59 +313,44 @@
 	class="flex h-full flex-col overflow-hidden"
 	enctype="multipart/form-data"
 >
-	<div class="flex w-full flex-col items-center justify-between border-b p-4">
-		<h1 class="text-2xl font-semibold">Create a new session</h1>
-		<section class="flex w-full justify-between gap-4">
-			<section class="flex flex-col gap-2">
-				<Form.Field {form} name="sessionId">
-					<Form.Control>
-						{#snippet children({ props })}
-							<Form.Label>Session name</Form.Label>
-							<Input {...props} bind:value={$formData.sessionId} />
-						{/snippet}
-					</Form.Control>
-				</Form.Field>
-				<section class="flex gap-2">
-					<Form.Field {form} name="applicationId">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Application ID</Form.Label>
-								<Input {...props} bind:value={$formData.applicationId} />
-							{/snippet}
-						</Form.Control>
-					</Form.Field>
-					<Form.Field {form} name="privacyKey">
-						<Form.Control>
-							{#snippet children({ props })}
-								<Form.Label>Privacy Key</Form.Label>
-								<Input {...props} type="password" bind:value={$formData.privacyKey} />
-							{/snippet}
-						</Form.Control>
-					</Form.Field>
-				</section>
-			</section>
+	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
+		<Form.Field {form} name="sessionId">
+			<Form.Control>
+				{#snippet children({ props })}
+					<Form.Label>Session name</Form.Label>
+					<Input {...props} bind:value={$formData.sessionId} />
+				{/snippet}
+			</Form.Control>
+		</Form.Field>
+		<Form.Field {form} name="applicationId">
+			<Form.Control>
+				{#snippet children({ props })}
+					<Form.Label>Application ID</Form.Label>
+					<Input {...props} bind:value={$formData.applicationId} />
+				{/snippet}
+			</Form.Control>
+		</Form.Field>
+		<Form.Field {form} name="privacyKey">
+			<Form.Control>
+				{#snippet children({ props })}
+					<Form.Label>Privacy Key</Form.Label>
+					<Input {...props} type="password" bind:value={$formData.privacyKey} />
+				{/snippet}
+			</Form.Control>
+		</Form.Field>
 
-			<section class="flex h-full flex-col gap-2">
-				<p class="grow text-right text-xs">
-					{#if error}
-						Error
-					{:else if sessCtx.registry}
-						Registry loaded: {Object.keys(sessCtx.registry).length} agent types found.
-					{/if}
-				</p>
-				<section class="flex gap-2">
-					<ClipboardImportDialog onImport={importFromJson} asJson={JSON.stringify(asJson, null, 2)}>
-						{#snippet child({ props })}
-							<Button {...props} variant="outline" class="w-fit">Edit raw</Button>
-						{/snippet}
-					</ClipboardImportDialog>
+		<ClipboardImportDialog onImport={importFromJson} asJson={JSON.stringify(asJson, null, 2)}>
+			{#snippet child({ props })}
+				<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
+			{/snippet}
+		</ClipboardImportDialog>
 
-					<Form.Button>Create</Form.Button>
-				</section>
-			</section>
-		</section>
+		<Form.Button>Create</Form.Button>
 	</div>
-	<Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1 overflow-hidden">
+	<Resizable.PaneGroup
+		direction={isMobile ? 'vertical' : 'horizontal'}
+		class="min-h-0 flex-1 overflow-hidden"
+	>
 		<Resizable.Pane
 			defaultSize={25}
 			minSize={21}
@@ -363,7 +360,7 @@
 				<Button
 					class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
 						? ''
-						: 'border-accent/50'}"
+						: 'border-accent/50'} w-fit truncate "
 					onclick={() => {
 						$formData.agents.push({
 							id: {
@@ -395,12 +392,12 @@
 						accordian = 'agent-editor';
 					}}
 				>
-					Add agent
+					<span>Add <span class="hidden lg:inline">agent</span></span>
 				</Button>
 				<TwostepButton
 					disabled={selectedAgent === null}
 					variant="destructive"
-					class="grow"
+					class="grow truncate"
 					onclick={() => {
 						if (selectedAgent === null) return;
 						const idx = selectedAgent;
@@ -408,26 +405,33 @@
 						$formData.agents = $formData.agents;
 						selectedAgent = Math.min(idx, $formData.agents.length - 1);
 						selectedAgent = null;
-					}}>Remove agent</TwostepButton
+					}}>Remove <span class="hidden xl:inline">agent</span></TwostepButton
 				>
 			</section>
 			{#if selectedAgent !== null && $formData.agents.length !== 0}
 				{@const agent = $formData.agents[selectedAgent]!}
-				{@const agentProvider = agent.provider}
-				{@const providerType = agent.providerType as ProviderType}
 
 				<Accordion.Root type="single" value={accordian}>
 					<Accordion.Item value="agent-editor">
 						<Accordion.Trigger>Agent settings</Accordion.Trigger>
 						<Accordion.Content class="b-8 min-h-0 flex-1 overflow-auto">
 							{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
-							<Tabs.Root value="options" class="grow overflow-hidden">
-								<Tabs.List class=" w-full">
-									<Tabs.Trigger value="options"><IconMenu class="size-6" />Options</Tabs.Trigger>
-									<Tabs.Trigger value="prompt"><IconPrompt class="size-6" />Prompt</Tabs.Trigger>
-									<Tabs.Trigger value="tools"
-										><IconWrenchRegular class="size-6" />Tools</Tabs.Trigger
-									>
+							<Tabs.Root value="options" class="w-full grow overflow-hidden">
+								<Tabs.List class="flex w-full">
+									<Tabs.Trigger value="options" class="items-centertruncate flex">
+										<IconMenu class="m-auto size-6 xl:size-0 " />
+										<span class=" m-auto hidden xl:inline">Options</span>
+									</Tabs.Trigger>
+
+									<Tabs.Trigger value="prompt" class="flex items-center truncate">
+										<IconPrompt class="m-auto size-6 xl:size-0 " />
+										<span class=" m-auto hidden xl:inline">Prompt</span>
+									</Tabs.Trigger>
+
+									<Tabs.Trigger value="tools" class="flex items-center truncate">
+										<IconWrenchRegular class="m-auto size-6 xl:size-0 " />
+										<span class=" m-auto hidden xl:inline">Tools</span>
+									</Tabs.Trigger>
 								</Tabs.List>
 
 								<Tabs.Content value="options" class="flex min-h-0 flex-col gap-4 overflow-scroll">
@@ -502,9 +506,7 @@
 															{#if opt.required}
 																<span class="text-destructive">*</span>
 															{/if}
-															<span class="text-muted-foreground ml-auto text-xs">
-																- {opt.type}</span
-															>
+															<span class="text-muted-foreground ml-auto text-xs"> {opt.type}</span>
 														</TooltipLabel>
 														{#if opt.type === 'blob'}
 															<Input
