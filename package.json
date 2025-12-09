@@ -10,7 +10,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"gen": "npx openapi-typescript api_v1.json -o src/generated/api.ts",
-		"build": "yarn gen && vite build && tsc --outDir build/ -m preserve socketio.ts && shx cp server.js build/.",
+		"build": "yarn gen && vite build",
 		"preview": "node build/server.js",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -23,7 +23,7 @@
 		"@eslint/js": "^9.18.0",
 		"@internationalized/date": "^3.8.1",
 		"@lucide/svelte": "^0.523.0",
-		"@sveltejs/adapter-node": "^5.2.12",
+		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.16.0",
 		"@sveltejs/vite-plugin-svelte": "^5.0.0",
 		"@tailwindcss/vite": "^4.0.0",

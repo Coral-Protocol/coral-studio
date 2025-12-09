@@ -51,6 +51,8 @@
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 
+	import { base } from '$app/paths';
+
 	let content = $state('');
 	let user_email = $state('');
 
@@ -242,13 +244,13 @@
 				<!-- <SidebarLink url="/" icon={IconHome} title="Home" /> -->
 
 				<SidebarLink
-					url="/server/registry"
+					url={`${base}/server/registry`}
 					icon={IconPackage}
 					title="Agent Registry"
 					disable={sessCtx.connection === null}
 				/>
 				<SidebarLink
-					url="/server/logs"
+					url={`${base}/server/logs`}
 					icon={IconNotepad}
 					title="Logs"
 					disable={sessCtx.connection === null}
@@ -321,7 +323,7 @@
 							<Button
 								onclick={() => {
 									if (sessCtx.connection) {
-										goto(`/sessions/create`);
+										goto(`${base}/sessions/create`);
 									} else {
 										toast.error(
 											"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
@@ -363,7 +365,7 @@
 						disable={!sessCtx.session}
 					/> -->
 					<SidebarLink
-						url="/tools/user-input"
+						url={`${base}/tools/user-input`}
 						icon={IconChats}
 						title="Input Requests"
 						disable={!sessCtx.session}
@@ -381,7 +383,7 @@
 									? Object.values(conn.threads).map((thread) => ({
 											id: thread.id,
 											title: thread.name,
-											url: `/thread/${thread.id}`,
+											url: `${base}/thread/#${thread.id}`,
 											badge: thread.unread
 										}))
 									: []
@@ -392,7 +394,7 @@
 								items: conn
 									? Object.entries(conn.agents).map(([title, agent]) => ({
 											title,
-											url: `/agent/${title}`,
+											url: `${base}/agent/#${title}`,
 											state: agent.state ?? 'disconnected'
 										}))
 									: []

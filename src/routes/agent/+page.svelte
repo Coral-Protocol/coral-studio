@@ -19,8 +19,8 @@
 	let threads = $derived(conn?.threads ?? {});
 	let agents = $derived(conn?.agents ?? {});
 
-	let agentName = $derived(page.params['agent']!);
-	let agent = $derived(agents[agentName]);
+	let agentName = $derived(page.url.hash.substring(1));
+	let agent = $derived(agentName ? agents[agentName] : undefined);
 
 	let memberThreads = $derived(
 		Object.values(threads).filter((thread) => thread.participants.indexOf(agentName) !== -1)
@@ -41,7 +41,7 @@
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator class="hidden md:block" />
 			<Breadcrumb.Item>
-				<Breadcrumb.Page>{page.params['agent'] ?? ''} {agent?.id ?? ''}</Breadcrumb.Page>
+				<Breadcrumb.Page>{agentName ?? ''} {agent?.id ?? ''}</Breadcrumb.Page>
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
