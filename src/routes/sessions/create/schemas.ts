@@ -199,16 +199,130 @@ const formSchema = z.object({
 			systemPrompt: z.string().optional(),
 			customToolAccess: z.set(z.string()),
 			blocking: z.boolean(),
-			options: z.record(
-				z.string(),
-				z
-					.discriminatedUnion('type', [
+			options: z
+				.record(
+					z.string(),
+					z.discriminatedUnion('type', [
+						z.object({ type: z.literal('number'), value: z.number() }),
+						z.object({ type: z.literal('bool'), value: z.boolean() }),
 						z.object({ type: z.literal('string'), value: z.string() }),
 						z.object({ type: z.literal('secret'), value: z.string() }),
-						z.object({ type: z.literal('number'), value: z.number() })
+
+						z.object({ type: z.literal('blob'), value: z.array(z.number().int().min(0).max(255)) }),
+						z.object({
+							type: z.literal('list[blob]'),
+							value: z.array(z.array(z.number().int().min(0).max(255)))
+						}),
+
+						z.object({
+							type: z.literal('i8'),
+							value: z.number().int().min(-128).max(127)
+						}),
+						z.object({
+							type: z.literal('list[i8]'),
+							value: z.array(z.number().int().min(-128).max(127))
+						}),
+
+						z.object({
+							type: z.literal('i16'),
+							value: z.number().int().min(-32768).max(32767)
+						}),
+						z.object({
+							type: z.literal('list[i16]'),
+							value: z.array(z.number().int().min(-32768).max(32767))
+						}),
+
+						z.object({
+							type: z.literal('i32'),
+							value: z.number().int().min(-2147483648).max(2147483647)
+						}),
+						z.object({
+							type: z.literal('list[i32]'),
+							value: z.array(z.number().int().min(-2147483648).max(2147483647))
+						}),
+
+						z.object({
+							type: z.literal('i64'),
+							value: z.string().refine(async (val) => {
+								try {
+									const n = BigInt(val);
+									return n >= -9223372036854775808n && n <= 9223372036854775808n;
+								} catch {
+									return false;
+								}
+							})
+						}),
+						z.object({
+							type: z.literal('list[i64]'),
+							value: z.array(z.number())
+						}),
+
+						z.object({
+							type: z.literal('u8'),
+							value: z.number().int().min(0).max(255)
+						}),
+						z.object({
+							type: z.literal('list[u8]'),
+							value: z.array(z.number().int().min(0).max(255))
+						}),
+
+						z.object({
+							type: z.literal('u16'),
+							value: z.number().int().min(0).max(65535)
+						}),
+						z.object({
+							type: z.literal('list[u16]'),
+							value: z.array(z.number().int().min(0).max(65535))
+						}),
+
+						z.object({
+							type: z.literal('u32'),
+							value: z.number().int().min(0).max(4294967295)
+						}),
+						z.object({
+							type: z.literal('list[u32]'),
+							value: z.array(z.number().int().min(0).max(4294967295))
+						}),
+
+						z.object({
+							type: z.literal('u64'),
+							value: z
+								.string()
+								.refine(
+									(val) => {
+										try {
+											BigInt(val);
+											return true;
+										} catch {
+											return false;
+										}
+									},
+									{ error: 'Not a number', abort: true }
+								)
+								.refine((val) => BigInt(val) < 18446744073709551615n, {
+									error: 'Number cannot be greater than 18446744073709551615',
+									abort: true
+								})
+								.refine((val) => BigInt(val) > 0, {
+									error: 'Number cannot be less than 0',
+									abort: true
+								})
+						}),
+						z.object({
+							type: z.literal('list[u64]'),
+							value: z.array(z.number().min(0))
+						}),
+
+						z.object({ type: z.literal('f32'), value: z.number() }),
+						z.object({ type: z.literal('list[f32]'), value: z.array(z.number()) }),
+
+						z.object({ type: z.literal('f64'), value: z.number() }),
+						z.object({ type: z.literal('list[f64]'), value: z.array(z.number()) }),
+
+						z.object({ type: z.literal('list[string]'), value: z.array(z.string()) })
 					])
-					.default({ type: 'string', value: '' })
-			)
+				)
+				.default({})
 		})
 	),
 	groups: z.array(z.array(z.string()))
@@ -236,13 +350,13 @@ export const makeFormSchema = (registryAgents: { [agent: string]: PublicRegistry
 			}
 			const options = Object.entries(regAgent.options ?? {});
 			for (const [name, opt] of options) {
-				if ('default' in opt && opt.default !== undefined) continue;
+				if ('required' in opt && opt.required !== true) continue;
 				const val = agent.options[name];
 				if (!val || (val.type === 'string' && val.value.length === 0)) {
 					ctx.addIssue({
 						code: 'custom',
 						path: ['agents', i, 'options', name],
-						message: `Missing required option: ${name}`
+						message: `Missing required option`
 					});
 				}
 			}
