@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import * as Kbd from '$lib/components/ui/kbd/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -14,6 +14,7 @@
 	} from '$lib/components/ui/button';
 	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
+	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
 
 	import IconFileArchive from 'phosphor-icons-svelte/IconFileArchiveRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
@@ -23,14 +24,17 @@
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import IconListMag from 'phosphor-icons-svelte/IconListMagnifyingGlassRegular.svelte';
+	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
 	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
 	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
+	import IconStorefront from 'phosphor-icons-svelte/IconStorefrontRegular.svelte';
 	import { tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as InputGroup from '$lib/components/ui/input-group/index.js';
 
 	import { cn } from '$lib/utils';
 	import { sessionCtx } from '$lib/threads';
@@ -50,6 +54,8 @@
 
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
+	import Shortcuts from './dialogs/shortcuts.svelte';
+	import { PressedKeys } from 'runed';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -169,9 +175,93 @@
 				}))
 			: []
 	);
+
+	let openQuickswitch = $state(false),
+		openShortcuts = $state(false),
+		debugToolsOpen = $state(false);
+
+	const handleKeydown = (event: KeyboardEvent) => {
+		const target = event.target as HTMLElement | null;
+		if (target) {
+			const tag = target.tagName;
+			if (
+				tag === 'INPUT' ||
+				tag === 'TEXTAREA' ||
+				tag === 'SELECT' ||
+				(target.isContentEditable ?? false)
+			) {
+				return;
+			}
+		}
+
+		const mod = event.ctrlKey || event.metaKey; // support Cmd on macOS
+
+		if (mod && event.key.toLowerCase() === 'k') {
+			event.preventDefault();
+			openQuickswitch = !openQuickswitch;
+			return;
+		}
+
+		if (event.shiftKey) {
+			const k = event.key.toLowerCase();
+			if (k === 'd') {
+				debugToolsOpen = !debugToolsOpen;
+				return;
+			}
+			if (k === 'r') {
+				toast.promise(refreshAgents(), {
+					loading: `Refreshing agent configuration...`,
+					success: `Agent configuration refreshed`,
+					error: (err) => `Failed to refresh agent configuration, Error: ${err || err}`
+				});
+				return;
+			}
+			if (k === 'n') {
+				if (sessCtx.connection) {
+					if (window.location.pathname !== '/sessions/create') {
+						goto(`/sessions/create`);
+						toast.info('Navigated to session creation page');
+					}
+				} else {
+					toast.error(
+						"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
+					);
+				}
+				return;
+			}
+			if (k === '/') {
+				openShortcuts = !openShortcuts;
+				return;
+			}
+		}
+	};
 </script>
 
-<Quickswitch {sessCtx} {agents} {threads} />
+<svelte:window on:keydown={handleKeydown} />
+
+<Quickswitch
+	{sessCtx}
+	{agents}
+	{threads}
+	bind:open={openQuickswitch}
+	bind:debugMenu={debugToolsOpen}
+/>
+<Shortcuts bind:open={openShortcuts} />
+<DebugTools bind:open={debugToolsOpen} />
+
+<button
+	class="bg-primary fixed top-3 right-3 z-50 flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
+	onclick={() => (openQuickswitch = true)}
+>
+	<div class="text-muted-foreground flex items-center gap-2">
+		<IconSearch class="" />
+		<span class="text-sm">Search</span>
+	</div>
+	<Kbd.Group>
+		<Kbd.Root>CTRL</Kbd.Root>
+		<Kbd.Root>K</Kbd.Root>
+	</Kbd.Group>
+</button>
 
 <Tour
 	open={tourOpen}
@@ -253,6 +343,7 @@
 					title="Agent Registry"
 					disable={sessCtx.connection === null}
 				/>
+
 				<SidebarLink
 					url="/server/logs"
 					icon={IconNotepad}
@@ -372,7 +463,10 @@
 						url="/tools/user-input"
 						icon={IconChats}
 						title="Input Requests"
-						disable={!sessCtx.session}
+						disable={!sessCtx.session &&
+							Object.values(tools.userInput.requests).filter(
+								(req) => req.userQuestion === undefined
+							).length === 0}
 						badge={Object.values(tools.userInput.requests).filter(
 							(req) => req.userQuestion === undefined
 						).length}

@@ -316,7 +316,7 @@
 	class="flex h-full flex-col overflow-hidden"
 	enctype="multipart/form-data"
 >
-	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
+	<div class="flex w-full items-center gap-4 border-b p-4">
 		<Form.Field {form} name="sessionId">
 			<Form.Control>
 				{#snippet children({ props })}
@@ -341,6 +341,8 @@
 				{/snippet}
 			</Form.Control>
 		</Form.Field>
+
+		<div class="w-full grow"></div>
 
 		<ClipboardImportDialog onImport={importFromJson} asJson={JSON.stringify(asJson, null, 2)}>
 			{#snippet child({ props })}
