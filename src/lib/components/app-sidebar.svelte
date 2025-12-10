@@ -51,8 +51,6 @@
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 
-	import { base } from '$app/paths';
-
 	let content = $state('');
 	let user_email = $state('');
 
@@ -84,7 +82,13 @@
 			sessCtx.registry = null;
 			const agents = (await client.GET('/api/v1/agents')).data!;
 			sessCtx.registry = agents;
-			sessCtx.sessions = (await client.GET('/api/v1/sessions')).data!;
+			sessCtx.sessions = (
+				await client.GET('/api/v1/sessions', {
+					headers: {
+						Authorization: 'Bearer test'
+					}
+				})
+			).data!;
 
 			connecting = false;
 			return agents;
@@ -244,13 +248,13 @@
 				<!-- <SidebarLink url="/" icon={IconHome} title="Home" /> -->
 
 				<SidebarLink
-					url={`${base}/server/registry`}
+					url="/server/registry"
 					icon={IconPackage}
 					title="Agent Registry"
 					disable={sessCtx.connection === null}
 				/>
 				<SidebarLink
-					url={`${base}/server/logs`}
+					url="/server/logs"
 					icon={IconNotepad}
 					title="Logs"
 					disable={sessCtx.connection === null}
@@ -323,7 +327,7 @@
 							<Button
 								onclick={() => {
 									if (sessCtx.connection) {
-										goto(`${base}/sessions/create`);
+										goto(`/sessions/create`);
 									} else {
 										toast.error(
 											"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
@@ -365,7 +369,7 @@
 						disable={!sessCtx.session}
 					/> -->
 					<SidebarLink
-						url={`${base}/tools/user-input`}
+						url="/tools/user-input"
 						icon={IconChats}
 						title="Input Requests"
 						disable={!sessCtx.session}
@@ -383,7 +387,7 @@
 									? Object.values(conn.threads).map((thread) => ({
 											id: thread.id,
 											title: thread.name,
-											url: `${base}/thread/#${thread.id}`,
+											url: `/thread/${thread.id}`,
 											badge: thread.unread
 										}))
 									: []
@@ -394,7 +398,7 @@
 								items: conn
 									? Object.entries(conn.agents).map(([title, agent]) => ({
 											title,
-											url: `${base}/agent/#${title}`,
+											url: `/agent/${title}`,
 											state: agent.state ?? 'disconnected'
 										}))
 									: []

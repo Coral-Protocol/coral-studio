@@ -61,8 +61,6 @@
 		"express": "^5.1.0",
 		"openapi-fetch": "^0.14.0",
 		"runed": "^0.28.0",
-		"socket.io": "^4.8.1",
-		"socket.io-client": "^4.8.1",
 		"zod": "4.1.13"
 	},
 	"packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"

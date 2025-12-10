@@ -122,7 +122,10 @@
 					baseUrl: `${location.protocol}//${sessCtx.connection.host}`
 				});
 				const res = await client.POST('/api/v1/sessions', {
-					body: asJson
+					body: asJson,
+					headers: {
+						Authorization: 'Bearer test'
+					}
 				});
 
 				if (res.error) {
