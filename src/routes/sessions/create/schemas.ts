@@ -208,10 +208,10 @@ const formSchema = z.object({
 						z.object({ type: z.literal('string'), value: z.string() }),
 						z.object({ type: z.literal('secret'), value: z.string() }),
 
-						z.object({ type: z.literal('blob'), value: z.array(z.number().int().min(0).max(255)) }),
+						z.object({ type: z.literal('blob'), value: z.file() }),
 						z.object({
 							type: z.literal('list[blob]'),
-							value: z.array(z.array(z.number().int().min(0).max(255)))
+							value: z.array(z.file())
 						}),
 
 						z.object({
