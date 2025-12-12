@@ -86,7 +86,7 @@
 			connecting = true;
 			error = null;
 			sessCtx.registry = null;
-			const agents = (await client.GET('/api/v1/agents')).data!;
+			// const agents = (await client.GET('/api/v1/agents')).data!;
 			sessCtx.registry = agents;
 			sessCtx.sessions = (
 				await client.GET('/api/v1/sessions', {

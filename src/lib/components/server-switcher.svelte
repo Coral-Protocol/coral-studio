@@ -20,6 +20,7 @@
 	import type { paths } from '../../generated/api';
 	import createClient from 'openapi-fetch';
 	import Badge from './ui/badge/badge.svelte';
+	import { page } from '$app/state';
 
 	let servers = new PersistedState<string[]>('servers', []);
 	let selected = new PersistedState<string | null>('selectedServer', null);
@@ -43,7 +44,8 @@
 	let testState: 'success' | 'fail' | 'outdated' | 'dupe' | null = $state(null);
 	let testing = $state(false);
 
-	let host = $state('127.0.0.1:5555');
+	let host = $state(page.url.hostname + ':5173');
+
 	let hostSanitized = $derived(host.replace(/^https?:\/\//, ''));
 
 	const checkForOld = async () => {
@@ -74,7 +76,8 @@
 			const client = createClient<paths>({
 				baseUrl: `${location.protocol}//${hostSanitized}`
 			});
-			const res = await client.GET('/api/v1/agents');
+			client.GET('');
+			const res = await client.GET('/api/v1/agents', {});
 			await tick();
 			testState = res.response.status === 200 ? 'success' : 'fail';
 			if (testState === 'success') {

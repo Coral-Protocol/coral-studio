@@ -16,6 +16,7 @@
 	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
+	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -1019,44 +1020,80 @@
 				<Accordion.Item value="item-1">
 					<Accordion.Trigger>Groups</Accordion.Trigger>
 					<Accordion.Content>
-						<p class="text-muted-foreground text-sm leading-tight">
-							Define a list of groups, where each agent in a group can all interact.
-						</p>
+						<header class="flex gap-2">
+							<p class="text-muted-foreground leading-tight">
+								Agents require a shared group to communicate with each other.
+							</p>
+
+							{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
+								<Tooltip.Provider>
+									<Tooltip.Root delayDuration={100}>
+										<Tooltip.Trigger
+											><Button
+												size="icon"
+												class="w-fit gap-1 px-3"
+												disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
+												onclick={() => {
+													$formData.groups = [...$formData.groups, []];
+												}}>Create a new group</Button
+											></Tooltip.Trigger
+										>
+										<Tooltip.Content>
+											Empty group already exists, please add agents to it before creating another.
+										</Tooltip.Content>
+									</Tooltip.Root>
+								</Tooltip.Provider>
+							{:else}
+								<Button
+									size="icon"
+									class="w-fit gap-1 px-3"
+									onclick={() => {
+										$formData.groups = [...$formData.groups, []];
+									}}>Create a new group</Button
+								>
+							{/if}
+						</header>
 						<ul class="mt-2 flex flex-col gap-1">
 							{#each $formData.groups as link, i}
-								<Select.Root
-									type="multiple"
-									value={link}
-									onValueChange={(value) => {
-										$formData.groups[i] = value;
-										$formData.groups = $formData.groups;
-									}}
-								>
-									<Select.Trigger>
-										{#if link.length == 0}
-											<span class="text-muted-foreground text-sm italic">Empty Group</span>
-										{:else}
-											{link.join(', ')}
-										{/if}
-									</Select.Trigger>
-									<Select.Content>
-										{#if $formData.agents.length == 0}
-											<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
-										{/if}
-										{#each new Set($formData.agents.map((agent) => agent.name)) as id}
-											<Select.Item value={id}>{id}</Select.Item>
-										{/each}
-									</Select.Content>
-								</Select.Root>
+								<Accordion.Root type="single">
+									<Accordion.Item value="item-1">
+										<Accordion.Trigger>
+											<span
+												>Group {i + 1}
+												<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
+												></span
+											>
+										</Accordion.Trigger>
+										<Accordion.Content>
+											<Select.Root
+												type="multiple"
+												value={link}
+												onValueChange={(value) => {
+													$formData.groups[i] = value;
+													$formData.groups = $formData.groups;
+												}}
+											>
+												<Select.Trigger>
+													<span>Invite agents</span>
+												</Select.Trigger>
+												<Select.Content>
+													{#if $formData.agents.length == 0}
+														<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
+													{/if}
+													{#each new Set($formData.agents.map((agent) => agent.name)) as id}
+														<Select.Item value={id}>{id}</Select.Item>
+													{/each}
+												</Select.Content>
+											</Select.Root>
+											<ol>
+												{#each link as agentName, j}
+													<li>{agentName}</li>
+												{/each}
+											</ol>
+										</Accordion.Content>
+									</Accordion.Item>
+								</Accordion.Root>
 							{/each}
-							<Button
-								size="icon"
-								class="w-fit gap-1 px-3"
-								disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
-								onclick={() => {
-									$formData.groups = [...$formData.groups, []];
-								}}>Create group</Button
-							>
 						</ul>
 					</Accordion.Content>
 				</Accordion.Item>
