@@ -337,12 +337,7 @@
 					title="Agent Registry"
 					disable={sessCtx.connection === null}
 				/>
-				<SidebarLink
-					url="/marketplace"
-					icon={IconStorefront}
-					title="Marketplace"
-					disable={sessCtx.connection === null}
-				/>
+
 				<SidebarLink
 					url="/server/logs"
 					icon={IconNotepad}
