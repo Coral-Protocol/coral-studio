@@ -76,8 +76,7 @@
 			const client = createClient<paths>({
 				baseUrl: `${location.protocol}//${hostSanitized}`
 			});
-			client.GET('');
-			const res = await client.GET('/api/v1/agents', {});
+			const res = await client.GET('/api/v1/registry', {});
 			await tick();
 			testState = res.response.status === 200 ? 'success' : 'fail';
 			if (testState === 'success') {

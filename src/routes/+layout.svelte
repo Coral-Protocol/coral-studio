@@ -8,16 +8,22 @@
 	import { watch } from 'runed';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import { page } from '$app/state';
 
 	let { children } = $props();
 
 	let session: ReturnType<(typeof sessionCtx)['get']> = $state({
+		bearerToken: null,
 		connection: null,
 		session: null,
 		sessions: null,
 		registry: null
 	});
 	sessionCtx.set(session);
+
+	$effect(() => {
+		session.bearerToken = `Bearer ${page.url.searchParams.get('token')}`;
+	});
 
 	let logCtx: ReturnType<(typeof logContext)['get']> = $state({
 		session: null,

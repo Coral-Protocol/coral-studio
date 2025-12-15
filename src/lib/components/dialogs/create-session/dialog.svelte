@@ -96,7 +96,7 @@
 					const res = await client.POST('/api/v1/sessions', {
 						body: asJson,
 						headers: {
-							Authorization: 'Bearer test'
+							Authorization: ctx.bearerToken
 						}
 					});
 

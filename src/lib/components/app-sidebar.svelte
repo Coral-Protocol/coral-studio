@@ -84,13 +84,12 @@
 			connecting = true;
 			error = null;
 			sessCtx.registry = null;
-			const agents = (await client.GET('/api')).data!;
-			// const agents = (await client.GET('/api/v1/agents')).data!;
+			const agents = (await client.GET('/api/v1/registry')).data!; // TODO: handle error on this
 			sessCtx.registry = agents;
 			sessCtx.sessions = (
 				await client.GET('/api/v1/sessions', {
 					headers: {
-						Authorization: 'Bearer test'
+						Authorization: sessCtx.bearerToken
 					}
 				})
 			).data!;

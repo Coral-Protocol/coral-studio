@@ -58,7 +58,7 @@ export class Session {
 		this.socket.onmessage = (ev) => {
 			let data = null;
 			try {
-				data = JSON.parse(ev.data) as components['schemas']['SocketEvent'];
+				data = JSON.parse(ev.data) as components['schemas']['']; // FIXME: oub???
 			} catch (e) {
 				toast.warning(`ws: '${ev.data}'`);
 				return;

@@ -2,9 +2,9 @@ import { Context } from 'runed';
 import type { Session } from './session.svelte';
 import type { components, operations } from '../generated/api';
 
-export type Message = components['schemas']['ResolvedMessage'];
+export type Message = any; // components['schemas']['']; // FIXME: oub??
 
-export type Thread = components['schemas']['ResolvedThread'];
+export type Thread = any; // components['schemas']['ResolvedThread']; // FIXME: oub??
 
 export type AgentOption = {
 	name: string;
@@ -12,10 +12,10 @@ export type AgentOption = {
 	value: string | undefined;
 } & ({ type: 'string'; default: string | null } | { type: 'number'; default: number | null });
 
-export type Agent = components['schemas']['SessionAgent'];
+export type Agent = any; //components['schemas']['SessionAgent']; // FIXME: oub??
 export type PublicRegistryAgent = components['schemas']['PublicRegistryAgent'];
 export type Registry =
-	operations['getAvailableAgents']['responses']['200']['content']['application/json'];
+	operations['getRegistryAgents']['responses']['200']['content']['application/json'];
 
 export const idAsKey = (id: PublicRegistryAgent['id']): string => `${id.name}${id.version}`;
 
@@ -29,6 +29,7 @@ export type ToolTransport = {
 export type CustomTool = components['schemas']['CustomTool'];
 
 export const sessionCtx = new Context<{
+	bearerToken: string | null;
 	session: Session | null;
 	registry: Registry | null;
 	sessions: string[] | null;
