@@ -28,11 +28,3 @@ export type ToolTransport = {
 };
 
 export type CustomTool = components['schemas']['CustomTool'];
-
-export const sessionCtx = new Context<{
-	client: Client<paths, `${string}/${string}`> | null;
-	session: Session | null;
-	registry: Registry | null;
-	sessions: string[] | null;
-	connection: { host: string; appId: string; privacyKey: string } | null;
-}>('sessionCtx');

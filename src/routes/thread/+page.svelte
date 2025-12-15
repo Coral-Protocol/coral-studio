@@ -4,7 +4,6 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Resizable from '$lib/components/ui/resizable';
-	import { sessionCtx } from '$lib/threads';
 	import { useDebounce, useIntersectionObserver } from 'runed';
 	import { onMount } from 'svelte';
 	import Message from './Message.svelte';
@@ -14,8 +13,9 @@
 	import { Users } from '@lucide/svelte';
 	import { pickTextColor, stringToColor } from '$lib/color';
 	import ThreadView from './ThreadView.svelte';
+	import { appContext } from '$lib/context';
 
-	let ctx = sessionCtx.get();
+	let ctx = appContext.get();
 	let conn = $derived(ctx.session);
 	let id = $derived(page.url.hash.substring(1));
 	let thread = $derived(id ? conn?.threads[id] : undefined);

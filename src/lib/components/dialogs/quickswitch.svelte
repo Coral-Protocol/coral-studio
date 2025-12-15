@@ -6,7 +6,8 @@
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	let { sessCtx, agents, threads, open = $bindable(), debugMenu = $bindable() } = $props();
+	// FIXME: prop typing
+	let { ctx, agents, threads, open = $bindable(), debugMenu = $bindable() } = $props();
 
 	let value = $state('');
 </script>
@@ -57,12 +58,11 @@
 			{/each}
 		</Command.Group>
 		<Command.Group heading="Sessions">
-			{#if sessCtx.sessions && sessCtx.sessions.length > 0}
-				{#each sessCtx.sessions as session}
+			{#if ctx.sessions && ctx.sessions.length > 0}
+				{#each ctx.sessions as session}
 					<Command.Item
 						onSelect={() => {
-							if (!sessCtx.connection) return;
-							sessCtx.session = new Session({ ...sessCtx.connection, session });
+							ctx.session = new Session({ session });
 							open = false;
 						}}
 					>
@@ -70,21 +70,6 @@
 					</Command.Item>
 				{/each}
 			{/if}
-		</Command.Group>
-		<Command.Group heading="Servers">
-			<!-- {#if sessCtx.sessions && sessCtx.sessions.length > 0}
-				{#each sessCtx.sessions as session}
-					<Command.Item
-						onSelect={() => {
-							if (!sessCtx.connection) return;
-							sessCtx.session = new Session({ ...sessCtx.connection, session });
-							open = false;
-						}}
-					>
-						<span class="truncate">{session}</span>
-					</Command.Item>
-				{/each}
-			{/if} -->
 		</Command.Group>
 	</Command.List>
 </Command.Dialog>

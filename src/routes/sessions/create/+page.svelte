@@ -26,7 +26,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 
 	import { cn } from '$lib/utils';
-	import { idAsKey, sessionCtx, type PublicRegistryAgent } from '$lib/threads';
+	import { idAsKey, type PublicRegistryAgent } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
 	import { tools } from '$lib/mcptools';
 
@@ -50,6 +50,7 @@
 	import { includes } from 'zod';
 	import { id } from 'zod/v4/locales';
 	import type { Provider, ProviderType } from './schemas';
+	import { appContext } from '$lib/context';
 
 	type CreateSessionRequest = operations['createSession'];
 
@@ -90,17 +91,14 @@
 		'list[u16]': 'number'
 	};
 
-	let sessCtx = sessionCtx.get();
+	let ctx = appContext.get();
 
 	let error: string | null = $state(null);
 
-	let registryRaw = $derived(sessCtx.registry ?? []);
+	let registryRaw = $derived(ctx.registry ?? []);
 	let registry = $derived(
 		Object.fromEntries(
-			(sessCtx.registry ?? []).map((a: { id: { name: string; version: string } }) => [
-				idAsKey(a.id),
-				a
-			])
+			(ctx.registry ?? []).map((a: { id: { name: string; version: string } }) => [idAsKey(a.id), a])
 		)
 	);
 
@@ -115,16 +113,13 @@
 		validationMethod: 'onblur',
 
 		async onUpdate({ form: f }) {
-			if (!sessCtx.client) return;
+			if (!ctx.client) return;
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
 				return;
 			}
-			if (!sessCtx.connection) {
-				throw new Error('Invalid connection to server!');
-			}
 			try {
-				const res = await sessCtx.client.POST('/api/v1/sessions/{namespace}', {
+				const res = await ctx.client.POST('/api/v1/sessions/{namespace}', {
 					params: {
 						path: { namespace: $formData.namespace }
 					},
@@ -141,10 +136,9 @@
 					return;
 				}
 				if (res.data) {
-					if (!sessCtx.sessions) sessCtx.sessions = [];
-					sessCtx.sessions.push(res.data.sessionId);
-					sessCtx.session = new Session({
-						...sessCtx.connection,
+					if (!ctx.sessions) ctx.sessions = [];
+					ctx.sessions.push(res.data.sessionId);
+					ctx.session = new Session({
 						session: res.data.sessionId
 					});
 				} else {

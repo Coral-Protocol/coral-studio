@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { socketCtx, UserInput } from '$lib/socket.svelte';
-	import { sessionCtx } from '$lib/threads';
 	import { ModeWatcher } from 'mode-watcher';
 	import '../app.css';
 	import { AgentLogs, logContext } from '$lib/logs.svelte';
@@ -11,27 +10,24 @@
 	import { page } from '$app/state';
 	import createClient from 'openapi-fetch';
 	import type { paths } from '$generated/api';
+	import { appContext, type AppContext } from '$lib/context';
+	import { base } from '$app/paths';
 
 	let { children } = $props();
 
-	let session: ReturnType<(typeof sessionCtx)['get']> = $state({
-		client: null,
+	let token = page.url.searchParams.get('token');
+
+	let session: AppContext = $state({
+		client: createClient<paths>({
+			baseUrl: `/${base}`,
+			headers: { Authorization: token ? `Bearer ${token}` : undefined }
+		}),
 		connection: null,
 		session: null,
 		sessions: null,
 		registry: null
 	});
-	sessionCtx.set(session);
-
-	$effect(() => {
-		const token = page.url.searchParams.get('token');
-		session.client = !!session.connection?.host
-			? createClient<paths>({
-					baseUrl: `${location.protocol}//${session.connection.host}`,
-					headers: { Authorization: token ? `Bearer ${token}` : undefined }
-				})
-			: null;
-	});
+	appContext.set(session);
 
 	let logCtx: ReturnType<(typeof logContext)['get']> = $state({
 		session: null,
@@ -41,30 +37,20 @@
 
 	//if we get problems we just need to logCtx.logs[agent]?.close() before assigning, according to our good developer friend, Alan.
 
-	watch(
-		[
-			() => session.session,
-			() => session.connection,
-			() => Object.keys(session.session?.agents ?? {})
-		],
-		() => {
-			if (!session.session || !session.connection) return;
-			if (logCtx.session !== null && logCtx.session !== session.session.session) {
-				logCtx.logs = {};
-				console.log('invalidating session logs');
-			}
-			logCtx.session = session.session.session;
-			for (const agent of Object.keys(session.session.agents)) {
-				if (!(agent in logCtx.logs)) {
-					logCtx.logs[agent] = new AgentLogs(
-						{ ...session.connection, session: session.session.session },
-						agent
-					);
-					console.log(`opening agent logs for '${agent}'`);
-				}
+	watch([() => session.session, () => Object.keys(session.session?.agents ?? {})], () => {
+		if (!session.session) return;
+		if (logCtx.session !== null && logCtx.session !== session.session.session) {
+			logCtx.logs = {};
+			console.log('invalidating session logs');
+		}
+		logCtx.session = session.session.session;
+		for (const agent of Object.keys(session.session.agents)) {
+			if (!(agent in logCtx.logs)) {
+				logCtx.logs[agent] = new AgentLogs({ session: session.session.session }, agent);
+				console.log(`opening agent logs for '${agent}'`);
 			}
 		}
-	);
+	});
 
 	let socket = $state({
 		userInput: new UserInput()

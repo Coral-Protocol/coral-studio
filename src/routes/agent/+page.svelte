@@ -5,14 +5,15 @@
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { idAsKey, sessionCtx } from '$lib/threads';
+	import { idAsKey } from '$lib/threads';
 	import { Button } from '$lib/components/ui/button';
 	import CaretRight from 'phosphor-icons-svelte/IconCaretRightRegular.svelte';
 	import ExternalLink from 'phosphor-icons-svelte/IconArrowsOutRegular.svelte';
 	import { AgentLogs, logContext } from '$lib/logs.svelte';
 	import Logs from '$lib/components/logs.svelte';
+	import { appContext } from '$lib/context';
 
-	let ctx = sessionCtx.get();
+	let ctx = appContext.get();
 	let logCtx = logContext.get();
 	let conn = $derived(ctx.session);
 

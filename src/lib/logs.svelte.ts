@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import { Context } from 'runed';
 
 export type Log = {
@@ -13,20 +14,14 @@ export class AgentLogs {
 
 	constructor(
 		{
-			host,
-			appId,
-			privacyKey,
 			session
 		}: {
-			host: string;
-			appId: string;
-			privacyKey: string;
 			session: string;
 		},
 		agentId: string
 	) {
 		this.socket = new WebSocket(
-			`http://${host}/ws/v1/debug/${appId}/${privacyKey}/${session}/${agentId}/logs`
+			`${base}/ws/v1/debug/` // FIXME: oub???
 		);
 		this.socket.onopen = () => {
 			this.connected = true;

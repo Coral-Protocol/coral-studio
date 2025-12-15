@@ -2,14 +2,12 @@ import type { Agent, Message, Thread } from './threads';
 import { toast } from 'svelte-sonner';
 
 import type { components } from '../generated/api';
+import { base } from '$app/paths';
 
 export class Session {
 	private socket: WebSocket;
 	public connected = $state(false);
 
-	readonly host: string;
-	readonly appId: string;
-	readonly privKey: string;
 	readonly session: string;
 
 	public agentId: string | null = $state(null);
@@ -20,23 +18,10 @@ export class Session {
 	} = $state({});
 	public messages: { [thread: string]: Message[] } = $state({});
 
-	constructor({
-		host,
-		appId,
-		privacyKey,
-		session
-	}: {
-		host: string;
-		appId: string;
-		privacyKey: string;
-		session: string;
-	}) {
-		this.host = host;
-		this.appId = appId;
-		this.privKey = privacyKey;
+	constructor({ session }: { session: string }) {
 		this.session = session;
 		this.socket = new WebSocket(
-			`ws://${host}/ws/v1/debug/${appId}/${privacyKey}/${session}/?timeout=10000`
+			`ws://${base}/ws/v1/debug/FIXME/FIXME/${session}/?timeout=10000` // FIXME: oub??
 		);
 
 		this.socket.onopen = () => {
@@ -58,7 +43,7 @@ export class Session {
 		this.socket.onmessage = (ev) => {
 			let data = null;
 			try {
-				data = JSON.parse(ev.data) as components['schemas']['']; // FIXME: oub???
+				data = JSON.parse(ev.data) as any; //components['schemas']['']; // FIXME: oub???
 			} catch (e) {
 				toast.warning(`ws: '${ev.data}'`);
 				return;
