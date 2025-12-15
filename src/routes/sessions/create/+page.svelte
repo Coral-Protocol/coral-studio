@@ -232,68 +232,6 @@
 	let usedTools = $derived(
 		new Set($formData.agents.flatMap((agent) => Array.from(agent.customToolAccess)))
 	) as Set<keyof typeof tools>;
-	// let asJson: CreateSessionRequest = $derived.by(() => {
-	// 	return {
-	// 		agentGraphRequest: {
-	// 			agents: $formData.agents.map((agent) => {
-	// 				return {
-	// 					id: agent.id,
-	// 					name: agent.name,
-	// 					description: undefined,
-
-	// 					x402Budgets: [],
-	// 					provider: {
-	// 						type: agent.providerType as ProviderType,
-	// 						runtime: agent.provider.runtime,
-	// 						...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
-	// 					} as any,
-	// 					blocking: agent.blocking,
-	// 					options: Object.fromEntries(
-	// 						Object.entries(agent.options ?? {})
-	// 							.filter(([name, opt]: [string, any]) => {
-	// 								// find the registry entry for this agent type/version
-	// 								const reg = registryRaw.find((r: { id: { name: string; version: string; }; }) => idAsKey(r.id) === idAsKey(agent.id));
-	// 								const defaultVal = reg?.options?.[name]?.default;
-	// 								// exclude options that are unset
-	// 								if (!opt || opt.value === undefined) return false;
-	// 								// include when value differs from registry default (deep compare via JSON)
-	// 								try {
-	// 									console.log(opt.value, defaultVal);
-
-	// 									return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
-	// 								} catch {
-	// 									// if stringify fails, conservatively include the option
-	// 									console.log('failed to stringify');
-	// 									return true;
-	// 								}
-	// 							})
-	// 							.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
-	// 					) as any,
-	// 					systemPrompt: agent.systemPrompt,
-	// 					customToolAccess: Array.from(agent.customToolAccess)
-	// 				} satisfies Complete<
-	// 					NonNullable<CreateSessionRequest['requestBody']>['content']['application/json']['agents'][number]
-	// 				>;
-	// 			}),
-	// 			customTools: Object.fromEntries(
-	// 				Array.from(usedTools).map((tool) => {
-	// 					let toolBody = tools[tool];
-	// 					return [
-	// 						tool,
-	// 						{
-	// 							...toolBody,
-	// 							transport: {
-	// 								...toolBody.transport,
-	// 								url: `${window.location.origin}${toolBody.transport.url}`
-	// 							}
-	// 						}
-	// 					];
-	// 				})
-	// 			) as any, // FIXME: !!!
-	// 			groups: $formData.groups
-	// 		}
-	// 	} satisfies CreateSessionRequest;
-	// });
 
 	let asJson: Pick<CreateSessionRequest, 'requestBody'> = $derived.by(() => {
 		const agents = $formData.agents.map((agent) => {
