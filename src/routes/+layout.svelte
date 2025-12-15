@@ -12,7 +12,7 @@
 	import type { paths } from '$generated/api';
 	import { appContext, type AppContext } from '$lib/context';
 	import { base } from '$app/paths';
-	import { CoralServer } from '$lib/coralServer';
+	import { CoralServer } from '$lib/CoralServer.svelte';
 
 	let { children } = $props();
 
