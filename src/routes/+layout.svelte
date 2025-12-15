@@ -9,11 +9,13 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import { page } from '$app/state';
+	import createClient from 'openapi-fetch';
+	import type { paths } from '$generated/api';
 
 	let { children } = $props();
 
 	let session: ReturnType<(typeof sessionCtx)['get']> = $state({
-		bearerToken: null,
+		client: null,
 		connection: null,
 		session: null,
 		sessions: null,
@@ -22,7 +24,13 @@
 	sessionCtx.set(session);
 
 	$effect(() => {
-		session.bearerToken = `Bearer ${page.url.searchParams.get('token')}`;
+		const token = page.url.searchParams.get('token');
+		session.client = !!session.connection?.host
+			? createClient<paths>({
+					baseUrl: `${location.protocol}//${session.connection.host}`,
+					headers: { Authorization: token ? `Bearer ${token}` : undefined }
+				})
+			: null;
 	});
 
 	let logCtx: ReturnType<(typeof logContext)['get']> = $state({

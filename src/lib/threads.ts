@@ -1,6 +1,7 @@
 import { Context } from 'runed';
 import type { Session } from './session.svelte';
-import type { components, operations } from '../generated/api';
+import type { components, operations, paths } from '../generated/api';
+import type { Client } from 'openapi-fetch';
 
 export type Message = any; // components['schemas']['']; // FIXME: oub??
 
@@ -29,7 +30,7 @@ export type ToolTransport = {
 export type CustomTool = components['schemas']['CustomTool'];
 
 export const sessionCtx = new Context<{
-	bearerToken: string | null;
+	client: Client<paths, `${string}/${string}`> | null;
 	session: Session | null;
 	registry: Registry | null;
 	sessions: string[] | null;

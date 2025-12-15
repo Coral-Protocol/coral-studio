@@ -47,7 +47,6 @@
 	import Tour from './tour/tour.svelte';
 	import { onMount } from 'svelte';
 
-	import createClient from 'openapi-fetch';
 	import type { paths, components } from '../../generated/api';
 	import { Session } from '$lib/session.svelte';
 	import { Plus, Send } from '@lucide/svelte';
@@ -70,29 +69,20 @@
 	let tourOpen = $state(false);
 
 	onMount(() => {
-		if (sessCtx.connection === null) tourOpen = true;
+		if (sessCtx.client === null) tourOpen = true;
 	});
 
 	const refreshAgents = async () => {
-		if (!sessCtx.connection) return;
+		if (!sessCtx.client) return;
 
 		try {
-			const client = createClient<paths>({
-				baseUrl: `${location.protocol}//${sessCtx.connection.host}`
-			});
-
 			connecting = true;
 			error = null;
 			sessCtx.registry = null;
-			const agents = (await client.GET('/api/v1/registry')).data!; // TODO: handle error on this
+
+			const agents = (await sessCtx.client.GET('/api/v1/registry')).data!; // TODO: handle error on this
 			sessCtx.registry = agents;
-			sessCtx.sessions = (
-				await client.GET('/api/v1/sessions', {
-					headers: {
-						Authorization: sessCtx.bearerToken
-					}
-				})
-			).data!;
+			sessCtx.sessions = (await sessCtx.client.GET('/api/v1/sessions')).data!;
 
 			connecting = false;
 			return agents;

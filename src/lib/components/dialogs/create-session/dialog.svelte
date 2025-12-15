@@ -47,7 +47,6 @@
 	import * as schemas from './schemas';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import type { HTMLInputTypeAttribute } from 'svelte/elements';
-	import createClient from 'openapi-fetch';
 	import type { paths, components } from '../../../../generated/api';
 	import SidebarMenuAction from '$lib/components/ui/sidebar/sidebar-menu-action.svelte';
 	import FormField from '$lib/components/ui/form/form-field.svelte';
@@ -82,6 +81,7 @@
 			dataType: 'json',
 			validators: zod4(formSchema),
 			async onUpdate({ form: f }) {
+				if (!ctx.client) return;
 				if (!f.valid) {
 					toast.error('Please fix all errors in the form.');
 					return;
@@ -90,14 +90,8 @@
 					throw new Error('Invalid connection to server!');
 				}
 				try {
-					const client = createClient<paths>({
-						baseUrl: `${location.protocol}//${ctx.connection.host}`
-					});
-					const res = await client.POST('/api/v1/sessions', {
-						body: asJson,
-						headers: {
-							Authorization: ctx.bearerToken
-						}
+					const res = await ctx.client.POST('/api/v1/sessions', {
+						body: asJson
 					});
 
 					if (res.error) {

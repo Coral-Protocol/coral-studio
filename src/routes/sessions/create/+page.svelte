@@ -42,7 +42,6 @@
 	import * as schemas from './schemas';
 
 	import type { HTMLInputTypeAttribute } from 'svelte/elements';
-	import createClient from 'openapi-fetch';
 	import type { paths, components, operations } from '$generated/api';
 	import { onMount, tick } from 'svelte';
 
@@ -116,6 +115,7 @@
 		validationMethod: 'onblur',
 
 		async onUpdate({ form: f }) {
+			if (!sessCtx.client) return;
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
 				return;
@@ -124,10 +124,7 @@
 				throw new Error('Invalid connection to server!');
 			}
 			try {
-				const client = createClient<paths>({
-					baseUrl: `${location.protocol}//${sessCtx.connection.host}`
-				});
-				const res = await client.POST('/api/v1/sessions/{namespace}', {
+				const res = await sessCtx.client.POST('/api/v1/sessions/{namespace}', {
 					params: {
 						path: { namespace: $formData.namespace }
 					},
