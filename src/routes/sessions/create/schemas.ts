@@ -189,7 +189,12 @@ const formSchema = z.object({
 		z.object({
 			id: z.object({
 				name: z.string().nonempty(),
-				version: z.string().nonempty()
+				version: z.string().nonempty(),
+				registrySourceId: z.discriminatedUnion('type', [
+					z.object({ type: z.literal('linked'), linkedServerId: z.string().optional() }),
+					z.object({ type: z.literal('local') }),
+					z.object({ type: z.literal('marketplace') })
+				])
 			}),
 			name: z.string().nonempty(),
 			provider: ProviderSchema,
