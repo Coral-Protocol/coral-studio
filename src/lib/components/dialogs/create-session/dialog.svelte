@@ -15,7 +15,6 @@
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 
 	// TODO: change these icons
-	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import { ClipboardCopy, PlusIcon, TrashIcon } from '@lucide/svelte';
 
 	import { cn } from '$lib/utils';

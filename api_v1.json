@@ -16,7 +16,20 @@
 				"summary": "List sessions in namespace",
 				"description": "Returns a list of all sessions in a specific namespace",
 				"operationId": "getSessionsInNamespace",
-				"parameters": [],
+				"parameters": [
+					{
+						"name": "namespace",
+						"in": "path",
+						"description": "The namespace to list sessions from",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					}
+				],
 				"responses": {
 					"200": {
 						"description": "Success",
@@ -46,14 +59,32 @@
 						}
 					}
 				},
-				"deprecated": false
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
 			},
 			"post": {
 				"tags": ["sessions"],
 				"summary": "Create session",
 				"description": "Creates a new session in a given namespace",
 				"operationId": "createSession",
-				"parameters": [],
+				"parameters": [
+					{
+						"name": "namespace",
+						"in": "path",
+						"description": "The namespace this session should be created in.  This namespace will be created if it does not exist.",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					}
+				],
 				"requestBody": {
 					"description": "Graph of agents to be used in the session",
 					"content": {
@@ -100,7 +131,12 @@
 						}
 					}
 				},
-				"deprecated": false
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
 			}
 		},
 		"/api/v1/sessions": {
@@ -128,7 +164,12 @@
 						}
 					}
 				},
-				"deprecated": false
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
 			}
 		},
 		"/api/v1/sessions/{namespace}/{sessionId}": {
@@ -137,7 +178,32 @@
 				"summary": "Close an active session",
 				"description": "Closes an active session, cancelling all running awgents",
 				"operationId": "closeSession",
-				"parameters": [],
+				"parameters": [
+					{
+						"name": "namespace",
+						"in": "path",
+						"description": "The namespace of the session to close",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					},
+					{
+						"name": "sessionId",
+						"in": "path",
+						"description": "The sessionId of the session to close",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					}
+				],
 				"responses": {
 					"200": {
 						"description": "Success",
@@ -155,7 +221,248 @@
 						}
 					}
 				},
-				"deprecated": false
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
+			}
+		},
+		"/api/v1/registry": {
+			"get": {
+				"tags": ["registry"],
+				"summary": "Get registry agents",
+				"description": "Returns a list of all agents available in this servers registry",
+				"operationId": "getRegistryAgents",
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"$ref": "#/components/schemas/AgentRegistrySource"
+									},
+									"title": "ArrayList<AgentRegistrySource>"
+								}
+							}
+						}
+					}
+				},
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
+			}
+		},
+		"/api/v1/registry/local/{agentName}/{agentVersion}": {
+			"get": {
+				"tags": ["registry"],
+				"summary": "Inspect local registry agent",
+				"description": "Returns all details about a specific agent in the local registry",
+				"operationId": "inspectLocalAgent",
+				"parameters": [
+					{
+						"name": "agentName",
+						"in": "path",
+						"description": "The name of the agent",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					},
+					{
+						"name": "agentVersion",
+						"in": "path",
+						"description": "The version of the agent",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RestrictedRegistryAgent"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Agent not found",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RouteException"
+								}
+							}
+						}
+					}
+				},
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
+			}
+		},
+		"/api/v1/registry/marketplace/{agentName}/{agentVersion}": {
+			"get": {
+				"tags": ["registry"],
+				"summary": "Inspect marketplace registry agent",
+				"description": "Returns all details about a specific agent in the marketplace",
+				"operationId": "inspectMarketplaceAgent",
+				"parameters": [
+					{
+						"name": "agentName",
+						"in": "path",
+						"description": "The name of the agent",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					},
+					{
+						"name": "agentVersion",
+						"in": "path",
+						"description": "The version of the agent",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RestrictedRegistryAgent"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Agent not found",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RouteException"
+								}
+							}
+						}
+					}
+				},
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
+			}
+		},
+		"/api/v1/registry/linked/{linkedServerName}/{agentName}/{agentVersion}": {
+			"get": {
+				"tags": ["registry"],
+				"summary": "Inspect linked server registry agent",
+				"description": "Returns all details about a specific agent from a specific linked server",
+				"operationId": "inspectLinkedServerAgent",
+				"parameters": [
+					{
+						"name": "linkedServerName",
+						"in": "path",
+						"description": "The name of the linked server to source the details of this agent from",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					},
+					{
+						"name": "agentName",
+						"in": "path",
+						"description": "The name of the agent",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					},
+					{
+						"name": "agentVersion",
+						"in": "path",
+						"description": "The version of the agent",
+						"required": true,
+						"deprecated": false,
+						"explode": false,
+						"schema": {
+							"type": "string",
+							"title": "String"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RestrictedRegistryAgent"
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Agent or linked server not found",
+						"headers": {},
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/RouteException"
+								}
+							}
+						}
+					}
+				},
+				"deprecated": false,
+				"security": [
+					{
+						"token": []
+					}
+				]
 			}
 		},
 		"/api/v1/agent-rpc/rental-claim": {
@@ -224,7 +531,12 @@
 						}
 					}
 				},
-				"deprecated": false
+				"deprecated": false,
+				"security": [
+					{
+						"agentSecret": []
+					}
+				]
 			}
 		},
 		"/api/v1/agent-rpc/x402": {
@@ -271,7 +583,12 @@
 						}
 					}
 				},
-				"deprecated": false
+				"deprecated": false,
+				"security": [
+					{
+						"agentSecret": []
+					}
+				]
 			}
 		},
 		"/api/v1/agent-rental/reserve": {
@@ -340,8 +657,8 @@
 							}
 						}
 					},
-					"404": {
-						"description": "No wallet configured on this server",
+					"403": {
+						"description": "This server is not configured to allow rental agents",
 						"headers": {},
 						"content": {
 							"application/json": {
@@ -371,72 +688,9 @@
 								"schema": {
 									"type": "array",
 									"items": {
-										"$ref": "#/components/schemas/PublicRegistryAgent"
+										"$ref": "#/components/schemas/PublicRestrictedRegistryAgent"
 									},
-									"title": "ArrayList<PublicRegistryAgent>"
-								}
-							}
-						}
-					}
-				},
-				"deprecated": false
-			}
-		},
-		"/api/v1/agent-rental/catalog/{name}/{version}": {
-			"get": {
-				"tags": ["agent-rental"],
-				"summary": "Get rental agent info",
-				"description": "Returns agent rental details for the specified agent",
-				"operationId": "getRentalAgentDetails",
-				"parameters": [
-					{
-						"name": "name",
-						"in": "path",
-						"description": "The name of the exported agent",
-						"required": true,
-						"deprecated": false,
-						"explode": false,
-						"schema": {
-							"type": "string",
-							"title": "String"
-						}
-					},
-					{
-						"name": "version",
-						"in": "path",
-						"description": "The version of the exported agent",
-						"required": true,
-						"deprecated": false,
-						"explode": false,
-						"schema": {
-							"type": "string",
-							"title": "String"
-						}
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Success",
-						"headers": {},
-						"content": {
-							"application/json": {
-								"schema": {
-									"type": "object",
-									"additionalProperties": {
-										"$ref": "#/components/schemas/PublicAgentExportSettings"
-									},
-									"title": "LinkedHashMap<RuntimeId,PublicAgentExportSettings>"
-								}
-							}
-						}
-					},
-					"404": {
-						"description": "Agent was not found or is not exported",
-						"headers": {},
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/RouteException"
+									"title": "ArrayList<PublicRestrictedRegistryAgent>"
 								}
 							}
 						}
@@ -468,7 +722,7 @@
 				"description": "A request for an agent.  GraphAgentRequest -> GraphAgent",
 				"properties": {
 					"id": {
-						"$ref": "#/components/schemas/AgentRegistryIdentifier",
+						"$ref": "#/components/schemas/RegistryAgentIdentifier",
 						"description": "The ID of this agent in the registry"
 					},
 					"name": {
@@ -1032,6 +1286,26 @@
 						"anyOf": [
 							{
 								"type": "object",
+								"description": "The agent will be provided by a linked server",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["linked"],
+										"title": "String"
+									},
+									"linkedServerName": {
+										"type": "string",
+										"title": "String"
+									},
+									"runtime": {
+										"$ref": "#/components/schemas/RuntimeId"
+									}
+								},
+								"required": ["linkedServerName", "runtime", "type"],
+								"title": "linked"
+							},
+							{
+								"type": "object",
 								"description": "The agent will be provided by this server",
 								"properties": {
 									"type": {
@@ -1461,7 +1735,7 @@
 				],
 				"title": "GraphAgentRequest"
 			},
-			"AgentRegistryIdentifier": {
+			"RegistryAgentIdentifier": {
 				"type": "object",
 				"properties": {
 					"name": {
@@ -1473,10 +1747,59 @@
 						"type": "string",
 						"description": "The exact version of the agent in the registry",
 						"title": "String"
+					},
+					"registrySourceId": {
+						"anyOf": [
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["linked"],
+										"title": "String"
+									},
+									"linkedServerId": {
+										"type": "string",
+										"title": "String"
+									}
+								},
+								"required": ["linkedServerId", "type"],
+								"title": "linked"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["local"],
+										"title": "String"
+									}
+								},
+								"required": ["type"],
+								"title": "local"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["marketplace"],
+										"title": "String"
+									}
+								},
+								"required": ["type"],
+								"title": "marketplace"
+							}
+						],
+						"description": "The identifier for the registry source that contains this agent",
+						"discriminator": {
+							"propertyName": "type"
+						},
+						"title": "AgentRegistrySourceIdentifier"
 					}
 				},
-				"required": ["name", "version"],
-				"title": "AgentRegistryIdentifier"
+				"required": ["name", "registrySourceId", "version"],
+				"title": "RegistryAgentIdentifier"
 			},
 			"RuntimeId": {
 				"type": "string",
@@ -1846,7 +2169,1174 @@
 			"RouteException": {
 				"type": "object",
 				"properties": {
-					"stackTrace": {
+					"message": {
+						"type": "string",
+						"title": "String"
+					}
+				},
+				"required": ["message"],
+				"title": "RouteException"
+			},
+			"AgentRegistrySource": {
+				"type": "object",
+				"properties": {
+					"identifier": {
+						"anyOf": [
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["linked"],
+										"title": "String"
+									},
+									"linkedServerId": {
+										"type": "string",
+										"title": "String"
+									}
+								},
+								"required": ["linkedServerId", "type"],
+								"title": "linked"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["local"],
+										"title": "String"
+									}
+								},
+								"required": ["type"],
+								"title": "local"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["marketplace"],
+										"title": "String"
+									}
+								},
+								"required": ["type"],
+								"title": "marketplace"
+							}
+						],
+						"discriminator": {
+							"propertyName": "type"
+						},
+						"title": "AgentRegistrySourceIdentifier"
+					},
+					"timestamp": {
+						"type": "integer",
+						"format": "int64",
+						"title": "Long"
+					},
+					"agents": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/RegistryAgentCatalog"
+						},
+						"title": "ArrayList<RegistryAgentCatalog>"
+					}
+				},
+				"required": ["agents", "identifier", "timestamp"],
+				"title": "AgentRegistrySource"
+			},
+			"RegistryAgentCatalog": {
+				"type": "object",
+				"description": "A catalog describing an agent and it's available versions",
+				"properties": {
+					"name": {
+						"type": "string",
+						"description": "The agent's registry name",
+						"title": "String"
+					},
+					"versions": {
+						"type": "array",
+						"description": "All versions this agent is available in",
+						"items": {
+							"type": "string",
+							"title": "String"
+						},
+						"title": "ArrayList<String>"
+					}
+				},
+				"required": ["name", "versions"],
+				"title": "RegistryAgentCatalog"
+			},
+			"RegistryAgent": {
+				"type": "object",
+				"properties": {
+					"info": {
+						"$ref": "#/components/schemas/RegistryAgentInfo"
+					},
+					"runtimes": {
+						"$ref": "#/components/schemas/runtime"
+					},
+					"options": {
+						"type": "object",
+						"additionalProperties": {
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["blob"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 127,
+												"minimum": -128,
+												"title": "Byte"
+											},
+											"title": "ByteArray<Byte>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/BlobAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "blob"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[blob]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "array",
+												"items": {
+													"type": "integer",
+													"maximum": 127,
+													"minimum": -128,
+													"title": "Byte"
+												},
+												"title": "ByteArray<Byte>"
+											},
+											"title": "ArrayList<ByteArray<Byte>>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/BlobAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[blob]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["bool"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "boolean",
+											"title": "Boolean"
+										}
+									},
+									"required": ["type"],
+									"title": "bool"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i8"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"maximum": 127,
+											"minimum": -128,
+											"title": "Byte"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/ByteAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "i8"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i8]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 127,
+												"minimum": -128,
+												"title": "Byte"
+											},
+											"title": "ArrayList<Byte>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/ByteAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[i8]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["f64"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "number",
+											"format": "double",
+											"title": "Double"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/DoubleAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "f64"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[f64]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "number",
+												"format": "double",
+												"title": "Double"
+											},
+											"title": "ArrayList<Double>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/DoubleAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[f64]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["f32"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "number",
+											"format": "float",
+											"title": "Float"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/FloatAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "f32"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[f32]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "number",
+												"format": "float",
+												"title": "Float"
+											},
+											"title": "ArrayList<Float>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/FloatAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[f32]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i32"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"format": "int32",
+											"title": "Int"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/IntAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "i32"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i32]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"format": "int32",
+												"title": "Int"
+											},
+											"title": "ArrayList<Int>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/IntAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[i32]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i64"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"format": "int64",
+											"title": "Long"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/LongAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "i64"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i64]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"format": "int64",
+												"title": "Long"
+											},
+											"title": "ArrayList<Long>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/LongAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[i64]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["number"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "number",
+											"format": "double",
+											"title": "Double"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/DoubleAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "number"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["secret"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "string",
+											"title": "String"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/StringAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "secret"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i16"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"maximum": 32767,
+											"minimum": -32768,
+											"title": "Short"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/ShortAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "i16"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i16]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 32767,
+												"minimum": -32768,
+												"title": "Short"
+											},
+											"title": "ArrayList<Short>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/ShortAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[i16]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["string"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "string",
+											"title": "String"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/StringAgentOptionValidation"
+										},
+										"base64": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"secret": {
+											"type": "boolean",
+											"title": "Boolean"
+										}
+									},
+									"required": ["type"],
+									"title": "string"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[string]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"title": "String"
+											},
+											"title": "ArrayList<String>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/StringAgentOptionValidation"
+										},
+										"base64": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"secret": {
+											"type": "boolean",
+											"title": "Boolean"
+										}
+									},
+									"required": ["type"],
+									"title": "list[string]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u8"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"maximum": 255,
+											"minimum": 0,
+											"title": "UByte"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/UByteAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "u8"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u8]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 255,
+												"minimum": 0,
+												"title": "UByte"
+											},
+											"title": "ArrayList<UByte>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/UByteAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[u8]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u32"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"maximum": 4294967295,
+											"minimum": 0,
+											"title": "UInt"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/UIntAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "u32"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u32]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 4294967295,
+												"minimum": 0,
+												"title": "UInt"
+											},
+											"title": "ArrayList<UInt>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/UIntAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[u32]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u64"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "string",
+											"title": "String"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/ULongAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "u64"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u64]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"title": "String"
+											},
+											"title": "ArrayList<String>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/ULongAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[u64]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u16"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "integer",
+											"maximum": 65535,
+											"minimum": 0,
+											"title": "UShort"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/UShortAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "u16"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u16]"],
+											"title": "String"
+										},
+										"required": {
+											"type": "boolean",
+											"title": "Boolean"
+										},
+										"display": {
+											"$ref": "#/components/schemas/AgentOptionDisplay"
+										},
+										"transport": {
+											"$ref": "#/components/schemas/AgentOptionTransport"
+										},
+										"description": {
+											"type": "string",
+											"title": "String"
+										},
+										"default": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 65535,
+												"minimum": 0,
+												"title": "UShort"
+											},
+											"title": "ArrayList<UShort>"
+										},
+										"validation": {
+											"$ref": "#/components/schemas/UShortAgentOptionValidation"
+										}
+									},
+									"required": ["type"],
+									"title": "list[u16]"
+								}
+							],
+							"discriminator": {
+								"propertyName": "type"
+							},
+							"title": "AgentOption"
+						},
+						"title": "LinkedHashMap<String,AgentOption>"
+					},
+					"path": {
+						"$ref": "#/components/schemas/Polymorphic<Path>"
+					},
+					"exportSettings": {
+						"type": "object",
+						"additionalProperties": {
+							"$ref": "#/components/schemas/AgentExportSettings"
+						},
+						"title": "LinkedHashMap<RuntimeId,AgentExportSettings>"
+					}
+				},
+				"required": ["exportSettings", "info", "options", "runtimes"],
+				"title": "RegistryAgent"
+			},
+			"RegistryAgentInfo": {
+				"type": "object",
+				"properties": {
+					"description": {
+						"type": "string",
+						"title": "String"
+					},
+					"capabilities": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/AgentCapability"
+						},
+						"title": "LinkedHashSet<AgentCapability>",
+						"uniqueItems": true
+					},
+					"identifier": {
+						"$ref": "#/components/schemas/RegistryAgentIdentifier"
+					}
+				},
+				"required": ["capabilities", "identifier"],
+				"title": "RegistryAgentInfo"
+			},
+			"AgentCapability": {
+				"type": "string",
+				"enum": ["resources", "tool_refreshing"],
+				"title": "AgentCapability"
+			},
+			"runtime": {
+				"type": "object",
+				"properties": {
+					"executable": {
+						"$ref": "#/components/schemas/executable"
+					},
+					"docker": {
+						"$ref": "#/components/schemas/docker"
+					}
+				},
+				"title": "runtime"
+			},
+			"executable": {
+				"type": "object",
+				"properties": {
+					"command": {
 						"type": "array",
 						"items": {
 							"type": "string",
@@ -1855,8 +3345,1091 @@
 						"title": "ArrayList<String>"
 					}
 				},
-				"required": ["stackTrace"],
-				"title": "RouteException"
+				"required": ["command"],
+				"title": "executable"
+			},
+			"docker": {
+				"type": "object",
+				"properties": {
+					"image": {
+						"type": "string",
+						"title": "String"
+					},
+					"command": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"title": "String"
+						},
+						"title": "ArrayList<String>"
+					}
+				},
+				"required": ["image"],
+				"title": "docker"
+			},
+			"AgentOptionDisplay": {
+				"type": "object",
+				"properties": {
+					"label": {
+						"type": "string",
+						"title": "String"
+					},
+					"description": {
+						"type": "string",
+						"title": "String"
+					},
+					"group": {
+						"type": "string",
+						"title": "String"
+					},
+					"multiline": {
+						"type": "boolean",
+						"title": "Boolean"
+					}
+				},
+				"title": "AgentOptionDisplay"
+			},
+			"AgentOptionTransport": {
+				"type": "string",
+				"enum": ["env", "fs"],
+				"title": "AgentOptionTransport"
+			},
+			"BlobAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"min_size": {
+						"$ref": "#/components/schemas/ValidationFileSize"
+					},
+					"max_size": {
+						"$ref": "#/components/schemas/ValidationFileSize"
+					}
+				},
+				"title": "BlobAgentOptionValidation"
+			},
+			"ValidationFileSize": {
+				"type": "object",
+				"properties": {
+					"size": {
+						"type": "number",
+						"format": "double",
+						"title": "Double"
+					},
+					"unit": {
+						"$ref": "#/components/schemas/ByteUnitSizes"
+					},
+					"byteCount": {
+						"type": "integer",
+						"format": "int64",
+						"title": "Long"
+					}
+				},
+				"required": ["byteCount", "size", "unit"],
+				"title": "ValidationFileSize"
+			},
+			"ByteUnitSizes": {
+				"type": "string",
+				"enum": ["b", "KiB", "MiB", "GiB", "TiB", "kB", "MB", "GB", "TB"],
+				"title": "ByteUnitSizes"
+			},
+			"ByteAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"maximum": 127,
+							"minimum": -128,
+							"title": "Byte"
+						},
+						"title": "ArrayList<Byte>"
+					},
+					"min": {
+						"type": "integer",
+						"maximum": 127,
+						"minimum": -128,
+						"title": "Byte"
+					},
+					"max": {
+						"type": "integer",
+						"maximum": 127,
+						"minimum": -128,
+						"title": "Byte"
+					}
+				},
+				"title": "ByteAgentOptionValidation"
+			},
+			"DoubleAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "number",
+							"format": "double",
+							"title": "Double"
+						},
+						"title": "ArrayList<Double>"
+					},
+					"min": {
+						"type": "number",
+						"format": "double",
+						"title": "Double"
+					},
+					"max": {
+						"type": "number",
+						"format": "double",
+						"title": "Double"
+					}
+				},
+				"title": "DoubleAgentOptionValidation"
+			},
+			"FloatAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "number",
+							"format": "float",
+							"title": "Float"
+						},
+						"title": "ArrayList<Float>"
+					},
+					"min": {
+						"type": "number",
+						"format": "float",
+						"title": "Float"
+					},
+					"max": {
+						"type": "number",
+						"format": "float",
+						"title": "Float"
+					}
+				},
+				"title": "FloatAgentOptionValidation"
+			},
+			"IntAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"format": "int32",
+							"title": "Int"
+						},
+						"title": "ArrayList<Int>"
+					},
+					"min": {
+						"type": "integer",
+						"format": "int32",
+						"title": "Int"
+					},
+					"max": {
+						"type": "integer",
+						"format": "int32",
+						"title": "Int"
+					}
+				},
+				"title": "IntAgentOptionValidation"
+			},
+			"LongAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"format": "int64",
+							"title": "Long"
+						},
+						"title": "ArrayList<Long>"
+					},
+					"min": {
+						"type": "integer",
+						"format": "int64",
+						"title": "Long"
+					},
+					"max": {
+						"type": "integer",
+						"format": "int64",
+						"title": "Long"
+					}
+				},
+				"title": "LongAgentOptionValidation"
+			},
+			"StringAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"title": "String"
+						},
+						"title": "ArrayList<String>"
+					},
+					"min_length": {
+						"type": "integer",
+						"format": "int32",
+						"title": "Int"
+					},
+					"max_length": {
+						"type": "integer",
+						"format": "int32",
+						"title": "Int"
+					},
+					"regex": {
+						"type": "string",
+						"title": "String"
+					}
+				},
+				"title": "StringAgentOptionValidation"
+			},
+			"ShortAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"maximum": 32767,
+							"minimum": -32768,
+							"title": "Short"
+						},
+						"title": "ArrayList<Short>"
+					},
+					"min": {
+						"type": "integer",
+						"maximum": 32767,
+						"minimum": -32768,
+						"title": "Short"
+					},
+					"max": {
+						"type": "integer",
+						"maximum": 32767,
+						"minimum": -32768,
+						"title": "Short"
+					}
+				},
+				"title": "ShortAgentOptionValidation"
+			},
+			"UByteAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"maximum": 255,
+							"minimum": 0,
+							"title": "UByte"
+						},
+						"title": "ArrayList<UByte>"
+					},
+					"min": {
+						"type": "integer",
+						"maximum": 255,
+						"minimum": 0,
+						"title": "UByte"
+					},
+					"max": {
+						"type": "integer",
+						"maximum": 255,
+						"minimum": 0,
+						"title": "UByte"
+					}
+				},
+				"title": "UByteAgentOptionValidation"
+			},
+			"UIntAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"maximum": 4294967295,
+							"minimum": 0,
+							"title": "UInt"
+						},
+						"title": "ArrayList<UInt>"
+					},
+					"min": {
+						"type": "integer",
+						"maximum": 4294967295,
+						"minimum": 0,
+						"title": "UInt"
+					},
+					"max": {
+						"type": "integer",
+						"maximum": 4294967295,
+						"minimum": 0,
+						"title": "UInt"
+					}
+				},
+				"title": "UIntAgentOptionValidation"
+			},
+			"ULongAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"title": "ULong"
+						},
+						"title": "ArrayList<ULong>"
+					},
+					"min": {
+						"type": "integer",
+						"title": "ULong"
+					},
+					"max": {
+						"type": "integer",
+						"title": "ULong"
+					}
+				},
+				"title": "ULongAgentOptionValidation"
+			},
+			"UShortAgentOptionValidation": {
+				"type": "object",
+				"properties": {
+					"variants": {
+						"type": "array",
+						"items": {
+							"type": "integer",
+							"maximum": 65535,
+							"minimum": 0,
+							"title": "UShort"
+						},
+						"title": "ArrayList<UShort>"
+					},
+					"min": {
+						"type": "integer",
+						"maximum": 65535,
+						"minimum": 0,
+						"title": "UShort"
+					},
+					"max": {
+						"type": "integer",
+						"maximum": 65535,
+						"minimum": 0,
+						"title": "UShort"
+					}
+				},
+				"title": "UShortAgentOptionValidation"
+			},
+			"Polymorphic<Path>": {
+				"type": "object",
+				"properties": {},
+				"title": "Polymorphic<Path>"
+			},
+			"AgentExportSettings": {
+				"type": "object",
+				"properties": {
+					"quantity": {
+						"type": "integer",
+						"maximum": 4294967295,
+						"minimum": 0,
+						"title": "UInt"
+					},
+					"pricing": {
+						"$ref": "#/components/schemas/RegistryAgentExportPricing"
+					},
+					"options": {
+						"type": "object",
+						"additionalProperties": {
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["blob"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 127,
+												"minimum": -128,
+												"title": "Byte"
+											},
+											"title": "ByteArray<Byte>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "blob"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[blob]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "array",
+												"items": {
+													"type": "integer",
+													"maximum": 127,
+													"minimum": -128,
+													"title": "Byte"
+												},
+												"title": "ByteArray<Byte>"
+											},
+											"title": "ArrayList<ByteArray<Byte>>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[blob]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["bool"],
+											"title": "String"
+										},
+										"value": {
+											"type": "boolean",
+											"title": "Boolean"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "bool"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i8"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"maximum": 127,
+											"minimum": -128,
+											"title": "Byte"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "i8"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i8]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 127,
+												"minimum": -128,
+												"title": "Byte"
+											},
+											"title": "ArrayList<Byte>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[i8]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["f64"],
+											"title": "String"
+										},
+										"value": {
+											"type": "number",
+											"format": "double",
+											"title": "Double"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "f64"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[f64]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "number",
+												"format": "double",
+												"title": "Double"
+											},
+											"title": "ArrayList<Double>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[f64]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["f32"],
+											"title": "String"
+										},
+										"value": {
+											"type": "number",
+											"format": "float",
+											"title": "Float"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "f32"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[f32]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "number",
+												"format": "float",
+												"title": "Float"
+											},
+											"title": "ArrayList<Float>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[f32]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i32"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"format": "int32",
+											"title": "Int"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "i32"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i32]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"format": "int32",
+												"title": "Int"
+											},
+											"title": "ArrayList<Int>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[i32]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i64"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"format": "int64",
+											"title": "Long"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "i64"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i64]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"format": "int64",
+												"title": "Long"
+											},
+											"title": "ArrayList<Long>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[i64]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["i16"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"maximum": 32767,
+											"minimum": -32768,
+											"title": "Short"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "i16"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[i16]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 32767,
+												"minimum": -32768,
+												"title": "Short"
+											},
+											"title": "ArrayList<Short>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[i16]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["string"],
+											"title": "String"
+										},
+										"value": {
+											"type": "string",
+											"title": "String"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "string"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[string]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"title": "String"
+											},
+											"title": "ArrayList<String>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[string]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u8"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"maximum": 255,
+											"minimum": 0,
+											"title": "UByte"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "u8"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u8]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 255,
+												"minimum": 0,
+												"title": "UByte"
+											},
+											"title": "ArrayList<UByte>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[u8]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u32"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"maximum": 4294967295,
+											"minimum": 0,
+											"title": "UInt"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "u32"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u32]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 4294967295,
+												"minimum": 0,
+												"title": "UInt"
+											},
+											"title": "ArrayList<UInt>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[u32]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u64"],
+											"title": "String"
+										},
+										"value": {
+											"type": "string",
+											"title": "String"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "u64"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u64]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"title": "String"
+											},
+											"title": "ArrayList<String>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[u64]"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["u16"],
+											"title": "String"
+										},
+										"value": {
+											"type": "integer",
+											"maximum": 65535,
+											"minimum": 0,
+											"title": "UShort"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "u16"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["list[u16]"],
+											"title": "String"
+										},
+										"value": {
+											"type": "array",
+											"items": {
+												"type": "integer",
+												"maximum": 65535,
+												"minimum": 0,
+												"title": "UShort"
+											},
+											"title": "ArrayList<UShort>"
+										}
+									},
+									"required": ["type", "value"],
+									"title": "list[u16]"
+								}
+							],
+							"discriminator": {
+								"propertyName": "type"
+							},
+							"title": "AgentOptionValue"
+						},
+						"title": "LinkedHashMap<String,AgentOptionValue>"
+					}
+				},
+				"required": ["options", "pricing", "quantity"],
+				"title": "AgentExportSettings"
+			},
+			"RegistryAgentExportPricing": {
+				"type": "object",
+				"properties": {
+					"min_price": {
+						"anyOf": [
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["coral"],
+										"title": "String"
+									},
+									"amount": {
+										"type": "number",
+										"format": "double",
+										"title": "Double"
+									}
+								},
+								"required": ["amount", "type"],
+								"title": "coral"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["micro_coral"],
+										"title": "String"
+									},
+									"amount": {
+										"type": "integer",
+										"format": "int64",
+										"title": "Long"
+									}
+								},
+								"required": ["amount", "type"],
+								"title": "micro_coral"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["usd"],
+										"title": "String"
+									},
+									"amount": {
+										"type": "number",
+										"format": "double",
+										"title": "Double"
+									}
+								},
+								"required": ["amount", "type"],
+								"title": "usd"
+							}
+						],
+						"discriminator": {
+							"propertyName": "type"
+						},
+						"title": "AgentClaimAmount"
+					},
+					"max_price": {
+						"anyOf": [
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["coral"],
+										"title": "String"
+									},
+									"amount": {
+										"type": "number",
+										"format": "double",
+										"title": "Double"
+									}
+								},
+								"required": ["amount", "type"],
+								"title": "coral"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["micro_coral"],
+										"title": "String"
+									},
+									"amount": {
+										"type": "integer",
+										"format": "int64",
+										"title": "Long"
+									}
+								},
+								"required": ["amount", "type"],
+								"title": "micro_coral"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"type": {
+										"type": "string",
+										"enum": ["usd"],
+										"title": "String"
+									},
+									"amount": {
+										"type": "number",
+										"format": "double",
+										"title": "Double"
+									}
+								},
+								"required": ["amount", "type"],
+								"title": "usd"
+							}
+						],
+						"discriminator": {
+							"propertyName": "type"
+						},
+						"title": "AgentClaimAmount"
+					}
+				},
+				"required": ["max_price", "min_price"],
+				"title": "RegistryAgentExportPricing"
+			},
+			"RestrictedRegistryAgent": {
+				"type": "object",
+				"properties": {
+					"registryAgent": {
+						"$ref": "#/components/schemas/RegistryAgent"
+					},
+					"restrictions": {
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["linked"],
+											"title": "String"
+										},
+										"linkedServerId": {
+											"type": "string",
+											"title": "String"
+										}
+									},
+									"required": ["linkedServerId", "type"],
+									"title": "linked"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["local"],
+											"title": "String"
+										}
+									},
+									"required": ["type"],
+									"title": "local"
+								},
+								{
+									"type": "object",
+									"description": "This agent can only be run on remote servers",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["remote"],
+											"title": "String"
+										}
+									},
+									"required": ["type"],
+									"title": "remote"
+								}
+							],
+							"discriminator": {
+								"propertyName": "type"
+							},
+							"title": "RegistryAgentRestriction"
+						},
+						"title": "LinkedHashSet<RegistryAgentRestriction>",
+						"uniqueItems": true
+					}
+				},
+				"required": ["registryAgent", "restrictions"],
+				"title": "RestrictedRegistryAgent"
 			},
 			"AgentPaymentClaimRequest": {
 				"type": "object",
@@ -2008,11 +4581,76 @@
 				"required": ["clientWalletAddress", "graphAgentRequest", "paidSessionId"],
 				"title": "PaidGraphAgentRequest"
 			},
+			"PublicRestrictedRegistryAgent": {
+				"type": "object",
+				"description": "Represents an agent that can have restrictions on where it can run.",
+				"properties": {
+					"registryAgent": {
+						"$ref": "#/components/schemas/PublicRegistryAgent"
+					},
+					"restrictions": {
+						"type": "array",
+						"items": {
+							"anyOf": [
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["linked"],
+											"title": "String"
+										},
+										"linkedServerId": {
+											"type": "string",
+											"title": "String"
+										}
+									},
+									"required": ["linkedServerId", "type"],
+									"title": "linked"
+								},
+								{
+									"type": "object",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["local"],
+											"title": "String"
+										}
+									},
+									"required": ["type"],
+									"title": "local"
+								},
+								{
+									"type": "object",
+									"description": "This agent can only be run on remote servers",
+									"properties": {
+										"type": {
+											"type": "string",
+											"enum": ["remote"],
+											"title": "String"
+										}
+									},
+									"required": ["type"],
+									"title": "remote"
+								}
+							],
+							"discriminator": {
+								"propertyName": "type"
+							},
+							"title": "RegistryAgentRestriction"
+						},
+						"title": "LinkedHashSet<RegistryAgentRestriction>",
+						"uniqueItems": true
+					}
+				},
+				"required": ["registryAgent", "restrictions"],
+				"title": "PublicRestrictedRegistryAgent"
+			},
 			"PublicRegistryAgent": {
 				"type": "object",
 				"properties": {
 					"id": {
-						"$ref": "#/components/schemas/AgentRegistryIdentifier"
+						"$ref": "#/components/schemas/RegistryAgentIdentifier"
 					},
 					"runtimes": {
 						"type": "array",
@@ -3037,360 +5675,6 @@
 				"required": ["exportSettings", "id", "options", "runtimes"],
 				"title": "PublicRegistryAgent"
 			},
-			"AgentOptionDisplay": {
-				"type": "object",
-				"properties": {
-					"label": {
-						"type": "string",
-						"title": "String"
-					},
-					"description": {
-						"type": "string",
-						"title": "String"
-					},
-					"group": {
-						"type": "string",
-						"title": "String"
-					},
-					"multiline": {
-						"type": "boolean",
-						"title": "Boolean"
-					}
-				},
-				"title": "AgentOptionDisplay"
-			},
-			"AgentOptionTransport": {
-				"type": "string",
-				"enum": ["env", "fs"],
-				"title": "AgentOptionTransport"
-			},
-			"BlobAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"min_size": {
-						"$ref": "#/components/schemas/ValidationFileSize"
-					},
-					"max_size": {
-						"$ref": "#/components/schemas/ValidationFileSize"
-					}
-				},
-				"title": "BlobAgentOptionValidation"
-			},
-			"ValidationFileSize": {
-				"type": "object",
-				"properties": {
-					"size": {
-						"type": "number",
-						"format": "double",
-						"title": "Double"
-					},
-					"unit": {
-						"$ref": "#/components/schemas/ByteUnitSizes"
-					},
-					"byteCount": {
-						"type": "integer",
-						"format": "int64",
-						"title": "Long"
-					}
-				},
-				"required": ["byteCount", "size", "unit"],
-				"title": "ValidationFileSize"
-			},
-			"ByteUnitSizes": {
-				"type": "string",
-				"enum": ["b", "KiB", "MiB", "GiB", "TiB", "kB", "MB", "GB", "TB"],
-				"title": "ByteUnitSizes"
-			},
-			"ByteAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"maximum": 127,
-							"minimum": -128,
-							"title": "Byte"
-						},
-						"title": "ArrayList<Byte>"
-					},
-					"min": {
-						"type": "integer",
-						"maximum": 127,
-						"minimum": -128,
-						"title": "Byte"
-					},
-					"max": {
-						"type": "integer",
-						"maximum": 127,
-						"minimum": -128,
-						"title": "Byte"
-					}
-				},
-				"title": "ByteAgentOptionValidation"
-			},
-			"DoubleAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "number",
-							"format": "double",
-							"title": "Double"
-						},
-						"title": "ArrayList<Double>"
-					},
-					"min": {
-						"type": "number",
-						"format": "double",
-						"title": "Double"
-					},
-					"max": {
-						"type": "number",
-						"format": "double",
-						"title": "Double"
-					}
-				},
-				"title": "DoubleAgentOptionValidation"
-			},
-			"FloatAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "number",
-							"format": "float",
-							"title": "Float"
-						},
-						"title": "ArrayList<Float>"
-					},
-					"min": {
-						"type": "number",
-						"format": "float",
-						"title": "Float"
-					},
-					"max": {
-						"type": "number",
-						"format": "float",
-						"title": "Float"
-					}
-				},
-				"title": "FloatAgentOptionValidation"
-			},
-			"IntAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"format": "int32",
-							"title": "Int"
-						},
-						"title": "ArrayList<Int>"
-					},
-					"min": {
-						"type": "integer",
-						"format": "int32",
-						"title": "Int"
-					},
-					"max": {
-						"type": "integer",
-						"format": "int32",
-						"title": "Int"
-					}
-				},
-				"title": "IntAgentOptionValidation"
-			},
-			"LongAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"format": "int64",
-							"title": "Long"
-						},
-						"title": "ArrayList<Long>"
-					},
-					"min": {
-						"type": "integer",
-						"format": "int64",
-						"title": "Long"
-					},
-					"max": {
-						"type": "integer",
-						"format": "int64",
-						"title": "Long"
-					}
-				},
-				"title": "LongAgentOptionValidation"
-			},
-			"StringAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "string",
-							"title": "String"
-						},
-						"title": "ArrayList<String>"
-					},
-					"min_length": {
-						"type": "integer",
-						"format": "int32",
-						"title": "Int"
-					},
-					"max_length": {
-						"type": "integer",
-						"format": "int32",
-						"title": "Int"
-					},
-					"regex": {
-						"type": "string",
-						"title": "String"
-					}
-				},
-				"title": "StringAgentOptionValidation"
-			},
-			"ShortAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"maximum": 32767,
-							"minimum": -32768,
-							"title": "Short"
-						},
-						"title": "ArrayList<Short>"
-					},
-					"min": {
-						"type": "integer",
-						"maximum": 32767,
-						"minimum": -32768,
-						"title": "Short"
-					},
-					"max": {
-						"type": "integer",
-						"maximum": 32767,
-						"minimum": -32768,
-						"title": "Short"
-					}
-				},
-				"title": "ShortAgentOptionValidation"
-			},
-			"UByteAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"maximum": 255,
-							"minimum": 0,
-							"title": "UByte"
-						},
-						"title": "ArrayList<UByte>"
-					},
-					"min": {
-						"type": "integer",
-						"maximum": 255,
-						"minimum": 0,
-						"title": "UByte"
-					},
-					"max": {
-						"type": "integer",
-						"maximum": 255,
-						"minimum": 0,
-						"title": "UByte"
-					}
-				},
-				"title": "UByteAgentOptionValidation"
-			},
-			"UIntAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"maximum": 4294967295,
-							"minimum": 0,
-							"title": "UInt"
-						},
-						"title": "ArrayList<UInt>"
-					},
-					"min": {
-						"type": "integer",
-						"maximum": 4294967295,
-						"minimum": 0,
-						"title": "UInt"
-					},
-					"max": {
-						"type": "integer",
-						"maximum": 4294967295,
-						"minimum": 0,
-						"title": "UInt"
-					}
-				},
-				"title": "UIntAgentOptionValidation"
-			},
-			"ULongAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"title": "ULong"
-						},
-						"title": "ArrayList<ULong>"
-					},
-					"min": {
-						"type": "integer",
-						"title": "ULong"
-					},
-					"max": {
-						"type": "integer",
-						"title": "ULong"
-					}
-				},
-				"title": "ULongAgentOptionValidation"
-			},
-			"UShortAgentOptionValidation": {
-				"type": "object",
-				"properties": {
-					"variants": {
-						"type": "array",
-						"items": {
-							"type": "integer",
-							"maximum": 65535,
-							"minimum": 0,
-							"title": "UShort"
-						},
-						"title": "ArrayList<UShort>"
-					},
-					"min": {
-						"type": "integer",
-						"maximum": 65535,
-						"minimum": 0,
-						"title": "UShort"
-					},
-					"max": {
-						"type": "integer",
-						"maximum": 65535,
-						"minimum": 0,
-						"title": "UShort"
-					}
-				},
-				"title": "UShortAgentOptionValidation"
-			},
 			"PublicAgentExportSettings": {
 				"type": "object",
 				"properties": {
@@ -3406,134 +5690,21 @@
 				},
 				"required": ["pricing", "quantity"],
 				"title": "PublicAgentExportSettings"
-			},
-			"RegistryAgentExportPricing": {
-				"type": "object",
-				"properties": {
-					"min_price": {
-						"anyOf": [
-							{
-								"type": "object",
-								"properties": {
-									"type": {
-										"type": "string",
-										"enum": ["coral"],
-										"title": "String"
-									},
-									"amount": {
-										"type": "number",
-										"format": "double",
-										"title": "Double"
-									}
-								},
-								"required": ["amount", "type"],
-								"title": "coral"
-							},
-							{
-								"type": "object",
-								"properties": {
-									"type": {
-										"type": "string",
-										"enum": ["micro_coral"],
-										"title": "String"
-									},
-									"amount": {
-										"type": "integer",
-										"format": "int64",
-										"title": "Long"
-									}
-								},
-								"required": ["amount", "type"],
-								"title": "micro_coral"
-							},
-							{
-								"type": "object",
-								"properties": {
-									"type": {
-										"type": "string",
-										"enum": ["usd"],
-										"title": "String"
-									},
-									"amount": {
-										"type": "number",
-										"format": "double",
-										"title": "Double"
-									}
-								},
-								"required": ["amount", "type"],
-								"title": "usd"
-							}
-						],
-						"discriminator": {
-							"propertyName": "type"
-						},
-						"title": "AgentClaimAmount"
-					},
-					"max_price": {
-						"anyOf": [
-							{
-								"type": "object",
-								"properties": {
-									"type": {
-										"type": "string",
-										"enum": ["coral"],
-										"title": "String"
-									},
-									"amount": {
-										"type": "number",
-										"format": "double",
-										"title": "Double"
-									}
-								},
-								"required": ["amount", "type"],
-								"title": "coral"
-							},
-							{
-								"type": "object",
-								"properties": {
-									"type": {
-										"type": "string",
-										"enum": ["micro_coral"],
-										"title": "String"
-									},
-									"amount": {
-										"type": "integer",
-										"format": "int64",
-										"title": "Long"
-									}
-								},
-								"required": ["amount", "type"],
-								"title": "micro_coral"
-							},
-							{
-								"type": "object",
-								"properties": {
-									"type": {
-										"type": "string",
-										"enum": ["usd"],
-										"title": "String"
-									},
-									"amount": {
-										"type": "number",
-										"format": "double",
-										"title": "Double"
-									}
-								},
-								"required": ["amount", "type"],
-								"title": "usd"
-							}
-						],
-						"discriminator": {
-							"propertyName": "type"
-						},
-						"title": "AgentClaimAmount"
-					}
-				},
-				"required": ["max_price", "min_price"],
-				"title": "RegistryAgentExportPricing"
 			}
 		},
-		"examples": {}
+		"examples": {},
+		"securitySchemes": {
+			"token": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "Configured token"
+			},
+			"agentSecret": {
+				"type": "http",
+				"scheme": "bearer",
+				"bearerFormat": "Generated agent secret"
+			}
+		}
 	},
 	"webhooks": {}
 }

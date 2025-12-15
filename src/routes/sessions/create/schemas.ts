@@ -184,9 +184,7 @@ export const AgentRegistryIdentifierSchema = z.object({
 export type AgentRegistryIdentifier = z.infer<typeof AgentRegistryIdentifierSchema>;
 
 const formSchema = z.object({
-	sessionId: z.string().optional(),
-	applicationId: z.string().nonempty().default('default'),
-	privacyKey: z.string().nonempty().default('default'),
+	namespace: z.string().min(1, 'Namespace is required'),
 	agents: z.array(
 		z.object({
 			id: z.object({

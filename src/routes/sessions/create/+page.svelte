@@ -43,7 +43,7 @@
 
 	import type { HTMLInputTypeAttribute } from 'svelte/elements';
 	import createClient from 'openapi-fetch';
-	import type { paths, components } from '$generated/api';
+	import type { paths, components, operations } from '$generated/api';
 	import { onMount, tick } from 'svelte';
 
 	import Graph from './Graph.svelte';
@@ -52,7 +52,7 @@
 	import { id } from 'zod/v4/locales';
 	import type { Provider, ProviderType } from './schemas';
 
-	type CreateSessionRequest = components['schemas']['SessionRequest'];
+	type CreateSessionRequest = operations['createSession'];
 
 	/// {a?: number | undefined} -> {a: number | undefined}
 	type Complete<T> = {
@@ -97,7 +97,12 @@
 
 	let registryRaw = $derived(sessCtx.registry ?? []);
 	let registry = $derived(
-		Object.fromEntries((sessCtx.registry ?? []).map((a) => [idAsKey(a.id), a]))
+		Object.fromEntries(
+			(sessCtx.registry ?? []).map((a: { id: { name: string; version: string } }) => [
+				idAsKey(a.id),
+				a
+			])
+		)
 	);
 
 	let formSchema = $derived(schemas.makeFormSchema(registry));
@@ -122,17 +127,17 @@
 				const client = createClient<paths>({
 					baseUrl: `${location.protocol}//${sessCtx.connection.host}`
 				});
-				const res = await client.POST('/api/v1/sessions', {
-					body: asJson,
-					headers: {
-						Authorization: 'Bearer test'
-					}
+				const res = await client.POST('/api/v1/sessions/{namespace}', {
+					params: {
+						path: { namespace: $formData.namespace }
+					},
+					...asJson
 				});
 
 				if (res.error) {
 					// todo @alan there should probably be an api class where we can generic-ify the handling of this error
 					// with a proper type implementation too..!
-					let error: { message?: string; stackTrace: string[] } = res.error;
+					let error: { message?: string; stackTrace?: string[] } = res.error;
 					console.error(error.stackTrace);
 
 					toast.error(`Failed to create session: ${error.message}`);
@@ -180,33 +185,46 @@
 		const data: CreateSessionRequest = JSON.parse(json);
 		$formData = {
 			groups: data.agentGraphRequest.groups ?? [],
-			applicationId: data.applicationId,
-			privacyKey: data.privacyKey,
-			agents: data.agentGraphRequest.agents.map((agent) => ({
-				id: agent.id,
-				name: agent.name,
-				provider: {
-					runtime: agent.provider.runtime,
-					remote_request:
-						agent.provider.type === 'remote_request'
-							? {
-									maxCost: agent.provider.maxCost,
-									// ensure serverSource is the "servers" variant expected by the form model
-									serverSource:
-										agent.provider.serverSource &&
-										typeof (agent.provider.serverSource as any).type === 'string' &&
-										(agent.provider.serverSource as any).type === 'servers'
-											? (agent.provider.serverSource as any)
-											: { type: 'servers', servers: [] },
-									serverScoring: agent.provider.serverScoring
-								}
-							: defaultProvider.remote_request
-				},
-				providerType: agent.provider.type,
-				blocking: agent.blocking ?? true,
-				options: agent.options as any,
-				customToolAccess: new Set(agent.customToolAccess)
-			}))
+			agents: data.agentGraphRequest.agents.map(
+				(agent: {
+					id: any;
+					name: any;
+					provider: {
+						runtime: any;
+						type: string;
+						maxCost: any;
+						serverSource: any;
+						serverScoring: any;
+					};
+					blocking: any;
+					options: any;
+					customToolAccess: Iterable<unknown> | null | undefined;
+				}) => ({
+					id: agent.id,
+					name: agent.name,
+					provider: {
+						runtime: agent.provider.runtime,
+						remote_request:
+							agent.provider.type === 'remote_request'
+								? {
+										maxCost: agent.provider.maxCost,
+										// ensure serverSource is the "servers" variant expected by the form model
+										serverSource:
+											agent.provider.serverSource &&
+											typeof (agent.provider.serverSource as any).type === 'string' &&
+											(agent.provider.serverSource as any).type === 'servers'
+												? (agent.provider.serverSource as any)
+												: { type: 'servers', servers: [] },
+										serverScoring: agent.provider.serverScoring
+									}
+								: defaultProvider.remote_request
+					},
+					providerType: agent.provider.type,
+					blocking: agent.blocking ?? true,
+					options: agent.options as any,
+					customToolAccess: new Set(agent.customToolAccess)
+				})
+			)
 		};
 		selectedAgent = $formData.agents.length > 0 ? 0 : null;
 	};
@@ -214,70 +232,146 @@
 	let usedTools = $derived(
 		new Set($formData.agents.flatMap((agent) => Array.from(agent.customToolAccess)))
 	) as Set<keyof typeof tools>;
-	let asJson: CreateSessionRequest = $derived.by(() => {
-		return {
-			privacyKey: $formData.privacyKey,
-			applicationId: $formData.applicationId,
-			sessionId: $formData.sessionId,
-			agentGraphRequest: {
-				agents: $formData.agents.map((agent) => {
-					return {
-						id: agent.id,
-						name: agent.name,
-						description: undefined,
-						coralPlugins: [],
-						x402Budgets: [],
-						provider: {
-							type: agent.providerType as ProviderType,
-							runtime: agent.provider.runtime,
-							...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
-						} as any,
-						blocking: agent.blocking,
-						options: Object.fromEntries(
-							Object.entries(agent.options ?? {})
-								.filter(([name, opt]: [string, any]) => {
-									// find the registry entry for this agent type/version
-									const reg = registryRaw.find((r) => idAsKey(r.id) === idAsKey(agent.id));
-									const defaultVal = reg?.options?.[name]?.default;
-									// exclude options that are unset
-									if (!opt || opt.value === undefined) return false;
-									// include when value differs from registry default (deep compare via JSON)
-									try {
-										console.log(opt.value, defaultVal);
+	// let asJson: CreateSessionRequest = $derived.by(() => {
+	// 	return {
+	// 		agentGraphRequest: {
+	// 			agents: $formData.agents.map((agent) => {
+	// 				return {
+	// 					id: agent.id,
+	// 					name: agent.name,
+	// 					description: undefined,
 
-										return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
-									} catch {
-										// if stringify fails, conservatively include the option
-										console.log('failed to stringify');
-										return true;
-									}
-								})
-								.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
-						) as any,
-						systemPrompt: agent.systemPrompt,
-						customToolAccess: Array.from(agent.customToolAccess)
-					} satisfies Complete<
-						NonNullable<CreateSessionRequest['agentGraphRequest']>['agents'][number]
-					>;
-				}),
-				customTools: Object.fromEntries(
-					Array.from(usedTools).map((tool) => {
-						let toolBody = tools[tool];
-						return [
-							tool,
-							{
-								...toolBody,
-								transport: {
-									...toolBody.transport,
-									url: `${window.location.origin}${toolBody.transport.url}`
-								}
+	// 					x402Budgets: [],
+	// 					provider: {
+	// 						type: agent.providerType as ProviderType,
+	// 						runtime: agent.provider.runtime,
+	// 						...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
+	// 					} as any,
+	// 					blocking: agent.blocking,
+	// 					options: Object.fromEntries(
+	// 						Object.entries(agent.options ?? {})
+	// 							.filter(([name, opt]: [string, any]) => {
+	// 								// find the registry entry for this agent type/version
+	// 								const reg = registryRaw.find((r: { id: { name: string; version: string; }; }) => idAsKey(r.id) === idAsKey(agent.id));
+	// 								const defaultVal = reg?.options?.[name]?.default;
+	// 								// exclude options that are unset
+	// 								if (!opt || opt.value === undefined) return false;
+	// 								// include when value differs from registry default (deep compare via JSON)
+	// 								try {
+	// 									console.log(opt.value, defaultVal);
+
+	// 									return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
+	// 								} catch {
+	// 									// if stringify fails, conservatively include the option
+	// 									console.log('failed to stringify');
+	// 									return true;
+	// 								}
+	// 							})
+	// 							.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
+	// 					) as any,
+	// 					systemPrompt: agent.systemPrompt,
+	// 					customToolAccess: Array.from(agent.customToolAccess)
+	// 				} satisfies Complete<
+	// 					NonNullable<CreateSessionRequest['requestBody']>['content']['application/json']['agents'][number]
+	// 				>;
+	// 			}),
+	// 			customTools: Object.fromEntries(
+	// 				Array.from(usedTools).map((tool) => {
+	// 					let toolBody = tools[tool];
+	// 					return [
+	// 						tool,
+	// 						{
+	// 							...toolBody,
+	// 							transport: {
+	// 								...toolBody.transport,
+	// 								url: `${window.location.origin}${toolBody.transport.url}`
+	// 							}
+	// 						}
+	// 					];
+	// 				})
+	// 			) as any, // FIXME: !!!
+	// 			groups: $formData.groups
+	// 		}
+	// 	} satisfies CreateSessionRequest;
+	// });
+
+	let asJson: Pick<CreateSessionRequest, 'requestBody'> = $derived.by(() => {
+		const agents = $formData.agents.map((agent) => {
+			const reg = registryRaw.find(
+				(r: { id: { name: string; version: string } }) => idAsKey(r.id) === idAsKey(agent.id)
+			);
+
+			return {
+				id: agent.id,
+				name: agent.name,
+				description: undefined,
+
+				provider: {
+					type: agent.providerType as ProviderType,
+					runtime: agent.provider.runtime,
+					...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
+				} as any,
+
+				blocking: agent.blocking,
+				systemPrompt: agent.systemPrompt,
+				customToolAccess: Array.from(agent.customToolAccess),
+				plugins: [],
+				x402Budgets: [],
+				options: Object.fromEntries(
+					Object.entries(agent.options ?? {})
+						.filter(([name, opt]: [string, any]) => {
+							// find the registry entry for this agent type/version
+							const reg = registryRaw.find(
+								(r: { id: { name: string; version: string } }) =>
+									idAsKey(r.id) === idAsKey(agent.id)
+							);
+							const defaultVal = reg?.options?.[name]?.default;
+							// exclude options that are unset
+							if (!opt || opt.value === undefined) return false;
+							// include when value differs from registry default (deep compare via JSON)
+							try {
+								console.log(opt.value, defaultVal);
+
+								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
+							} catch {
+								// if stringify fails, conservatively include the option
+								console.log('failed to stringify');
+								return true;
 							}
-						];
-					})
-				) as any, // FIXME: !!!
-				groups: $formData.groups
+						})
+						.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
+				) as any
+			} satisfies components['schemas']['GraphAgentRequest'];
+		});
+
+		const customTools = Object.fromEntries(
+			Array.from(usedTools).map((tool) => {
+				const toolBody = tools[tool];
+
+				return [
+					tool,
+					{
+						...toolBody,
+						transport: {
+							...toolBody.transport,
+							url: `${window.location.origin}${toolBody.transport.url}`
+						}
+					}
+				];
+			})
+		) as any;
+
+		return {
+			requestBody: {
+				content: {
+					'application/json': {
+						agents,
+						groups: $formData.groups,
+						customTools
+					}
+				}
 			}
-		} satisfies CreateSessionRequest;
+		} satisfies Pick<CreateSessionRequest, 'requestBody'>;
 	});
 
 	let selectedAgent: number | null = $state(null);
@@ -318,27 +412,11 @@
 	enctype="multipart/form-data"
 >
 	<div class="flex w-full items-center gap-4 border-b p-4">
-		<Form.Field {form} name="sessionId">
+		<Form.Field {form} name="namespace">
 			<Form.Control>
 				{#snippet children({ props })}
 					<Form.Label>Session name</Form.Label>
-					<Input {...props} bind:value={$formData.sessionId} />
-				{/snippet}
-			</Form.Control>
-		</Form.Field>
-		<Form.Field {form} name="applicationId">
-			<Form.Control>
-				{#snippet children({ props })}
-					<Form.Label>Application ID</Form.Label>
-					<Input {...props} bind:value={$formData.applicationId} />
-				{/snippet}
-			</Form.Control>
-		</Form.Field>
-		<Form.Field {form} name="privacyKey">
-			<Form.Control>
-				{#snippet children({ props })}
-					<Form.Label>Privacy Key</Form.Label>
-					<Input {...props} type="password" bind:value={$formData.privacyKey} />
+					<Input {...props} bind:value={$formData.namespace} />
 				{/snippet}
 			</Form.Control>
 		</Form.Field>
@@ -480,7 +558,7 @@
 															}),
 															() => {}
 														}
-														options={registryRaw.map((a) => ({
+														options={registryRaw.map((a: { id: { name: any; version: any } }) => ({
 															label: `${a.id.name} ${a.id.version}`,
 															key: idAsKey(a.id),
 															value: a.id

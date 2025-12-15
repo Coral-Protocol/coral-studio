@@ -67,8 +67,6 @@
 		if (sessCtx.connection === null) tourOpen = true;
 	});
 
-	let createSessionOpen = $state(false);
-
 	const refreshAgents = async () => {
 		if (!sessCtx.connection) return;
 
@@ -80,7 +78,7 @@
 			connecting = true;
 			error = null;
 			sessCtx.registry = null;
-			// const agents = (await client.GET('/api/v1/agents')).data!;
+			const agents = (await client.GET('/api')).data!;
 			sessCtx.registry = agents;
 			sessCtx.sessions = (
 				await client.GET('/api/v1/sessions', {
