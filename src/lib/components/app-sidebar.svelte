@@ -2,17 +2,8 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Kbd from '$lib/components/ui/kbd/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { toast } from 'svelte-sonner';
-	import {
-		Button,
-		buttonVariants,
-		type ButtonSize,
-		type ButtonVariant
-	} from '$lib/components/ui/button';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import { Button } from '$lib/components/ui/button';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
 
@@ -23,14 +14,10 @@
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import IconListMag from 'phosphor-icons-svelte/IconListMagnifyingGlassRegular.svelte';
 	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
-	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
-	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
-	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
-	import IconStorefront from 'phosphor-icons-svelte/IconStorefrontRegular.svelte';
+
 	import { tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
@@ -44,16 +31,12 @@
 	import NavBundle from './nav-bundle.svelte';
 	import SidebarLink from './sidebar-link.svelte';
 	import Tour from './tour/tour.svelte';
-	import { onMount } from 'svelte';
 
-	import type { paths, components } from '../../generated/api';
 	import { Session } from '$lib/session.svelte';
-	import { Plus, Send } from '@lucide/svelte';
 
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 	import Shortcuts from './dialogs/shortcuts.svelte';
-	import { PressedKeys } from 'runed';
 	import { appContext } from '$lib/context';
 
 	let content = $state('');
@@ -72,17 +55,13 @@
 		try {
 			connecting = true;
 			error = null;
-			ctx.registry = null;
 
-			const agents = (await ctx.server.api.GET('/api/v1/registry')).data!; // TODO: handle error on this
-			ctx.registry = agents;
-			ctx.sessions = (await ctx.server.api.GET('/api/v1/sessions')).data!;
+			await ctx.server.fetchAll();
 
 			connecting = false;
 			return agents;
 		} catch (e) {
 			connecting = false;
-			ctx.registry = null;
 			error = `${e}`;
 			throw e;
 		}
@@ -278,7 +257,8 @@
 						>
 							{#if error}
 								disconnected
-							{:else if ctx.registry}
+							{:else}
+								<!-- FIXME (alan): we still need health check here -->
 								connected
 							{/if}
 						</span>
