@@ -68,21 +68,15 @@
 
 	let tourOpen = $state(false);
 
-	onMount(() => {
-		if (ctx.client === null) tourOpen = true;
-	});
-
 	const refreshAgents = async () => {
-		if (!ctx.client) return;
-
 		try {
 			connecting = true;
 			error = null;
 			ctx.registry = null;
 
-			const agents = (await ctx.client.GET('/api/v1/registry')).data!; // TODO: handle error on this
+			const agents = (await ctx.server.api.GET('/api/v1/registry')).data!; // TODO: handle error on this
 			ctx.registry = agents;
-			ctx.sessions = (await ctx.client.GET('/api/v1/sessions')).data!;
+			ctx.sessions = (await ctx.server.api.GET('/api/v1/sessions')).data!;
 
 			connecting = false;
 			return agents;

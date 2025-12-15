@@ -81,7 +81,6 @@
 			dataType: 'json',
 			validators: zod4(formSchema),
 			async onUpdate({ form: f }) {
-				if (!ctx.client) return;
 				if (!f.valid) {
 					toast.error('Please fix all errors in the form.');
 					return;
@@ -90,7 +89,7 @@
 					throw new Error('Invalid connection to server!');
 				}
 				try {
-					const res = await ctx.client.POST('/api/v1/sessions', {
+					const res = await ctx.server.api.POST('/api/v1/sessions', {
 						body: asJson
 					});
 

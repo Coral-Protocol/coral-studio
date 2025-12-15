@@ -3,11 +3,12 @@ import type { Client } from 'openapi-fetch';
 import { Context } from 'runed';
 import type { Session } from './session.svelte';
 import type { Registry } from './threads';
+import type { CoralServer } from './coralServer';
 
 export type CoralClient = Client<paths, `${string}/${string}`>;
 
 export type AppContext = {
-	client: CoralClient;
+	server: CoralServer;
 	session: Session | null;
 	registry: Registry | null;
 	sessions: string[] | null;

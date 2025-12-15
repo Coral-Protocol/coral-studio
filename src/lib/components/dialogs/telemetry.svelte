@@ -50,9 +50,8 @@
 	// promise unresolved whilst waiting for data and resolved as undefined if there is no data (no telemetry data for the message,
 	// which will happen if it is currently being sent or the agent does not support telemetry (this is the majority of agents currently))
 	let dataPromise = $derived.by(async () => {
-		if (!ctx.client) return new Promise(() => {}); // don't resolve until we have a client to request with
 		return (
-			await ctx.client.GET('/api/v1/telemetry/{sessionId}/{threadId}/{messageId}', {
+			await ctx.server.api.GET('/api/v1/telemetry/{sessionId}/{threadId}/{messageId}', {
 				params: {
 					path: {
 						messageId,

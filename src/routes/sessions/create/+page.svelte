@@ -113,13 +113,12 @@
 		validationMethod: 'onblur',
 
 		async onUpdate({ form: f }) {
-			if (!ctx.client) return;
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
 				return;
 			}
 			try {
-				const res = await ctx.client.POST('/api/v1/sessions/{namespace}', {
+				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
 					params: {
 						path: { namespace: $formData.namespace }
 					},

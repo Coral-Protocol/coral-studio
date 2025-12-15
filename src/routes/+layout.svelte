@@ -12,16 +12,12 @@
 	import type { paths } from '$generated/api';
 	import { appContext, type AppContext } from '$lib/context';
 	import { base } from '$app/paths';
+	import { CoralServer } from '$lib/coralServer';
 
 	let { children } = $props();
 
-	let token = page.url.searchParams.get('token');
-
 	let session: AppContext = $state({
-		client: createClient<paths>({
-			baseUrl: `/${base}`,
-			headers: { Authorization: token ? `Bearer ${token}` : undefined }
-		}),
+		server: new CoralServer(),
 		connection: null,
 		session: null,
 		sessions: null,
