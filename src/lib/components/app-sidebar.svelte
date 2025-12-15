@@ -2,17 +2,8 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Kbd from '$lib/components/ui/kbd/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { toast } from 'svelte-sonner';
-	import {
-		Button,
-		buttonVariants,
-		type ButtonSize,
-		type ButtonVariant
-	} from '$lib/components/ui/button';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import { Button } from '$lib/components/ui/button';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
 
@@ -23,21 +14,16 @@
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import IconListMag from 'phosphor-icons-svelte/IconListMagnifyingGlassRegular.svelte';
 	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
-	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
-	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
-	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
-	import IconStorefront from 'phosphor-icons-svelte/IconStorefrontRegular.svelte';
+
 	import { tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as InputGroup from '$lib/components/ui/input-group/index.js';
 
 	import { cn } from '$lib/utils';
-	import { sessionCtx } from '$lib/threads';
 	import { socketCtx } from '$lib/socket.svelte';
 	import { toggleMode } from 'mode-watcher';
 
@@ -45,60 +31,37 @@
 	import NavBundle from './nav-bundle.svelte';
 	import SidebarLink from './sidebar-link.svelte';
 	import Tour from './tour/tour.svelte';
-	import { onMount } from 'svelte';
 
-	import createClient from 'openapi-fetch';
-	import type { paths, components } from '../../generated/api';
 	import { Session } from '$lib/session.svelte';
-	import { Plus, Send } from '@lucide/svelte';
 
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 	import Shortcuts from './dialogs/shortcuts.svelte';
-	import { PressedKeys } from 'runed';
+	import { appContext } from '$lib/context';
 
 	let content = $state('');
 	let user_email = $state('');
 
-	let sessCtx = sessionCtx.get();
+	let ctx = appContext.get();
 	let tools = socketCtx.get();
-	let conn = $derived(sessCtx.session);
+	let conn = $derived(ctx.session);
 
 	let connecting = $state(false);
 	let error: string | null = $state(null);
 
 	let tourOpen = $state(false);
 
-	onMount(() => {
-		if (sessCtx.connection === null) tourOpen = true;
-	});
-
 	const refreshAgents = async () => {
-		if (!sessCtx.connection) return;
-
 		try {
-			const client = createClient<paths>({
-				baseUrl: `${location.protocol}//${sessCtx.connection.host}`
-			});
-
 			connecting = true;
 			error = null;
-			sessCtx.registry = null;
-			const agents = (await client.GET('/api/v1/registry')).data!; // TODO: handle error on this
-			sessCtx.registry = agents;
-			sessCtx.sessions = (
-				await client.GET('/api/v1/sessions', {
-					headers: {
-						Authorization: sessCtx.bearerToken
-					}
-				})
-			).data!;
+
+			await ctx.server.fetchAll();
 
 			connecting = false;
 			return agents;
 		} catch (e) {
 			connecting = false;
-			sessCtx.registry = null;
 			error = `${e}`;
 			throw e;
 		}
@@ -215,15 +178,9 @@
 				return;
 			}
 			if (k === 'n') {
-				if (sessCtx.connection) {
-					if (window.location.pathname !== '/sessions/create') {
-						goto(`/sessions/create`);
-						toast.info('Navigated to session creation page');
-					}
-				} else {
-					toast.error(
-						"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
-					);
+				if (window.location.pathname !== '/sessions/create') {
+					goto(`/sessions/create`);
+					toast.info('Navigated to session creation page');
 				}
 				return;
 			}
@@ -237,13 +194,7 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<Quickswitch
-	{sessCtx}
-	{agents}
-	{threads}
-	bind:open={openQuickswitch}
-	bind:debugMenu={debugToolsOpen}
-/>
+<Quickswitch {ctx} {agents} {threads} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
 
@@ -283,11 +234,6 @@
 			bind:ref={serverSwitcher}
 			serverAdded={() => refreshAgents()}
 			onSelect={(host) => {
-				sessCtx.connection = {
-					host,
-					appId: sessCtx.connection?.appId ?? 'app',
-					privacyKey: sessCtx.connection?.privacyKey ?? 'priv'
-				};
 				toast.promise(refreshAgents(), {
 					loading: `Connecting to server '${host}'...`,
 					success: `Connected to server '${host}'`,
@@ -300,54 +246,41 @@
 				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
 				>Server</span
 			>
-			{#if sessCtx.connection}
-				<Tooltip.Provider delayDuration={0}>
-					<Tooltip.Root>
-						<Tooltip.Trigger disabled={error === null}>
-							<span
-								class={cn(
-									'text-muted-foreground  font-mono text-xs font-normal',
-									error && 'text-destructive'
-								)}
-							>
-								{#if error}
-									disconnected
-								{:else if sessCtx.registry}
-									connected
-								{/if}
-							</span>
-						</Tooltip.Trigger>
-						<Tooltip.Content><p>{error}</p></Tooltip.Content>
-					</Tooltip.Root>
-				</Tooltip.Provider>
-				<Button
-					size="icon"
-					variant="ghost"
-					class="mx-1 size-7"
-					disabled={connecting}
-					onclick={() => refreshAgents()}
-				>
-					<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
-				</Button>
-			{/if}
+			<Tooltip.Provider delayDuration={0}>
+				<Tooltip.Root>
+					<Tooltip.Trigger disabled={error === null}>
+						<span
+							class={cn(
+								'text-muted-foreground  font-mono text-xs font-normal',
+								error && 'text-destructive'
+							)}
+						>
+							{#if error}
+								disconnected
+							{:else}
+								<!-- FIXME (alan): we still need health check here -->
+								connected
+							{/if}
+						</span>
+					</Tooltip.Trigger>
+					<Tooltip.Content><p>{error}</p></Tooltip.Content>
+				</Tooltip.Root>
+			</Tooltip.Provider>
+			<Button
+				size="icon"
+				variant="ghost"
+				class="mx-1 size-7"
+				disabled={connecting}
+				onclick={() => refreshAgents()}
+			>
+				<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
+			</Button>
 		</Sidebar.GroupLabel>
 		<Sidebar.GroupContent>
 			<Sidebar.Menu>
 				<!-- <SidebarLink url="/" icon={IconHome} title="Home" /> -->
-
-				<SidebarLink
-					url="/server/registry"
-					icon={IconPackage}
-					title="Agent Registry"
-					disable={sessCtx.connection === null}
-				/>
-
-				<SidebarLink
-					url="/server/logs"
-					icon={IconNotepad}
-					title="Logs"
-					disable={sessCtx.connection === null}
-				/>
+				<SidebarLink url="/server/registry" icon={IconPackage} title="Agent Registry" />
+				<SidebarLink url="/server/logs" icon={IconNotepad} title="Logs" />
 			</Sidebar.Menu>
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
@@ -387,12 +320,8 @@
 						<section class="my-2 flex w-full gap-2">
 							<Popover.Trigger
 								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive relative  w-full flex-1 grow justify-between truncate border-1 "
-								aria-invalid={(sessCtx?.sessions?.length !== 0 &&
-									sessCtx.session === null &&
-									sessCtx.connection !== null) ||
-									(sessCtx?.sessions?.length !== 0 &&
-										!sessCtx?.session?.connected &&
-										sessCtx.connection !== null)}
+								aria-invalid={(ctx?.sessions?.length !== 0 && ctx.session === null) ||
+									(ctx?.sessions?.length !== 0 && !ctx?.session?.connected)}
 							>
 								{#snippet child({ props })}
 									<Button
@@ -400,13 +329,12 @@
 										{...props}
 										role="combobox"
 										aria-expanded={sessionSearcherOpen}
-										disabled={(sessCtx.sessions && sessCtx.sessions.length === 0) ||
-											sessCtx.connection === null}
+										disabled={ctx.sessions && ctx.sessions.length === 0}
 										bind:ref={triggerRef}
 									>
 										<span class=" w-4/5 grow truncate overflow-hidden">
-											{sessCtx.session && sessCtx.session.connected
-												? sessCtx.session.session
+											{ctx.session && ctx.session.connected
+												? ctx.session.session
 												: 'Select a Session'}
 										</span>
 										<CaretUpDown />
@@ -415,13 +343,7 @@
 							</Popover.Trigger>
 							<Button
 								onclick={() => {
-									if (sessCtx.connection) {
-										goto(`/sessions/create`);
-									} else {
-										toast.error(
-											"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
-										);
-									}
+									goto(`/sessions/create`);
 								}}
 								bind:ref={sessionSwitcher}>New</Button
 							>
@@ -430,15 +352,14 @@
 									<Command.Input placeholder="Search" />
 									<Command.List>
 										<Command.Empty>No sessions found</Command.Empty>
-										{#if sessCtx.sessions && sessCtx.sessions.length > 0}
+										{#if ctx.sessions && ctx.sessions.length > 0}
 											<Command.Group>
-												{#each sessCtx.sessions as session}
+												{#each ctx.sessions as session}
 													<Command.Item
 														onSelect={() => {
 															value = session;
 															closeAndFocusTrigger();
-															if (!sessCtx.connection) return;
-															sessCtx.session = new Session({ ...sessCtx.connection, session });
+															ctx.session = new Session({ session });
 														}}
 													>
 														{session}
@@ -461,7 +382,7 @@
 						url="/tools/user-input"
 						icon={IconChats}
 						title="Input Requests"
-						disable={!sessCtx.session &&
+						disable={!ctx.session &&
 							Object.values(tools.userInput.requests).filter(
 								(req) => req.userQuestion === undefined
 							).length === 0}

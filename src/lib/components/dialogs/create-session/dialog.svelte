@@ -47,7 +47,6 @@
 	import * as schemas from './schemas';
 	import Card from '$lib/components/ui/card/card.svelte';
 	import type { HTMLInputTypeAttribute } from 'svelte/elements';
-	import createClient from 'openapi-fetch';
 	import type { paths, components } from '../../../../generated/api';
 	import SidebarMenuAction from '$lib/components/ui/sidebar/sidebar-menu-action.svelte';
 	import FormField from '$lib/components/ui/form/form-field.svelte';
@@ -90,14 +89,8 @@
 					throw new Error('Invalid connection to server!');
 				}
 				try {
-					const client = createClient<paths>({
-						baseUrl: `${location.protocol}//${ctx.connection.host}`
-					});
-					const res = await client.POST('/api/v1/sessions', {
-						body: asJson,
-						headers: {
-							Authorization: ctx.bearerToken
-						}
+					const res = await ctx.server.api.POST('/api/v1/sessions', {
+						body: asJson
 					});
 
 					if (res.error) {
