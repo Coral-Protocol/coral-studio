@@ -3714,9 +3714,6 @@
             },
             "title" : "LinkedHashMap<String,AgentOption>"
           },
-          "path" : {
-            "$ref" : "#/components/schemas/Polymorphic<Path>"
-          },
           "exportSettings" : {
             "type" : "object",
             "additionalProperties" : {
@@ -4154,11 +4151,6 @@
           }
         },
         "title" : "UShortAgentOptionValidation"
-      },
-      "Polymorphic<Path>" : {
-        "type" : "object",
-        "properties" : { },
-        "title" : "Polymorphic<Path>"
       },
       "AgentExportSettings" : {
         "type" : "object",
