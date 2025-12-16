@@ -339,25 +339,14 @@
 	class="flex h-full flex-col overflow-hidden"
 	enctype="multipart/form-data"
 >
-	<div class="flex w-full items-center gap-4 border-b p-4">
-		<Form.Field {form} name="namespace">
-			<Form.Control>
-				{#snippet children({ props })}
-					<Form.Label>Session name</Form.Label>
-					<Input {...props} bind:value={$formData.namespace} />
-				{/snippet}
-			</Form.Control>
-		</Form.Field>
-
-		<div class="w-full grow"></div>
-
+	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
 		<ClipboardImportDialog onImport={importFromJson} asJson={JSON.stringify(asJson, null, 2)}>
 			{#snippet child({ props })}
 				<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
 			{/snippet}
 		</ClipboardImportDialog>
 
-		<Form.Button>Create</Form.Button>
+		<Form.Button>Create Session</Form.Button>
 	</div>
 	<Resizable.PaneGroup
 		direction={isMobile ? 'vertical' : 'horizontal'}
