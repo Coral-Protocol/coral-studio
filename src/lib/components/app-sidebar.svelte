@@ -322,9 +322,7 @@
 										bind:ref={triggerRef}
 									>
 										<span class=" w-4/5 grow truncate overflow-hidden">
-											{ctx.session && ctx.session.connected
-												? ctx.session.session
-												: 'Select a Session'}
+											{ctx.session ? ctx.session.session : 'Select a Session'}
 										</span>
 										<CaretUpDown />
 									</Button>
@@ -341,9 +339,9 @@
 									<Command.Input placeholder="Search" />
 									<Command.List>
 										<Command.Empty>No sessions found</Command.Empty>
-										{#if ctx.sessions && ctx.sessions.length > 0}
+										{#if ctx.server.sessions.length > 0}
 											<Command.Group>
-												{#each ctx.sessions as session}
+												{#each ctx.server.sessions as session}
 													<Command.Item
 														onSelect={() => {
 															value = session;
