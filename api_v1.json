@@ -163,10 +163,67 @@
       }
     },
     "/api/v1/sessions/{namespace}/{sessionId}" : {
+      "get" : {
+        "tags" : [ "sessions" ],
+        "summary" : "Get session state",
+        "description" : "Returns the current state of a session, the agents, threads and their messages",
+        "operationId" : "getSessionState",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The namespace of the session",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The sessionId of the session",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SessionState"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "If either namespace or session ID is invalid",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      },
       "delete" : {
         "tags" : [ "sessions" ],
         "summary" : "Close an active session",
-        "description" : "Closes an active session, cancelling all running awgents",
+        "description" : "Closes an active session, cancelling all running agents",
         "operationId" : "closeSession",
         "parameters" : [ {
           "name" : "namespace",
@@ -665,6 +722,443 @@
         "type" : "string",
         "enum" : [ "coral_create_thread", "coral_close_thread", "coral_add_participant", "coral_remove_participant", "coral_send_message", "coral_wait_for_message", "coral_wait_for_mention", "coral_wait_for_agent", "coral_close_session" ],
         "title" : "McpToolName"
+      },
+      "ServerEvent" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "namespace_closed" ],
+              "title" : "String"
+            },
+            "namespace" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "namespace", "type" ],
+          "title" : "namespace_closed"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "namespace_created" ],
+              "title" : "String"
+            },
+            "namespace" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "namespace", "type" ],
+          "title" : "namespace_created"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "session_closed" ],
+              "title" : "String"
+            },
+            "sessionId" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "namespace" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "namespace", "sessionId", "type" ],
+          "title" : "session_closed"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "session_created" ],
+              "title" : "String"
+            },
+            "sessionId" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "namespace" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "namespace", "sessionId", "type" ],
+          "title" : "session_created"
+        } ],
+        "discriminator" : {
+          "propertyName" : "type"
+        },
+        "title" : "ServerEvent"
+      },
+      "SessionEvent" : {
+        "anyOf" : [ {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "agent_connected" ],
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "type" ],
+          "title" : "agent_connected"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "agent_wait_start" ],
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "filters" : {
+              "type" : "array",
+              "items" : {
+                "anyOf" : [ {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "from" ],
+                      "title" : "String"
+                    },
+                    "name" : {
+                      "type" : "string",
+                      "title" : "String"
+                    }
+                  },
+                  "required" : [ "name", "type" ],
+                  "title" : "from"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "mentions" ],
+                      "title" : "String"
+                    },
+                    "name" : {
+                      "type" : "string",
+                      "title" : "String"
+                    }
+                  },
+                  "required" : [ "name", "type" ],
+                  "title" : "mentions"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "thread" ],
+                      "title" : "String"
+                    },
+                    "threadId" : {
+                      "type" : "string",
+                      "title" : "String"
+                    }
+                  },
+                  "required" : [ "threadId", "type" ],
+                  "title" : "thread"
+                } ],
+                "discriminator" : {
+                  "propertyName" : "type"
+                },
+                "title" : "SessionThreadMessageFilter"
+              },
+              "title" : "LinkedHashSet<SessionThreadMessageFilter>",
+              "uniqueItems" : true
+            }
+          },
+          "required" : [ "filters", "name", "type" ],
+          "title" : "agent_wait_start"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "agent_wait_stop" ],
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "message" : {
+              "$ref" : "#/components/schemas/SessionThreadMessage"
+            }
+          },
+          "required" : [ "message", "name", "type" ],
+          "title" : "agent_wait_stop"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "docker_container_created" ],
+              "title" : "String"
+            },
+            "containerId" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "containerId", "type" ],
+          "title" : "docker_container_created"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "docker_container_removed" ],
+              "title" : "String"
+            },
+            "containerId" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "containerId", "type" ],
+          "title" : "docker_container_removed"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "runtime_started" ],
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "type" ],
+          "title" : "runtime_started"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "runtime_stopped" ],
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "type" ],
+          "title" : "runtime_stopped"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "thread_closed" ],
+              "title" : "String"
+            },
+            "threadId" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "summary" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "summary", "threadId", "type" ],
+          "title" : "thread_closed"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "thread_created" ],
+              "title" : "String"
+            },
+            "thread" : {
+              "$ref" : "#/components/schemas/SessionThread"
+            }
+          },
+          "required" : [ "thread", "type" ],
+          "title" : "thread_created"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "thread_message_sent" ],
+              "title" : "String"
+            },
+            "message" : {
+              "$ref" : "#/components/schemas/SessionThreadMessage"
+            }
+          },
+          "required" : [ "message", "type" ],
+          "title" : "thread_message_sent"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "thread_participant_added" ],
+              "title" : "String"
+            },
+            "threadId" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "threadId", "type" ],
+          "title" : "thread_participant_added"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "thread_participant_removed" ],
+              "title" : "String"
+            },
+            "threadId" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "threadId", "type" ],
+          "title" : "thread_participant_removed"
+        } ],
+        "discriminator" : {
+          "propertyName" : "type"
+        },
+        "title" : "SessionEvent"
+      },
+      "SessionThreadMessage" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "threadId" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "text" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "senderName" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "timestamp" : {
+            "type" : "integer",
+            "format" : "int64",
+            "title" : "Long"
+          },
+          "mentionNames" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "id", "mentionNames", "senderName", "text", "threadId", "timestamp" ],
+        "title" : "SessionThreadMessage"
+      },
+      "SessionThread" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "name" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "creatorName" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "participants" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          },
+          "messages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SessionThreadMessage"
+            },
+            "title" : "ArrayList<SessionThreadMessage>"
+          },
+          "state" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "properties" : {
+                "state" : {
+                  "type" : "string",
+                  "enum" : [ "closed" ],
+                  "title" : "String"
+                },
+                "summary" : {
+                  "type" : "string",
+                  "title" : "String"
+                }
+              },
+              "required" : [ "state", "summary" ],
+              "title" : "closed"
+            }, {
+              "type" : "object",
+              "properties" : {
+                "state" : {
+                  "type" : "string",
+                  "enum" : [ "open" ],
+                  "title" : "String"
+                }
+              },
+              "required" : [ "state" ],
+              "title" : "open"
+            } ],
+            "discriminator" : {
+              "propertyName" : "state"
+            },
+            "title" : "SessionThreadState"
+          }
+        },
+        "required" : [ "creatorName", "id", "messages", "name", "participants", "state" ],
+        "title" : "SessionThread"
       },
       "GraphAgentRequest" : {
         "type" : "object",
@@ -2048,6 +2542,88 @@
         },
         "required" : [ "message" ],
         "title" : "RouteException"
+      },
+      "SessionAgentState" : {
+        "type" : "object",
+        "description" : "The state of an agent running in a session",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name given for this agent in the AgentGraph, this is unique in the graph",
+            "title" : "String"
+          },
+          "registryAgentIdentifier" : {
+            "$ref" : "#/components/schemas/RegistryAgentIdentifier",
+            "description" : "The identifier for this agent's registry entry.  See RegistryAgent for more information"
+          },
+          "isWaiting" : {
+            "type" : "boolean",
+            "description" : "True when the agent is waiting for a message from another agent",
+            "title" : "Boolean"
+          },
+          "isConnected" : {
+            "type" : "boolean",
+            "description" : "True after agent process was launched and made a connection to the Coral MCP server.  The agent will not be responsive until connected",
+            "title" : "Boolean"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "The description of this agent, given to other agents in the graph",
+            "title" : "String"
+          },
+          "links" : {
+            "type" : "array",
+            "description" : "A list of agents that this agent is aware of, constructed from agent groups in the AgentGraph",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "isConnected", "isWaiting", "links", "name", "registryAgentIdentifier" ],
+        "title" : "SessionAgentState"
+      },
+      "SessionState" : {
+        "type" : "object",
+        "description" : "The state of a running session",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "The unique identifier for this session",
+            "title" : "String"
+          },
+          "timestamp" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "The timestamp of when this state was generated",
+            "title" : "Long"
+          },
+          "namespace" : {
+            "type" : "string",
+            "description" : "The namespace that this session resides in",
+            "title" : "String"
+          },
+          "agents" : {
+            "type" : "array",
+            "description" : "A list of the states of all agents in this session",
+            "items" : {
+              "$ref" : "#/components/schemas/SessionAgentState"
+            },
+            "title" : "ArrayList<SessionAgentState>"
+          },
+          "threads" : {
+            "type" : "array",
+            "description" : "A list of the states of all threads in this session",
+            "items" : {
+              "$ref" : "#/components/schemas/SessionThread"
+            },
+            "title" : "ArrayList<SessionThread>"
+          }
+        },
+        "required" : [ "agents", "id", "namespace", "threads", "timestamp" ],
+        "title" : "SessionState"
       },
       "AgentRegistrySource" : {
         "type" : "object",
