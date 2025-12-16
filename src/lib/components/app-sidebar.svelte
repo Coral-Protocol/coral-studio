@@ -27,7 +27,7 @@
 	import { socketCtx } from '$lib/socket.svelte';
 	import { toggleMode } from 'mode-watcher';
 
-	import ServerSwitcher from './server-switcher.svelte';
+	import ServerSwitcher from './namespace-switcher.svelte';
 	import NavBundle from './nav-bundle.svelte';
 	import SidebarLink from './sidebar-link.svelte';
 	import Tour from './tour/tour.svelte';
@@ -67,7 +67,7 @@
 		}
 	};
 
-	let serverSwitcher = $state(null) as unknown as HTMLButtonElement;
+	let namespaceSwitcher = $state(null) as unknown as HTMLButtonElement;
 	let sessionSwitcher = $state(null) as unknown as HTMLButtonElement;
 
 	let feedbackVisible = $state(false);
@@ -212,7 +212,7 @@
 	</Kbd.Group>
 </button>
 
-<Tour
+<!-- <Tour
 	open={tourOpen}
 	items={[
 		{
@@ -226,21 +226,11 @@
 			text: 'Then, once connected:\n\nCreate a session here.'
 		}
 	]}
-/>
+/> -->
 
 <Sidebar.Root>
 	<Sidebar.Header>
-		<ServerSwitcher
-			bind:ref={serverSwitcher}
-			serverAdded={() => refreshAgents()}
-			onSelect={(host) => {
-				toast.promise(refreshAgents(), {
-					loading: `Connecting to server '${host}'...`,
-					success: `Connected to server '${host}'`,
-					error: (err) => `Failed to connect to server '${host}', Error: ${err || err}`
-				});
-			}}
-		/>
+		<ServerSwitcher bind:ref={namespaceSwitcher} namespaceAdded={() => refreshAgents()} />
 		<Sidebar.GroupLabel class="pr-0">
 			<span
 				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
