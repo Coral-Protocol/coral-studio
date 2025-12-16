@@ -115,7 +115,7 @@
 			triggerRef.focus();
 		});
 	}
-	// todo: refactor below into one object
+	// TODO: refactor below into one object
 	let agents = $derived(
 		conn
 			? Object.entries(conn.agents).map(([title, agent]) => ({
