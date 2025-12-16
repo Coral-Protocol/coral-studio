@@ -4,7 +4,6 @@ import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
 import createClient, { type Client } from 'openapi-fetch';
 import { toast } from 'svelte-sonner';
-import { SvelteSet } from 'svelte/reactivity';
 
 export type Registry =
 	paths['/api/v1/registry']['get']['responses']['200']['content']['application/json'][number];
@@ -29,6 +28,7 @@ export class CoralServer {
 	/** Wrapper around our openapi-fetch API client **/
 	public api: { GET: APIClient['GET']; POST: APIClient['POST'] } = {
 		GET: async (url, ...init) => {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const res = await this.rawApi.GET(url, ...(init as any));
 			switch (res.response.status) {
 				case 401: {
@@ -62,7 +62,7 @@ export class CoralServer {
 
 	constructor() {
 		$effect(() => {
-			browser && localStorage.setItem('namespace', this.namespace);
+			if (browser) localStorage.setItem('namespace', this.namespace);
 			this.fetchSessions(this.namespace);
 		});
 	}
@@ -102,5 +102,6 @@ export class CoralServer {
 		await Promise.all([this.fetchRegistries(), this.fetchSessions()]);
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	public async lookupAgent(agent: RegistryAgentIdentifier) {}
 }
