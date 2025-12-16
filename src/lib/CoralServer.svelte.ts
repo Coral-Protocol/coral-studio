@@ -2,7 +2,8 @@ import { browser } from '$app/environment';
 import { base } from '$app/paths';
 import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
-import createClient from 'openapi-fetch';
+import createClient, { type Client } from 'openapi-fetch';
+import { toast } from 'svelte-sonner';
 import { SvelteSet } from 'svelte/reactivity';
 
 export type Registry =
@@ -14,14 +15,35 @@ export type RegistryAgentIdentifier = components['schemas']['RegistryAgentIdenti
 export const registryIdOf = (identifier: RegistryIdentifier) =>
 	`${identifier.type}${identifier.type === 'linked' ? `/${identifier.linkedServerId}` : ''}`;
 
+type APIClient = Client<paths, `${string}/${string}`>;
 export class CoralServer {
-	api = $derived.by(() => {
+	/** Unwrapped API Client. DO NOT use this without good reason - if the wrapped `api` is missing a method then add it there. **/
+	public rawApi = $derived.by(() => {
 		const token = page.url.searchParams.get('token');
 		return createClient<paths>({
 			baseUrl: `/${base}`,
 			headers: { Authorization: token ? `Bearer ${token}` : undefined }
 		});
 	});
+
+	/** Wrapper around our openapi-fetch API client **/
+	public api: { GET: APIClient['GET']; POST: APIClient['POST'] } = {
+		GET: async (url, ...init) => {
+			const res = await this.rawApi.GET(url, ...(init as any));
+			switch (res.response.status) {
+				case 401: {
+					toast.error('Invalid auth token!');
+					this.alive = false;
+					throw new Error('Invalid auth token!');
+				}
+				case 200: {
+					this.alive = true;
+				}
+			}
+			return res;
+		},
+		POST: this.rawApi.POST
+	};
 
 	// 0/1 local
 	// 0/1 marketplace
@@ -31,6 +53,7 @@ export class CoralServer {
 	// TODO (alan): store Session classes here (supa svelty)
 	allSessions: { [namespace: string]: string[] } = $state({});
 
+	// TODO (alan): better server state repr
 	public alive = $state(false);
 	public namespace = $state((browser && localStorage.getItem('namespace')) || 'default');
 	public namespaces = $derived(Object.keys(this.allSessions));
@@ -60,6 +83,9 @@ export class CoralServer {
 				params: { path: { namespace } }
 			});
 			if (res.response.status === 404) {
+				// wrapped GET normally handles this, but 404 usually does not mean good things,
+				// so we have to manually mark ourselves alive
+				this.alive = true;
 				this.allSessions[namespace] = [];
 				return;
 			}

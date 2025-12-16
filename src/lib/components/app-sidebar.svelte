@@ -242,13 +242,12 @@
 						<span
 							class={cn(
 								'text-muted-foreground  font-mono text-xs font-normal',
-								error && 'text-destructive'
+								(error || !ctx.server.alive) && 'text-destructive'
 							)}
 						>
-							{#if error}
+							{#if error || !ctx.server.alive}
 								disconnected
 							{:else}
-								<!-- FIXME (alan): we still need health check here -->
 								connected
 							{/if}
 						</span>
