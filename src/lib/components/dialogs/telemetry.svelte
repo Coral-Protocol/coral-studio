@@ -19,7 +19,7 @@
 	import { ScrollArea } from '../ui/scroll-area';
 	import * as Card from '../ui/card';
 	import * as Accordion from '../ui/accordion';
-	import { sessionCtx } from '$lib/threads';
+	import { appContext } from '$lib/context';
 
 	const filter = $state({
 		user: true,
@@ -30,7 +30,7 @@
 		developer: true
 	});
 
-	let ctx = sessionCtx.get();
+	let ctx = appContext.get();
 
 	let showActivityBar = $state(true);
 	let showPanel = $state(false);
