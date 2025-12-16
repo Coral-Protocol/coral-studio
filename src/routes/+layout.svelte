@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Coral Studio</title>
+	<title>Coral Console</title>
 </svelte:head>
 
 <ModeWatcher />
