@@ -8,7 +8,7 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Resizable from '$lib/components/ui/resizable';
-	import { sessionCtx } from '$lib/threads';
+	import { appContext } from '$lib/context';
 	import type { Message as AgentMessage, Thread } from '$lib/threads';
 	import { useDebounce, useIntersectionObserver } from 'runed';
 	import { onMount } from 'svelte';
@@ -22,7 +22,7 @@
 	import { Toggle } from '$lib/components/ui/toggle';
 	import { SvelteSet } from 'svelte/reactivity';
 
-	let ctx = sessionCtx.get();
+	let ctx = appContext.get();
 	let conn = $derived(ctx.session);
 
 	let {
