@@ -147,10 +147,9 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "type" : "string",
-                    "title" : "String"
+                    "$ref" : "#/components/schemas/BasicNamespace"
                   },
-                  "title" : "ArrayList<String>"
+                  "title" : "ArrayList<BasicNamespace>"
                 }
               }
             }
@@ -2542,6 +2541,25 @@
         },
         "required" : [ "message" ],
         "title" : "RouteException"
+      },
+      "BasicNamespace" : {
+        "type" : "object",
+        "properties" : {
+          "namespace" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "sessions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "ArrayList<String>"
+          }
+        },
+        "required" : [ "namespace", "sessions" ],
+        "title" : "BasicNamespace"
       },
       "SessionAgentState" : {
         "type" : "object",
