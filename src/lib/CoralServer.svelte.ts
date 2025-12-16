@@ -1,7 +1,9 @@
+import { browser } from '$app/environment';
 import { base } from '$app/paths';
 import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
 import createClient from 'openapi-fetch';
+import { SvelteSet } from 'svelte/reactivity';
 
 export type Registry =
 	paths['/api/v1/registry']['get']['responses']['200']['content']['application/json'][number];
@@ -21,15 +23,30 @@ export class CoralServer {
 		});
 	});
 
-	public alive = $state(false);
-
-	// there is guaranteed local catalog?
-	// only one local/marketplace catalog?
-
+	// 0/1 local
+	// 0/1 marketplace
+	// 0+ linked
 	catalogs: { [id: string]: Registry } = $state({});
 
 	// TODO (alan): store Session classes here (supa svelty)
-	sessions: { [namespace: string]: string[] } = $state({});
+	allSessions: { [namespace: string]: string[] } = $state({});
+
+	public alive = $state(false);
+	public namespace = $state((browser && localStorage.getItem('namespace')) || 'default');
+	public namespaces = $derived(Object.keys(this.allSessions));
+
+	public sessions = $derived(this.allSessions[this.namespace] ?? []);
+
+	constructor() {
+		$effect(() => {
+			browser && localStorage.setItem('namespace', this.namespace);
+			this.fetchSessions(this.namespace);
+		});
+	}
+
+	public addNamespace(namespace: string) {
+		this.allSessions[namespace] = [];
+	}
 
 	public async fetchRegistries() {
 		const res = await this.api.GET('/api/v1/registry');
@@ -38,14 +55,20 @@ export class CoralServer {
 	}
 
 	public async fetchSessions(namespace?: string) {
-		const res = await (namespace
-			? this.api.GET(`/api/v1/sessions/{namespace}`, { params: { path: { namespace } } })
-			: this.api.GET('/api/v1/sessions'));
-		if (res.error) throw new Error(`Error fetching sessions - ${res.error}`);
 		if (namespace) {
-			this.sessions[namespace] = res.data;
+			const res = await this.api.GET(`/api/v1/sessions/{namespace}`, {
+				params: { path: { namespace } }
+			});
+			if (res.response.status === 404) {
+				this.allSessions[namespace] = [];
+				return;
+			}
+			if (res.error) throw new Error(`Error fetching sessions - ${res.error}`);
+			this.allSessions[namespace] = res.data;
 		} else {
-			//this.sessions = res.data; // FIXME: oub please make list all sessions include the namespace
+			const res = await this.api.GET('/api/v1/sessions');
+			if (res.error) throw new Error(`Error fetching sessions`);
+			this.allSessions = Object.fromEntries(res.data.map((s) => [s.namespace, s.sessions]));
 		}
 	}
 

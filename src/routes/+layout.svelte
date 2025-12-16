@@ -16,14 +16,14 @@
 
 	let { children } = $props();
 
-	let session: AppContext = $state({
+	let ctx: AppContext = $state({
 		server: new CoralServer(),
 		connection: null,
 		session: null,
 		sessions: null,
 		registry: null
 	});
-	appContext.set(session);
+	appContext.set(ctx);
 
 	let logCtx: ReturnType<(typeof logContext)['get']> = $state({
 		session: null,
@@ -33,16 +33,16 @@
 
 	//if we get problems we just need to logCtx.logs[agent]?.close() before assigning, according to our good developer friend, Alan.
 
-	watch([() => session.session, () => Object.keys(session.session?.agents ?? {})], () => {
-		if (!session.session) return;
-		if (logCtx.session !== null && logCtx.session !== session.session.session) {
+	watch([() => ctx.session, () => Object.keys(ctx.session?.agents ?? {})], () => {
+		if (!ctx.session) return;
+		if (logCtx.session !== null && logCtx.session !== ctx.session.session) {
 			logCtx.logs = {};
 			console.log('invalidating session logs');
 		}
-		logCtx.session = session.session.session;
-		for (const agent of Object.keys(session.session.agents)) {
+		logCtx.session = ctx.session.session;
+		for (const agent of Object.keys(ctx.session.agents)) {
 			if (!(agent in logCtx.logs)) {
-				logCtx.logs[agent] = new AgentLogs({ session: session.session.session }, agent);
+				logCtx.logs[agent] = new AgentLogs({ session: ctx.session.session }, agent);
 				console.log(`opening agent logs for '${agent}'`);
 			}
 		}

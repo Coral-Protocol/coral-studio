@@ -230,7 +230,7 @@
 
 <Sidebar.Root>
 	<Sidebar.Header>
-		<ServerSwitcher bind:ref={namespaceSwitcher} namespaceAdded={() => refreshAgents()} />
+		<ServerSwitcher bind:ref={namespaceSwitcher} />
 		<Sidebar.GroupLabel class="pr-0">
 			<span
 				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
@@ -310,8 +310,8 @@
 						<section class="my-2 flex w-full gap-2">
 							<Popover.Trigger
 								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive relative  w-full flex-1 grow justify-between truncate border-1 "
-								aria-invalid={(ctx?.sessions?.length !== 0 && ctx.session === null) ||
-									(ctx?.sessions?.length !== 0 && !ctx?.session?.connected)}
+								aria-invalid={ctx.server.sessions.length !== 0 &&
+									(ctx.session === null || !ctx.session.connected)}
 							>
 								{#snippet child({ props })}
 									<Button
@@ -319,7 +319,7 @@
 										{...props}
 										role="combobox"
 										aria-expanded={sessionSearcherOpen}
-										disabled={ctx.sessions && ctx.sessions.length === 0}
+										disabled={ctx.server.sessions.length === 0}
 										bind:ref={triggerRef}
 									>
 										<span class=" w-4/5 grow truncate overflow-hidden">

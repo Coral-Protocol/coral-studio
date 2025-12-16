@@ -4,86 +4,50 @@
 	import * as Dialog from '$lib/components/ui/dialog/index.js';
 	import { toast } from 'svelte-sonner';
 
-	import IconX from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconDot from 'phosphor-icons-svelte/IconDotRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 
 	import Logo from '$lib/icons/logo.svelte';
-	import { PersistedState, useDebounce, watch } from 'runed';
+	import { watch } from 'runed';
 	import { Input } from '$lib/components/ui/input';
 	import TooltipLabel from './tooltip-label.svelte';
 	import Button from './ui/button/button.svelte';
 	import { fade } from 'svelte/transition';
-	import { onMount, tick, untrack } from 'svelte';
 	import type { WithElementRef } from 'bits-ui';
 
 	import Badge from './ui/badge/badge.svelte';
-	import { page } from '$app/state';
+	import { appContext } from '$lib/context';
+	import { cn } from '$lib/utils';
 
-	let namespaces = new PersistedState<string[]>('namespaces', []);
-	let selected = new PersistedState<string | null>('selectedNamespace', null);
+	let ctx = appContext.get();
+	let namespaces = $derived(ctx.server.namespaces.filter((ns) => ns !== 'default'));
 
-	watch([() => namespaces.current], () => {
-		if (!selected.current) return;
-		if (namespaces.current.indexOf(selected.current) === -1) {
-			selected.current = null;
+	watch([() => ctx.server.namespaces], () => {
+		if (!(ctx.server.namespace in ctx.server.sessions)) {
+			ctx.server.namespace = 'default';
 		}
-		if (selected.current === null && namespaces.current.length > 0) {
-			selected.current = namespaces.current[0] ?? null;
-		}
-	});
-
-	onMount(() => {
-		if (selected.current === null) return;
-		onSelect?.(selected.current);
 	});
 
 	let dialogOpen = $state(false);
-	let duplicate: true | null = $state(null);
 
 	let newNamespace = $state('Untitled Namespace');
+	let duplicate = $derived(newNamespace === 'default' || newNamespace in ctx.server.sessions);
 
-	const checkForDupe = (s: string) => {
-		if (namespaces.current.indexOf(s) !== -1) {
-			duplicate = true;
-			return true;
-		}
-		return false;
-	};
-
-	$effect(() => {
-		value = selected.current;
-	});
-
-	let {
-		value = $bindable(null),
-		ref = $bindable(null),
-		onSelect,
-		namespaceAdded
-	}: WithElementRef<
-		{
-			value?: string | null;
-			onSelect?: (namespace: string) => void;
-			namespaceAdded?: (namespace: string) => void;
-		},
-		HTMLButtonElement
-	> = $props();
-
-	const createNamespace = () => {
-		return async (e: Event) => {
-			e.preventDefault();
-			if (checkForDupe(newNamespace)) {
-				return;
-			}
-			namespaces.current = [...namespaces.current, newNamespace];
-			selected.current = newNamespace;
-			dialogOpen = false;
-			duplicate = null;
-			toast.success('Created new namespace.');
-			namespaceAdded?.(newNamespace);
-		};
-	};
+	let { ref = $bindable(null) }: WithElementRef<{}, HTMLButtonElement> = $props();
 </script>
+
+{#snippet item(ns: string)}
+	<DropdownMenu.Item
+		onSelect={() => {
+			ctx.server.namespace = ns;
+		}}
+	>
+		{ns}
+
+		<Badge variant="outline" class={cn('ml-auto', ctx.server.namespace === ns ? '' : 'hidden')}>
+			Selected
+		</Badge>
+	</DropdownMenu.Item>
+{/snippet}
 
 <Sidebar.Menu>
 	<Sidebar.MenuItem>
@@ -103,37 +67,21 @@
 							<span class="font-sans text-xs font-bold tracking-widest uppercase"
 								>Coral Console</span
 							>
-							<span class="">{selected.current === null ? '' : `${selected.current}`}</span>
+							<span class="">{ctx.server.namespace}</span>
 						</div>
 						<CaretUpDown class="ml-auto" />
 					</Sidebar.MenuButton>
 				{/snippet}
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Content class="w-(--bits-dropdown-menu-anchor-width)" align="start">
-				{#if namespaces.current.length === 0}
-					<DropdownMenu.Label class="text-muted-foreground font-normal"
-						>No namespaces added.</DropdownMenu.Label
-					>
+				{@render item('default')}
+				{#if namespaces.length > 0}
+					<DropdownMenu.Separator />
 				{/if}
-				{#each namespaces.current as namespace (namespace)}
-					<DropdownMenu.Item
-						onSelect={() => {
-							selected.current = namespace;
-							onSelect?.(namespace);
-						}}
-					>
-						{namespace}
-
-						<Badge
-							variant="outline"
-							class="ml-auto
-							{selected.current === namespace ? '' : 'hidden'}"
-						>
-							Selected
-						</Badge>
-					</DropdownMenu.Item>
+				{#each namespaces as namespace (namespace)}
+					{@render item(namespace)}
 				{/each}
-				<DropdownMenu.Separator />
+				<DropdownMenu.Separator class="my-1.5" />
 				<DropdownMenu.Item onSelect={() => (dialogOpen = true)}>Add namespace</DropdownMenu.Item>
 			</DropdownMenu.Content>
 		</DropdownMenu.Root>
@@ -142,54 +90,38 @@
 
 <Dialog.Root bind:open={dialogOpen}>
 	<Dialog.Content>
-		<form class="grid w-full gap-4" onsubmit={createNamespace()}>
+		<form
+			class="grid w-full gap-4"
+			onsubmit={(e) => {
+				e.preventDefault();
+				ctx.server.namespace = newNamespace;
+				if (duplicate) {
+					toast.info(`Using existing namespace '${newNamespace}'.`);
+				} else {
+					toast.info(`Using namespace '${newNamespace}'.`);
+					ctx.server.addNamespace(newNamespace);
+				}
+				newNamespace = '';
+				dialogOpen = false;
+			}}
+		>
 			<Dialog.Header>
 				<Dialog.Title>Create a namespace</Dialog.Title>
 			</Dialog.Header>
 			<section class="grid grid-cols-2">
 				<TooltipLabel>Namespace</TooltipLabel>
-				<Input
-					placeholder="my namespace"
-					maxlength={100}
-					bind:value={newNamespace}
-					oninput={() => {
-						duplicate = null;
-					}}
-				/>
+				<Input placeholder="Namespace Name" maxlength={100} bind:value={newNamespace} />
 			</section>
 			<Dialog.Footer class="items-center">
-				<p class="text-destructive mr-auto text-sm" transition:fade>
-					{#if duplicate === true}
-						This namespace already exists.
-					{/if}
-				</p>
 				{#if duplicate === true}
-					<Button
-						variant="outline"
-						onclick={() => {
-							dialogOpen = false;
-							toast.info(`Switched to existing namespace ${newNamespace}`);
-						}}>Use</Button
-					>
+					<p class="mr-auto text-sm text-orange-400" transition:fade>
+						This namespace already exists.
+					</p>
 				{/if}
-				{#if duplicate !== true}
-					<Button
-						type="submit"
-						onclick={(e) => {
-							duplicate = null;
-						}}
-					>
-						<span>Add</span>
-					</Button>
+				{#if duplicate === true}
+					<Button type="submit" variant="outline">Use</Button>
 				{:else}
-					<Button
-						onclick={() => {
-							duplicate = null;
-							newNamespace = '';
-						}}
-					>
-						Clear
-					</Button>
+					<Button type="submit">Add</Button>
 				{/if}
 			</Dialog.Footer>
 		</form>
