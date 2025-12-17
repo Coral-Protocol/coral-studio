@@ -80,11 +80,11 @@
           }
         } ],
         "requestBody" : {
-          "description" : "Graph of agents to be used in the session",
+          "description" : "The session request body, containing the agents to use in the session and other settings",
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/AgentGraphRequest"
+                "$ref" : "#/components/schemas/SessionRequest"
               }
             }
           },
@@ -1158,6 +1158,44 @@
         },
         "required" : [ "creatorName", "id", "messages", "name", "participants", "state" ],
         "title" : "SessionThread"
+      },
+      "AgentGraphRequest" : {
+        "type" : "object",
+        "properties" : {
+          "agents" : {
+            "type" : "array",
+            "description" : "Every agent required for this agent graph",
+            "items" : {
+              "$ref" : "#/components/schemas/GraphAgentRequest"
+            },
+            "title" : "ArrayList<GraphAgentRequest>"
+          },
+          "groups" : {
+            "type" : "array",
+            "description" : "A set, containing sets that define the agent groups by name",
+            "items" : {
+              "type" : "array",
+              "items" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashSet<String>",
+              "uniqueItems" : true
+            },
+            "title" : "LinkedHashSet<LinkedHashSet<String>>",
+            "uniqueItems" : true
+          },
+          "customTools" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/CustomTool"
+            },
+            "description" : "A map of custom tools to provide to the agents in this graph",
+            "title" : "LinkedHashMap<String,CustomTool>"
+          }
+        },
+        "required" : [ "agents", "customTools", "groups" ],
+        "title" : "AgentGraphRequest"
       },
       "GraphAgentRequest" : {
         "type" : "object",
@@ -2476,43 +2514,37 @@
         },
         "title" : "ToolAnnotations"
       },
-      "AgentGraphRequest" : {
+      "SessionRuntimeSettings" : {
         "type" : "object",
         "properties" : {
-          "agents" : {
-            "type" : "array",
-            "description" : "Every agent required for this agent graph",
-            "items" : {
-              "$ref" : "#/components/schemas/GraphAgentRequest"
-            },
-            "title" : "ArrayList<GraphAgentRequest>"
+          "ttl" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "If specified, the session will never live longer than this many milliseconds.",
+            "title" : "Long"
           },
-          "groups" : {
-            "type" : "array",
-            "description" : "A set, containing sets that define the agent groups by name",
-            "items" : {
-              "type" : "array",
-              "items" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashSet<String>",
-              "uniqueItems" : true
-            },
-            "title" : "LinkedHashSet<LinkedHashSet<String>>",
-            "uniqueItems" : true
-          },
-          "customTools" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/CustomTool"
-            },
-            "description" : "A map of custom tools to provide to the agents in this graph",
-            "title" : "LinkedHashMap<String,CustomTool>"
+          "holdForTtl" : {
+            "type" : "boolean",
+            "description" : "If true, when a TTL is specified, even after the session naturally closes, the session will remain in memory until the TTL expires",
+            "title" : "Boolean"
           }
         },
-        "required" : [ "agents", "customTools", "groups" ],
-        "title" : "AgentGraphRequest"
+        "required" : [ "holdForTtl" ],
+        "title" : "SessionRuntimeSettings"
+      },
+      "SessionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "agentGraphRequest" : {
+            "$ref" : "#/components/schemas/AgentGraphRequest",
+            "description" : "A request for the agents in this session"
+          },
+          "sessionRuntimeSettings" : {
+            "$ref" : "#/components/schemas/SessionRuntimeSettings"
+          }
+        },
+        "required" : [ "agentGraphRequest", "sessionRuntimeSettings" ],
+        "title" : "SessionRequest"
       },
       "SessionIdentifier" : {
         "type" : "object",

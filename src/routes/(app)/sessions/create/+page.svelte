@@ -175,8 +175,8 @@
 	const importFromJson = (json: string) => {
 		const data: CreateSessionRequest = JSON.parse(json);
 		$formData = {
-			groups: data.groups ?? [],
-			agents: data.agents.map((agent) => ({
+			groups: data.agentGraphRequest.groups ?? [],
+			agents: data.agentGraphRequest.agents.map((agent) => ({
 				id: agent.id,
 				name: agent.name,
 				provider: {
@@ -272,9 +272,15 @@
 		) as any;
 
 		return {
-			agents,
-			groups: $formData.groups,
-			customTools
+			agentGraphRequest: {
+				agents,
+				groups: $formData.groups,
+				customTools
+			},
+			sessionRuntimeSettings: {
+				ttl: undefined,
+				holdForTtl: true
+			}
 		} satisfies CreateSessionRequest;
 	});
 
