@@ -34,9 +34,9 @@
 				</Field.Field>
 			</Field.Group>
 		</Field.Set>
-		<Field.Field orientation="horizontal">
-			<Button type="submit">Submit</Button>
-			<!-- <Button variant="outline" type="button">Help</Button> -->
+		<Field.Field orientation="horizontal" class="flex justify-between">
+			<Button variant="outline" type="button">Help</Button>
+			<Button type="submit">Enter</Button>
 		</Field.Field>
 	</form>
 </main>
