@@ -1,3 +1,4 @@
+import type { CoralServer } from '$lib/CoralServer.svelte';
 import type { PublicRegistryAgent } from '$lib/threads';
 import { z } from 'zod/v4';
 // RuntimeId
@@ -184,14 +185,13 @@ export const AgentRegistryIdentifierSchema = z.object({
 export type AgentRegistryIdentifier = z.infer<typeof AgentRegistryIdentifierSchema>;
 
 const formSchema = z.object({
-	namespace: z.string().min(1, 'Namespace is required'),
 	agents: z.array(
 		z.object({
 			id: z.object({
 				name: z.string().nonempty(),
 				version: z.string().nonempty(),
 				registrySourceId: z.discriminatedUnion('type', [
-					z.object({ type: z.literal('linked'), linkedServerId: z.string().optional() }),
+					z.object({ type: z.literal('linked'), linkedServerId: z.string() }),
 					z.object({ type: z.literal('local') }),
 					z.object({ type: z.literal('marketplace') })
 				])
@@ -331,38 +331,38 @@ const formSchema = z.object({
 	groups: z.array(z.array(z.string()))
 });
 
-export const makeFormSchema = (registryAgents: { [agent: string]: PublicRegistryAgent }) =>
+export const makeFormSchema = (server: CoralServer) =>
 	formSchema.superRefine((data, ctx) => {
 		data.agents.forEach((agent, i) => {
-			const regAgent = registryAgents[`${agent.id.name}${agent.id.version}`];
-			if (!regAgent) {
-				ctx.addIssue({
-					code: 'custom',
-					path: ['agent', i, 'agentName'],
-					message: `Agent name ${agent.id.name}@${agent.id.version} not found in registry.`
-				});
-				return;
-			}
-			const runtime = agent.provider.runtime;
-			if (runtime && regAgent.runtimes.indexOf(runtime) === -1) {
-				ctx.addIssue({
-					code: 'custom',
-					path: ['agent', i, 'provider', 'runtime'],
-					message: `Runtime ${runtime} not available for this agent.`
-				});
-			}
-			const options = Object.entries(regAgent.options ?? {});
-			for (const [name, opt] of options) {
-				if ('required' in opt && opt.required !== true) continue;
-				const val = agent.options[name];
-				if (!val || (val.type === 'string' && val.value.length === 0)) {
-					ctx.addIssue({
-						code: 'custom',
-						path: ['agents', i, 'options', name],
-						message: `Missing required option`
-					});
-				}
-			}
+			// const regAgent = registryAgents[`${agent.id.name}${agent.id.version}`];
+			// if (!regAgent) {
+			// 	ctx.addIssue({
+			// 		code: 'custom',
+			// 		path: ['agent', i, 'agentName'],
+			// 		message: `Agent name ${agent.id.name}@${agent.id.version} not found in registry.`
+			// 	});
+			// 	return;
+			// }
+			// const runtime = agent.provider.runtime;
+			// if (runtime && regAgent.runtimes.indexOf(runtime) === -1) {
+			// 	ctx.addIssue({
+			// 		code: 'custom',
+			// 		path: ['agent', i, 'provider', 'runtime'],
+			// 		message: `Runtime ${runtime} not available for this agent.`
+			// 	});
+			// }
+			// const options = Object.entries(regAgent.options ?? {});
+			// for (const [name, opt] of options) {
+			// 	if ('required' in opt && opt.required !== true) continue;
+			// 	const val = agent.options[name];
+			// 	if (!val || (val.type === 'string' && val.value.length === 0)) {
+			// 		ctx.addIssue({
+			// 			code: 'custom',
+			// 			path: ['agents', i, 'options', name],
+			// 			message: `Missing required option`
+			// 		});
+			// 	}
+			// }
 		});
 	});
 

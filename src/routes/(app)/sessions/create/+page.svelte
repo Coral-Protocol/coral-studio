@@ -51,8 +51,12 @@
 	import { id } from 'zod/v4/locales';
 	import type { Provider, ProviderType } from './schemas';
 	import { appContext } from '$lib/context';
+	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
-	type CreateSessionRequest = operations['createSession'];
+	type CreateSessionRequest = NonNullable<
+		operations['createSession']['requestBody']
+	>['content']['application/json'];
 
 	/// {a?: number | undefined} -> {a: number | undefined}
 	type Complete<T> = {
@@ -95,14 +99,7 @@
 
 	let error: string | null = $state(null);
 
-	let registryRaw = $derived(ctx.registry ?? []);
-	let registry = $derived(
-		Object.fromEntries(
-			(ctx.registry ?? []).map((a: { id: { name: string; version: string } }) => [idAsKey(a.id), a])
-		)
-	);
-
-	let formSchema = $derived(schemas.makeFormSchema(registry));
+	let formSchema = $derived(schemas.makeFormSchema(ctx.server));
 
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
@@ -115,14 +112,17 @@
 		async onUpdate({ form: f }) {
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
+				console.error({ errors: f.errors });
 				return;
 			}
 			try {
+				const body = await asJson;
+				console.log({ body });
 				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
 					params: {
-						path: { namespace: $formData.namespace }
+						path: { namespace: ctx.server.namespace }
 					},
-					...asJson
+					body
 				});
 
 				if (res.error) {
@@ -135,8 +135,9 @@
 					return;
 				}
 				if (res.data) {
-					if (!ctx.sessions) ctx.sessions = [];
-					ctx.sessions.push(res.data.sessionId);
+					if (!(ctx.server.namespace in ctx.server.allSessions))
+						ctx.server.allSessions[ctx.server.namespace] = [];
+					ctx.server.allSessions[ctx.server.namespace]!.push(res.data.sessionId);
 					ctx.session = new Session({
 						session: res.data.sessionId
 					});
@@ -174,47 +175,32 @@
 	const importFromJson = (json: string) => {
 		const data: CreateSessionRequest = JSON.parse(json);
 		$formData = {
-			groups: data.agentGraphRequest.groups ?? [],
-			agents: data.agentGraphRequest.agents.map(
-				(agent: {
-					id: any;
-					name: any;
-					provider: {
-						runtime: any;
-						type: string;
-						maxCost: any;
-						serverSource: any;
-						serverScoring: any;
-					};
-					blocking: any;
-					options: any;
-					customToolAccess: Iterable<unknown> | null | undefined;
-				}) => ({
-					id: agent.id,
-					name: agent.name,
-					provider: {
-						runtime: agent.provider.runtime,
-						remote_request:
-							agent.provider.type === 'remote_request'
-								? {
-										maxCost: agent.provider.maxCost,
-										// ensure serverSource is the "servers" variant expected by the form model
-										serverSource:
-											agent.provider.serverSource &&
-											typeof (agent.provider.serverSource as any).type === 'string' &&
-											(agent.provider.serverSource as any).type === 'servers'
-												? (agent.provider.serverSource as any)
-												: { type: 'servers', servers: [] },
-										serverScoring: agent.provider.serverScoring
-									}
-								: defaultProvider.remote_request
-					},
-					providerType: agent.provider.type,
-					blocking: agent.blocking ?? true,
-					options: agent.options as any,
-					customToolAccess: new Set(agent.customToolAccess)
-				})
-			)
+			groups: data.groups ?? [],
+			agents: data.agents.map((agent) => ({
+				id: agent.id,
+				name: agent.name,
+				provider: {
+					runtime: agent.provider.runtime,
+					remote_request:
+						agent.provider.type === 'remote_request'
+							? {
+									maxCost: agent.provider.maxCost,
+									// ensure serverSource is the "servers" variant expected by the form model
+									serverSource:
+										agent.provider.serverSource &&
+										typeof (agent.provider.serverSource as any).type === 'string' &&
+										(agent.provider.serverSource as any).type === 'servers'
+											? (agent.provider.serverSource as any)
+											: { type: 'servers', servers: [] },
+									serverScoring: agent.provider.serverScoring
+								}
+							: defaultProvider.remote_request
+				},
+				providerType: agent.provider.type,
+				blocking: agent.blocking ?? true,
+				options: agent.options as any,
+				customToolAccess: new Set(agent.customToolAccess)
+			}))
 		};
 		selectedAgent = $formData.agents.length > 0 ? 0 : null;
 	};
@@ -223,11 +209,11 @@
 		new Set($formData.agents.flatMap((agent) => Array.from(agent.customToolAccess)))
 	) as Set<keyof typeof tools>;
 
-	let asJson: Pick<CreateSessionRequest, 'requestBody'> = $derived.by(() => {
-		const agents = $formData.agents.map((agent) => {
-			const reg = registryRaw.find(
-				(r: { id: { name: string; version: string } }) => idAsKey(r.id) === idAsKey(agent.id)
-			);
+	let asJson: Promise<CreateSessionRequest> = $derived.by(async () => {
+		const detailed = await Promise.all($formData.agents.map((a) => getDetailed(a.id)));
+		const agents = $formData.agents.map((agent, idx) => {
+			const reg = detailed[idx];
+			if (!reg) throw new Error('something bad happened');
 
 			return {
 				id: agent.id,
@@ -249,11 +235,7 @@
 					Object.entries(agent.options ?? {})
 						.filter(([name, opt]: [string, any]) => {
 							// find the registry entry for this agent type/version
-							const reg = registryRaw.find(
-								(r: { id: { name: string; version: string } }) =>
-									idAsKey(r.id) === idAsKey(agent.id)
-							);
-							const defaultVal = reg?.options?.[name]?.default;
+							const defaultVal = reg.registryAgent.options[name]?.default;
 							// exclude options that are unset
 							if (!opt || opt.value === undefined) return false;
 							// include when value differs from registry default (deep compare via JSON)
@@ -290,19 +272,41 @@
 		) as any;
 
 		return {
-			requestBody: {
-				content: {
-					'application/json': {
-						agents,
-						groups: $formData.groups,
-						customTools
-					}
-				}
-			}
-		} satisfies Pick<CreateSessionRequest, 'requestBody'>;
+			agents,
+			groups: $formData.groups,
+			customTools
+		} satisfies CreateSessionRequest;
 	});
 
 	let selectedAgent: number | null = $state(null);
+	let curAgent = $derived(selectedAgent !== null ? $formData.agents[selectedAgent] : undefined);
+	let curCatalog = $derived(
+		curAgent && ctx.server.catalogs[registryIdOf(curAgent.id.registrySourceId)]
+	);
+
+	let detailedRegistry: {
+		[catalog: string]: { [id: string]: Awaited<ReturnType<CoralServer['lookupAgent']>> };
+	} = {};
+	const getDetailed = async (agentId: RegistryAgentIdentifier) => {
+		const catId = registryIdOf(agentId.registrySourceId);
+		if (!(catId in detailedRegistry)) {
+			detailedRegistry[catId] = {};
+		}
+		const agentKey = `${agentId.name}/${agentId.version}`;
+		if (!(agentKey in detailedRegistry[catId]!)) {
+			const res = await ctx.server.lookupAgent(agentId).catch((e) => {
+				toast.error(`${e}`);
+				console.error(e);
+				return {} as any;
+			});
+
+			detailedRegistry[catId]![agentKey] = res;
+		}
+		// Safety: must exist because of above guards
+		return detailedRegistry[catId]![agentKey]!;
+	};
+
+	$inspect(curAgent, curCatalog);
 	let accordian: string = $state('');
 
 	let isMobile = $state(false);
@@ -340,7 +344,7 @@
 	enctype="multipart/form-data"
 >
 	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
-		<ClipboardImportDialog onImport={importFromJson} asJson={JSON.stringify(asJson, null, 2)}>
+		<ClipboardImportDialog onImport={importFromJson} {asJson}>
 			{#snippet child({ props })}
 				<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
 			{/snippet}
@@ -363,30 +367,28 @@
 						? ''
 						: 'border-accent/50'} w-fit truncate "
 					onclick={() => {
+						const catalog = Object.values(ctx.server.catalogs).at(0);
+						const agent = catalog && Object.values(catalog.agents).at(0);
+						if (!agent || !catalog || !agent.versions[0]) return;
+						const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
 						$formData.agents.push({
 							id: {
-								name: registryRaw[0]?.id.name ?? 'agent-name',
-								version: registryRaw[0]?.id.version ?? '1.0.0'
+								name: agent.name,
+								version: agent.versions[0],
+								registrySourceId: { ...catalog.identifier }
 							},
-							provider: defaultProvider,
+							name: agent.name + (existingCount > 0 ? `-${existingCount}` : ''),
+							provider: {
+								remote_request: {
+									maxCost: { type: 'micro_coral', amount: 1000 },
+									serverSource: { type: 'servers', servers: [] }
+								},
+								runtime: 'executable'
+							},
 							providerType: 'local',
-							systemPrompt: undefined,
-							blocking: true,
-							name:
-								'Agent' + ($formData.agents.length > 0 ? ` ${$formData.agents.length + 1}` : ''),
-							options: registryRaw[0]
-								? Object.fromEntries(
-										Object.entries(registryRaw[0].options).map(([name, opt]) => [
-											name,
-											{
-												type: opt.type,
-												// initialize value from default when available, otherwise undefined
-												value: 'default' in opt ? (opt as any).default : undefined
-											} as any
-										])
-									)
-								: {},
-							customToolAccess: new Set()
+							customToolAccess: new Set(),
+							blocking: false,
+							options: {}
 						});
 						$formData.agents = $formData.agents;
 						selectedAgent = $formData.agents.length - 1;
@@ -409,14 +411,15 @@
 					}}>Remove <span class="hidden xl:inline">agent</span></TwostepButton
 				>
 			</section>
-			{#if selectedAgent !== null && $formData.agents.length !== 0}
-				{@const agent = $formData.agents[selectedAgent]!}
+			{#if selectedAgent !== null && curAgent && curCatalog}
+				{@const agent = curAgent}
 
 				<Accordion.Root type="single" value={accordian}>
 					<Accordion.Item value="agent-editor">
 						<Accordion.Trigger>Agent settings</Accordion.Trigger>
 						<Accordion.Content class="b-8 min-h-0 flex-1 overflow-auto">
-							{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}
+							<!--{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}-->
+							{@const availableOptions = {}}
 							<Tabs.Root value="options" class="w-full grow overflow-hidden">
 								<Tabs.List class="flex w-full">
 									<Tabs.Trigger value="options" class="items-centertruncate flex">
@@ -436,7 +439,9 @@
 								</Tabs.List>
 
 								<Tabs.Content value="options" class="flex min-h-0 flex-col gap-4 overflow-scroll">
-									{#if availableOptions && selectedAgent !== null && $formData.agents.length > selectedAgent}
+									{#await getDetailed(curAgent.id)}
+										<Skeleton />
+									{:then detailed}
 										<Form.ElementField
 											{form}
 											name="agents[{selectedAgent}].name"
@@ -469,16 +474,23 @@
 														align="start"
 														bind:selected={
 															() => ({
-																label: `${id.name} ${id.version}`,
-																key: idAsKey(id),
+																label: `${id.name}`,
+																key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
 																value: id
 															}),
 															() => {}
 														}
-														options={registryRaw.map((a: { id: { name: any; version: any } }) => ({
-															label: `${a.id.name} ${a.id.version}`,
-															key: idAsKey(a.id),
-															value: a.id
+														options={Object.values(ctx.server.catalogs).map((catalog) => ({
+															heading: catalog.identifier.type,
+															items: Object.values(catalog.agents).map((a) => ({
+																label: `${a.name}`,
+																key: `${registryIdOf(catalog.identifier)}/${a.name}`,
+																value: {
+																	registrySourceId: catalog.identifier,
+																	name: a.name,
+																	version: a.versions.at(-1)! // won't be in registry if 0 versions
+																}
+															}))
 														}))}
 														searchPlaceholder="Search types..."
 														onValueChange={(value) => {
@@ -497,8 +509,44 @@
 												{/snippet}
 											</Form.Control>
 										</Form.ElementField>
+										<Form.ElementField
+											{form}
+											name="agents[{selectedAgent}].id.version"
+											class="flex items-center gap-2"
+										>
+											<Form.Control>
+												{#snippet children({ props })}
+													{@const id = curAgent.id}
+													{@const reg = curCatalog.agents[id.name]!}
+													<TooltipLabel tooltip={'Version of this agent'} class="m-0"
+														>Version</TooltipLabel
+													>
+													<Combobox
+														{...props}
+														class="w-auto grow pr-[2px]"
+														side="right"
+														align="start"
+														bind:selected={() => id.version, () => {}}
+														options={[{ items: reg.versions }]}
+														searchPlaceholder="Search versions..."
+														onValueChange={(value: string) => {
+															$formData.agents[selectedAgent!]!.id.version = value;
+															$formData.agents = $formData.agents;
+															tick().then(() => {
+																for (const name in $formData.agents[selectedAgent!]!.options) {
+																	if (!(name in availableOptions)) {
+																		delete $formData.agents[selectedAgent!]!.options[name];
+																	}
+																}
+																$formData.agents = $formData.agents;
+															});
+														}}
+													/>
+												{/snippet}
+											</Form.Control>
+										</Form.ElementField>
 										<Separator />
-										{#each Object.entries(availableOptions) as [name, opt] (name)}
+										{#each Object.entries(detailed.registryAgent.options) as [name, opt] (name)}
 											<Form.ElementField {form} name="agents[{selectedAgent}].options.{name}.value">
 												<Form.Control>
 													{#snippet children({ props })}
@@ -682,16 +730,7 @@
 												</Form.Control>
 											</Form.ElementField>
 										{/each}
-									{:else}
-										<p>
-											No options available! This can happen if you have no agent registry, it's
-											empty, or there's no server connection.
-										</p>
-
-										<p>
-											Still need help? please <a class="underline" href="/helpme">click here</a>
-										</p>
-									{/if}
+									{/await}
 								</Tabs.Content>
 								<Tabs.Content value="prompt" class="overflow-scroll">
 									<Form.ElementField
@@ -756,198 +795,200 @@
 					<Accordion.Item value="item-1">
 						<Accordion.Trigger>Provider settings</Accordion.Trigger>
 						<Accordion.Content class="flex min-h-0 flex-col gap-4 overflow-scroll">
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].providerType"
-								class="flex items-center gap-2"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										Provider Type
-										<Select.Root
-											type="single"
-											bind:value={$formData.agents[selectedAgent!]!.providerType}
-										>
-											<Select.Trigger class="w-full"
-												>{$formData.agents[selectedAgent!]!.providerType === 'local'
-													? 'Local'
-													: 'Remote'}</Select.Trigger
-											>
-											<Select.Content>
-												<Select.Item value="local">Local</Select.Item>
-												<Select.Item value="remote_request">Remote</Select.Item>
-											</Select.Content>
-										</Select.Root>
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].provider.runtime"
-								class="flex items-center gap-2"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
-										<TooltipLabel
-											tooltip={'Agent runtime, will only show available options for the selected agent type'}
-											class="m-0">Runtime</TooltipLabel
-										>
-										<Combobox
-											{...props}
-											class="w-auto grow pr-[2px]"
-											side="right"
-											align="start"
-											options={((registry[idAsKey(agent.id)]?.runtimes as any) ?? []).map(
-												(value: string) => ({
-													key: value,
-													label: value,
-													value
-												})
-											)}
-											searchPlaceholder="Search runtimes..."
-											bind:selected={
-												() => ({ key: runtime, label: runtime, value: runtime }),
-												(selected) => {
-													$formData.agents[selectedAgent!]!.provider.runtime = selected.value;
-												}
-											}
-										/>
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
-							{#if selectedAgent !== null && $formData.agents.length > selectedAgent && agent.providerType === 'remote_request'}
+							{#await getDetailed(curAgent.id)}
+								<Skeleton />
+							{:then detailed}
 								<Form.ElementField
 									{form}
-									name="agents[{selectedAgent}].provider.remote_request.maxCost.amount"
+									name="agents[{selectedAgent}].providerType"
+									class="flex items-center gap-2"
 								>
 									<Form.Control>
 										{#snippet children({ props })}
-											<TooltipLabel tooltip={'The agents max cost'}>Agent budget</TooltipLabel>
-											{#if $formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type === 'micro_coral'}
-												<Input
-													type="number"
-													placeholder="0"
-													min="0"
-													pattern="[0-9]"
-													class="grow"
-													{...props}
-													bind:value={
-														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
-													}
-												/>
-											{:else}
-												<Input
-													type="number"
-													placeholder="0.00"
-													min="0"
-													class="grow"
-													{...props}
-													bind:value={
-														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
-													}
-												/>
-											{/if}
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].provider.remote_request.maxCost.type"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'The currency of the agents max cost'}
-												>Budget Currency</TooltipLabel
-											>
-
+											Provider Type
 											<Select.Root
-												{...props}
 												type="single"
-												bind:value={
-													$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type
-												}
+												bind:value={$formData.agents[selectedAgent!]!.providerType}
 											>
 												<Select.Trigger class="w-full"
-													>{$formData.agents[
-														selectedAgent!
-													]!.provider.remote_request.maxCost.type.charAt(0).toLocaleUpperCase() +
-														$formData.agents[
-															selectedAgent!
-														]!.provider.remote_request.maxCost.type.replace('_', ' ').slice(
-															1
-														)}</Select.Trigger
+													>{$formData.agents[selectedAgent!]!.providerType === 'local'
+														? 'Local'
+														: 'Remote'}</Select.Trigger
 												>
-
 												<Select.Content>
-													<Select.Item value="usd">USD</Select.Item>
-													<Select.Item value="micro_coral">Micro coral</Select.Item>
-													<Select.Item value="coral">Coral</Select.Item>
+													<Select.Item value="local">Local</Select.Item>
+													<Select.Item value="remote_request">Remote</Select.Item>
 												</Select.Content>
 											</Select.Root>
 										{/snippet}
 									</Form.Control>
 								</Form.ElementField>
-								<TooltipLabel tooltip={'Servers to use for remote requests'} class="m-0"
-									>Servers</TooltipLabel
+								<Form.ElementField
+									{form}
+									name="agents[{selectedAgent}].provider.runtime"
+									class="flex items-center gap-2"
 								>
-								{@const serverSource =
-									$formData.agents[selectedAgent!]!.provider.remote_request.serverSource}
-								{#if serverSource.type === 'servers'}
-									{#each serverSource.servers as server, i}
-										<p>
-											{server.address}{server.port ? `:${server.port}` : ''}{server.secure
-												? ' (secure)'
-												: ''}
-										</p>
-										<div class="flex flex-col gap-1 text-sm">
-											{#if server.attributes?.length}
-												<div class="text-muted-foreground text-xs">
-													Attributes: {JSON.stringify(server.attributes)}
-												</div>
-											{/if}
-										</div>
-									{/each}
-								{/if}
-								<div class="flex w-full max-w-sm items-center space-x-2">
-									<Input class="grow" placeholder="127.0.0.1" bind:value={newServerAddress} />
-									<Input class="w-24" placeholder="port" bind:value={newServerPort} />
-									<Button
-										onclick={() => {
-											if (selectedAgent === null) return;
-											const agentReq = $formData.agents[selectedAgent!]!.provider.remote_request;
-											const addr = (newServerAddress ?? '').trim();
-											const portRaw = newServerPort;
-											if (!addr) {
-												toast.error('Please enter an address');
-												return;
-											}
-											const port = portRaw === '' || portRaw === undefined ? 0 : Number(portRaw);
-											if (port !== undefined && Number.isNaN(port)) {
-												toast.error('Invalid port');
-												return;
-											}
-
-											agentReq.serverSource.servers = agentReq.serverSource.servers ?? [];
-											agentReq.serverSource.servers.push({
-												address: addr,
-												port,
-												secure: false,
-												attributes: []
-											});
-
-											// trigger reactivity
-											$formData.agents = $formData.agents;
-
-											// clear inputs
-											newServerAddress = '';
-											newServerPort = '';
-										}}
+									<Form.Control>
+										{#snippet children({ props })}
+											{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
+											<TooltipLabel
+												tooltip={'Agent runtime, will only show available options for the selected agent type'}
+												class="m-0">Runtime</TooltipLabel
+											>
+											<Combobox
+												{...props}
+												class="w-auto grow pr-[2px]"
+												side="right"
+												align="start"
+												options={[
+													{
+														items: Object.keys(detailed.registryAgent.runtimes)
+													}
+												]}
+												searchPlaceholder="Search runtimes..."
+												bind:selected={() => runtime, () => {}}
+												onValueChange={(selected: string) => {
+													$formData.agents[selectedAgent!]!.provider.runtime = selected as any;
+												}}
+											/>
+										{/snippet}
+									</Form.Control>
+								</Form.ElementField>
+								{#if selectedAgent !== null && $formData.agents.length > selectedAgent && agent.providerType === 'remote_request'}
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].provider.remote_request.maxCost.amount"
 									>
-										Add
-									</Button>
-								</div>
-							{/if}
+										<Form.Control>
+											{#snippet children({ props })}
+												<TooltipLabel tooltip={'The agents max cost'}>Agent budget</TooltipLabel>
+												{#if $formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type === 'micro_coral'}
+													<Input
+														type="number"
+														placeholder="0"
+														min="0"
+														pattern="[0-9]"
+														class="grow"
+														{...props}
+														bind:value={
+															$formData.agents[selectedAgent!]!.provider.remote_request.maxCost
+																.amount
+														}
+													/>
+												{:else}
+													<Input
+														type="number"
+														placeholder="0.00"
+														min="0"
+														class="grow"
+														{...props}
+														bind:value={
+															$formData.agents[selectedAgent!]!.provider.remote_request.maxCost
+																.amount
+														}
+													/>
+												{/if}
+											{/snippet}
+										</Form.Control>
+									</Form.ElementField>
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].provider.remote_request.maxCost.type"
+									>
+										<Form.Control>
+											{#snippet children({ props })}
+												<TooltipLabel tooltip={'The currency of the agents max cost'}
+													>Budget Currency</TooltipLabel
+												>
+
+												<Select.Root
+													{...props}
+													type="single"
+													bind:value={
+														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type
+													}
+												>
+													<Select.Trigger class="w-full"
+														>{$formData.agents[
+															selectedAgent!
+														]!.provider.remote_request.maxCost.type.charAt(0).toLocaleUpperCase() +
+															$formData.agents[
+																selectedAgent!
+															]!.provider.remote_request.maxCost.type.replace('_', ' ').slice(
+																1
+															)}</Select.Trigger
+													>
+
+													<Select.Content>
+														<Select.Item value="usd">USD</Select.Item>
+														<Select.Item value="micro_coral">Micro coral</Select.Item>
+														<Select.Item value="coral">Coral</Select.Item>
+													</Select.Content>
+												</Select.Root>
+											{/snippet}
+										</Form.Control>
+									</Form.ElementField>
+									<TooltipLabel tooltip={'Servers to use for remote requests'} class="m-0"
+										>Servers</TooltipLabel
+									>
+									{@const serverSource =
+										$formData.agents[selectedAgent!]!.provider.remote_request.serverSource}
+									{#if serverSource.type === 'servers'}
+										{#each serverSource.servers as server, i}
+											<p>
+												{server.address}{server.port ? `:${server.port}` : ''}{server.secure
+													? ' (secure)'
+													: ''}
+											</p>
+											<div class="flex flex-col gap-1 text-sm">
+												{#if server.attributes?.length}
+													<div class="text-muted-foreground text-xs">
+														Attributes: {JSON.stringify(server.attributes)}
+													</div>
+												{/if}
+											</div>
+										{/each}
+									{/if}
+									<div class="flex w-full max-w-sm items-center space-x-2">
+										<Input class="grow" placeholder="127.0.0.1" bind:value={newServerAddress} />
+										<Input class="w-24" placeholder="port" bind:value={newServerPort} />
+										<Button
+											onclick={() => {
+												if (selectedAgent === null) return;
+												const agentReq = $formData.agents[selectedAgent!]!.provider.remote_request;
+												const addr = (newServerAddress ?? '').trim();
+												const portRaw = newServerPort;
+												if (!addr) {
+													toast.error('Please enter an address');
+													return;
+												}
+												const port = portRaw === '' || portRaw === undefined ? 0 : Number(portRaw);
+												if (port !== undefined && Number.isNaN(port)) {
+													toast.error('Invalid port');
+													return;
+												}
+
+												agentReq.serverSource.servers = agentReq.serverSource.servers ?? [];
+												agentReq.serverSource.servers.push({
+													address: addr,
+													port,
+													secure: false,
+													attributes: []
+												});
+
+												// trigger reactivity
+												$formData.agents = $formData.agents;
+
+												// clear inputs
+												newServerAddress = '';
+												newServerPort = '';
+											}}
+										>
+											Add
+										</Button>
+									</div>
+								{/if}
+							{/await}
 						</Accordion.Content>
 					</Accordion.Item>
 				</Accordion.Root>

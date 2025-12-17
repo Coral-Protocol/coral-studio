@@ -7,6 +7,10 @@
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { cn } from '$lib/utils.js';
 
+	type Entry = Value extends string
+		? { label: string; key?: string; value: Value } | string
+		: { label: string; key?: string; value: Value };
+
 	let {
 		open = $bindable(false),
 		selected = $bindable(undefined),
@@ -24,8 +28,8 @@
 		class: className
 	}: {
 		open?: boolean;
-		selected?: { label: string; key: string; value: Value } | undefined;
-		options?: { label: string; key: string; value: Value }[];
+		selected?: Entry | undefined;
+		options?: { heading?: string; items: Entry[] }[];
 		selectPlaceholder?: string;
 		searchPlaceholder?: string;
 		emptyLabel?: string;
@@ -34,21 +38,24 @@
 		side?: ComponentProps<typeof Popover.Content>['side'];
 		align?: ComponentProps<typeof Popover.Content>['align'];
 
-		option?: Snippet<[{ option: { label: string; key: string; value: Value } }]>;
+		option?: Snippet<[{ item: Entry }]>;
 		trigger?: Snippet<[{ props: Record<string, unknown> }]>;
 		class?: string;
 	} = $props();
 
-	let triggerRef = $state<HTMLButtonElement>(null!);
+	let triggerRef = $state(null) as HTMLButtonElement | null;
 	// We want to refocus the trigger button when the user selects
 	// an item from the list so users can continue navigating the
 	// rest of the form with the keyboard.
 	function closeAndFocusTrigger() {
 		open = false;
 		tick().then(() => {
+			if (!triggerRef) return;
 			triggerRef.focus();
 		});
 	}
+
+	const getKey = (entry: Entry) => (typeof entry === 'string' ? entry : (entry.key ?? entry.label));
 </script>
 
 <Popover.Root bind:open>
@@ -64,7 +71,11 @@
 					role="combobox"
 					aria-expanded={open}
 				>
-					{selected?.label || selectPlaceholder}
+					{selected
+						? typeof selected === 'string'
+							? selected
+							: selected.label
+						: selectPlaceholder}
 					<ChevronsUpDownIcon class="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			{/if}
@@ -75,27 +86,32 @@
 			<Command.Input placeholder={searchPlaceholder} />
 			<Command.List>
 				<Command.Empty>{emptyLabel}</Command.Empty>
-				<Command.Group>
-					{#each options as option}
-						<Command.Item
-							value={option.key}
-							onSelect={() => {
-								selected = option;
-								onValueChange?.(option.value);
-								closeAndFocusTrigger();
-							}}
-						>
-							{#if optionChild}
-								{@render optionChild({ option })}
-							{:else}
-								<CheckIcon
-									class={cn('mr-2 size-4', selected?.key !== option.key && 'text-transparent')}
-								/>
-								{option.label}
-							{/if}
-						</Command.Item>
-					{/each}
-				</Command.Group>
+				{#each options as group}
+					<Command.Group>
+						{#each group.items as item}
+							<Command.Item
+								value={getKey(item)}
+								onSelect={() => {
+									selected = item;
+									onValueChange?.((typeof item === 'string' ? item : item.value) as any); // item is only string when Value is string, so this is safe
+									closeAndFocusTrigger();
+								}}
+							>
+								{#if optionChild}
+									{@render optionChild({ item })}
+								{:else}
+									<CheckIcon
+										class={cn(
+											'mr-2 size-4',
+											!selected || (getKey(selected) !== getKey(item) && 'text-transparent')
+										)}
+									/>
+									{typeof item === 'string' ? item : item.label}
+								{/if}
+							</Command.Item>
+						{/each}
+					</Command.Group>
+				{/each}
 			</Command.List>
 		</Command.Root>
 	</Popover.Content>
