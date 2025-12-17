@@ -4,13 +4,20 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { page } from '$app/state';
 	import Logo from '$lib/icons/logo.svelte';
+
+	let form = $state() as HTMLFormElement;
+	$effect(() => {
+		if (!form) return;
+		form.action = `/api/v1/auth?to=${encodeURIComponent(page.url.searchParams.get('to') || '/')}`;
+	});
 </script>
 
 <main class="flex h-screen w-screen">
 	<form
+		bind:this={form}
 		class="m-auto flex w-md flex-col items-center gap-4"
 		method="POST"
-		action="/api/v1/auth?to={encodeURIComponent(page.url.searchParams.get('to') || '/')}"
+		action="/api/v1/auth"
 	>
 		<header class="flex gap-2 pb-8">
 			<Logo class="h-12 w-12" />
