@@ -99,7 +99,7 @@
 				action: {
 					label: 'View',
 					onClick: () => {
-						goto('/tools/user-input');
+						goto(`${base}/tools/user-input`);
 					}
 				}
 			});
@@ -121,7 +121,7 @@
 		conn
 			? Object.entries(conn.agents).map(([title, agent]) => ({
 					title,
-					url: `/agent/${title}`,
+					url: `${base}/agent/${title}`,
 					state: agent.state ?? 'disconnected'
 				}))
 			: []
@@ -132,7 +132,7 @@
 			? Object.values(conn.threads).map((thread) => ({
 					id: thread.id,
 					title: thread.name,
-					url: `/thread/${thread.id}`,
+					url: `${base}/thread/${thread.id}`,
 					badge: thread.unread
 				}))
 			: []
@@ -179,8 +179,8 @@
 				return;
 			}
 			if (k === 'n') {
-				if (window.location.pathname !== '/sessions/create') {
-					goto(`/sessions/create`);
+				if (window.location.pathname !== `${base}/sessions/create`) {
+					goto(`${base}/sessions/create`);
 					toast.info('Navigated to session creation page');
 				}
 				return;
@@ -331,7 +331,7 @@
 							</Popover.Trigger>
 							<Button
 								onclick={() => {
-									goto(`/sessions/create`);
+									goto(`${base}/sessions/create`);
 								}}
 								bind:ref={sessionSwitcher}>New</Button
 							>
@@ -388,7 +388,7 @@
 									? Object.values(conn.threads).map((thread) => ({
 											id: thread.id,
 											title: thread.name,
-											url: `/thread/${thread.id}`,
+											url: `${base}/thread/${thread.id}`,
 											badge: thread.unread
 										}))
 									: []
@@ -399,7 +399,7 @@
 								items: conn
 									? Object.entries(conn.agents).map(([title, agent]) => ({
 											title,
-											url: `/agent/${title}`,
+											url: `${base}/agent/${title}`,
 											state: agent.state ?? 'disconnected'
 										}))
 									: []
