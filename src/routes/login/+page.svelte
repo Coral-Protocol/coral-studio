@@ -8,7 +8,7 @@
 
 	let form = $state() as HTMLFormElement;
 	onMount(() => {
-		form.action = `/api/v1/auth?to=${encodeURIComponent(page.url.searchParams.get('to') || '/')}`;
+		form.action = `/api/v1/auth/token?to=${encodeURIComponent(page.url.searchParams.get('to') || '/')}`;
 	});
 </script>
 
@@ -17,7 +17,7 @@
 		bind:this={form}
 		class="m-auto flex w-md flex-col items-center gap-4"
 		method="POST"
-		action="/api/v1/auth"
+		action="/api/v1/auth/token"
 	>
 		<header class="flex gap-2 pb-8">
 			<Logo class="h-12 w-12" />
@@ -29,8 +29,8 @@
 		<Field.Set class="w-full">
 			<Field.Group>
 				<Field.Field>
-					<Field.Label for="password">Access token</Field.Label>
-					<Input id="password" type="password" name="password" />
+					<Field.Label for="token">Access token</Field.Label>
+					<Input id="token" type="password" name="token" />
 				</Field.Field>
 			</Field.Group>
 		</Field.Set>
