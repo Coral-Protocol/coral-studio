@@ -4,10 +4,10 @@
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { page } from '$app/state';
 	import Logo from '$lib/icons/logo.svelte';
+	import { onMount } from 'svelte';
 
 	let form = $state() as HTMLFormElement;
-	$effect(() => {
-		if (!form) return;
+	onMount(() => {
 		form.action = `/api/v1/auth?to=${encodeURIComponent(page.url.searchParams.get('to') || '/')}`;
 	});
 </script>

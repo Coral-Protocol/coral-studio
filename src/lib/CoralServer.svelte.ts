@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser, building } from '$app/environment';
 import { base } from '$app/paths';
 import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
@@ -18,7 +18,7 @@ type APIClient = Client<paths, `${string}/${string}`>;
 export class CoralServer {
 	/** Unwrapped API Client. DO NOT use this without good reason - if the wrapped `api` is missing a method then add it there. **/
 	public rawApi = $derived.by(() => {
-		const token = page.url.searchParams.get('token');
+		const token = building ? '' : page.url.searchParams.get('token');
 		return createClient<paths>({
 			baseUrl: `/${base}`,
 			headers: { Authorization: token ? `Bearer ${token}` : undefined }
