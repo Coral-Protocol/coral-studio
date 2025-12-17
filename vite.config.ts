@@ -23,7 +23,7 @@ export default defineConfig({
 		proxy: {
 			'/api': { target: 'http://localhost:5555', changeOrigin: true },
 			'/sse': { target: 'http://localhost:5555', changeOrigin: true },
-			'/ws': { target: 'http://localhost:5555', changeOrigin: true }
+			'/ws': { target: 'http://localhost:5555', rewriteWsOrigin: true, ws: true }
 		}
 	}
 });
