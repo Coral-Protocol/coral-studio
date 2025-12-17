@@ -26,7 +26,7 @@ export class CoralServer {
 	public rawApi = $derived.by(() => {
 		const token = building ? '' : page.url.searchParams.get('token');
 		return createClient<paths>({
-			baseUrl: `/${base}`,
+			baseUrl: `${base ?? '/'}`,
 			headers: { Authorization: token ? `Bearer ${token}` : undefined }
 		});
 	});
