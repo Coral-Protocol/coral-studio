@@ -6,6 +6,7 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import { appContext, type AppContext } from '$lib/context';
 	import { CoralServer } from '$lib/CoralServer.svelte';
+	import { onMount } from 'svelte';
 
 	let { children } = $props();
 
@@ -23,6 +24,10 @@
 		logs: {}
 	});
 	logContext.set(logCtx);
+
+	onMount(() => {
+		ctx.server.fetchAll();
+	});
 
 	//if we get problems we just need to logCtx.logs[agent]?.close() before assigning, according to our good developer friend, Alan.
 
