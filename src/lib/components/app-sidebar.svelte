@@ -38,6 +38,7 @@
 	import { goto } from '$app/navigation';
 	import Shortcuts from './dialogs/shortcuts.svelte';
 	import { appContext } from '$lib/context';
+	import { base } from '$app/paths';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -267,9 +268,9 @@
 		</Sidebar.GroupLabel>
 		<Sidebar.GroupContent>
 			<Sidebar.Menu>
-				<!-- <SidebarLink url="/" icon={IconHome} title="Home" /> -->
-				<SidebarLink url="/server/registry" icon={IconPackage} title="Agent Registry" />
-				<SidebarLink url="/server/logs" icon={IconNotepad} title="Logs" />
+				<!-- <SidebarLink url="{base}/" icon={IconHome} title="Home" /> -->
+				<SidebarLink url="{base}/server/registry" icon={IconPackage} title="Agent Registry" />
+				<SidebarLink url="{base}/server/logs" icon={IconNotepad} title="Logs" />
 			</Sidebar.Menu>
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
@@ -285,13 +286,13 @@
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
 					<SidebarLink
-						url="/finance/wallet"
+						url="{base}/finance/wallet"
 						icon={IconWallet}
 						title="Wallet"
 						disable={sessCtx.connection === null}
 					/>
 					<SidebarLink
-						url="/finance/dashboard"
+						url="{base}/finance/dashboard"
 						icon={IconDashboard}
 						title="Dashboard"
 						disable={sessCtx.connection === null}
@@ -360,13 +361,13 @@
 						</section>
 					</Popover.Root>
 					<!-- <SidebarLink
-						url="/sessions/overview"
+						url="{base}/sessions/overview"
 						icon={IconListMag}
 						title="Session Overview"
 						disable={!sessCtx.session}
 					/> -->
 					<SidebarLink
-						url="/tools/user-input"
+						url="{base}/tools/user-input"
 						icon={IconChats}
 						title="Input Requests"
 						disable={!ctx.session &&
