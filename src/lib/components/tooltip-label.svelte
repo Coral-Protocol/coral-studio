@@ -24,7 +24,7 @@
 	<Tooltip.Root disabled={!tooltip} delayDuration={100}>
 		<Tooltip.Trigger>
 			{#snippet child({ props })}
-				<Label {...props} class="{className} !m-0 w-fit">
+				<Label {...props} class="{className} !m-0 ">
 					{@render labelChild?.()}
 				</Label>
 			{/snippet}
