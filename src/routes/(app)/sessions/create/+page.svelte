@@ -139,7 +139,9 @@
 						ctx.server.allSessions[ctx.server.namespace] = [];
 					ctx.server.allSessions[ctx.server.namespace]!.push(res.data.sessionId);
 					ctx.session = new Session({
-						session: res.data.sessionId
+						session: res.data.sessionId,
+						namespace: ctx.server.namespace,
+						server: ctx.server
 					});
 				} else {
 					throw new Error('no data received');
