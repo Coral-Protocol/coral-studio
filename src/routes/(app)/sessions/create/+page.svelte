@@ -328,6 +328,56 @@
 		window.addEventListener('resize', updateIsMobile);
 		return () => window.removeEventListener('resize', updateIsMobile);
 	});
+	const addAgent = () => {
+		const catalog = Object.values(ctx.server.catalogs).at(0);
+		const agent = catalog && Object.values(catalog.agents).at(0);
+
+		try {
+			if (!agent) {
+				throw new Error('No agents found in registry');
+			}
+
+			if (!catalog) {
+				throw new Error('Catalog failed to load');
+			}
+
+			if (!agent.versions?.[0]) {
+				throw new Error('Agent versions are missing');
+			}
+
+			if (!Array.isArray(agent.versions) || agent.versions.length === 0) {
+				throw new Error('Agent has no available versions');
+			}
+
+			const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
+
+			$formData.agents.push({
+				id: {
+					name: agent.name,
+					version: agent.versions[0],
+					registrySourceId: { ...catalog.identifier }
+				},
+				name: agent.name + (existingCount > 0 ? `-${existingCount}` : ''),
+				provider: {
+					remote_request: {
+						maxCost: { type: 'micro_coral', amount: 1000 },
+						serverSource: { type: 'servers', servers: [] }
+					},
+					runtime: 'executable'
+				},
+				providerType: 'local',
+				customToolAccess: new Set(),
+				blocking: false,
+				options: {}
+			});
+
+			$formData.agents = $formData.agents;
+			selectedAgent = $formData.agents.length - 1;
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+			toast.error(message);
+		}
+	};
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -374,34 +424,7 @@
 					class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
 						? ''
 						: 'border-accent/50'} w-fit truncate "
-					onclick={() => {
-						const catalog = Object.values(ctx.server.catalogs).at(0);
-						const agent = catalog && Object.values(catalog.agents).at(0);
-						if (!agent || !catalog || !agent.versions[0]) return;
-						const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
-						$formData.agents.push({
-							id: {
-								name: agent.name,
-								version: agent.versions[0],
-								registrySourceId: { ...catalog.identifier }
-							},
-							name: agent.name + (existingCount > 0 ? `-${existingCount}` : ''),
-							provider: {
-								remote_request: {
-									maxCost: { type: 'micro_coral', amount: 1000 },
-									serverSource: { type: 'servers', servers: [] }
-								},
-								runtime: 'executable'
-							},
-							providerType: 'local',
-							customToolAccess: new Set(),
-							blocking: false,
-							options: {}
-						});
-						$formData.agents = $formData.agents;
-						selectedAgent = $formData.agents.length - 1;
-						accordian = 'agent-editor';
-					}}
+					onclick={addAgent}
 				>
 					<span>Add <span class="hidden lg:inline">agent</span></span>
 				</Button>
