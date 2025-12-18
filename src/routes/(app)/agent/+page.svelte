@@ -69,14 +69,14 @@
 								{#each memberThreads as thread (thread.id)}
 									<li class="flex items-center">
 										<CaretRight class="size-4" />
-										<Button variant="link" href={`/thread/${thread.id}`} class="font-bold">
+										<Button variant="link" href={`/thread/#${thread.id}`} class="font-bold">
 											{thread.name}<ExternalLink class="size-3" />
 										</Button>
 										<span>
 											with:
 											{#each thread.participants as part}
 												{#if part !== agentName}
-													<Button variant="link" href={`/agent/${part}`} class="m-0 px-2"
+													<Button variant="link" href={`/agent/#${part}`} class="m-0 px-2"
 														>{part}</Button
 													>
 												{/if}

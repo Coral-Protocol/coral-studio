@@ -370,7 +370,7 @@
 									? Object.values(conn.threads).map((thread) => ({
 											id: thread.id,
 											title: thread.name,
-											url: `${base}/thread/${thread.id}`,
+											url: `${base}/thread/#${thread.id}`,
 											badge: thread.unread
 										}))
 									: []
@@ -381,7 +381,7 @@
 								items: conn
 									? Object.entries(conn.agents).map(([title, agent]) => ({
 											title,
-											url: `${base}/agent/${title}`,
+											url: `${base}/agent/#${title}`,
 											state: agent.isConnected
 												? agent.isWaiting
 													? 'listening'

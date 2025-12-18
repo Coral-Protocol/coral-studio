@@ -18,7 +18,7 @@
 		ctx.session &&
 			Object.entries(ctx.session.agents).map(([title, agent]) => ({
 				title,
-				url: `${base}/agent/${title}`,
+				url: `${base}/agent/#${title}`,
 				state: agent.isConnected ? (agent.isWaiting ? 'listening' : 'busy') : 'disconnected'
 			}))
 	);
@@ -28,7 +28,7 @@
 			Object.values(ctx.session.threads).map((thread) => ({
 				id: thread.id,
 				title: thread.name,
-				url: `${base}/thread/${thread.id}`,
+				url: `${base}/thread/#${thread.id}`,
 				badge: thread.unread
 			}))
 	);
