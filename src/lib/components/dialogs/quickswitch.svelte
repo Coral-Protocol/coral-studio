@@ -59,10 +59,10 @@
 			>
 		</Command.Group>
 		<Command.Group heading="Pages">
-			<Command.LinkItem href="/tools/user-input">User input</Command.LinkItem>
-			<Command.LinkItem href="/registry">Agent registry</Command.LinkItem>
-			<Command.LinkItem href="/logs">Logs</Command.LinkItem>
-			<Command.LinkItem href="/statistics">Statistics</Command.LinkItem>
+			<Command.LinkItem href="{base}/tools/user-input">User input</Command.LinkItem>
+			<Command.LinkItem href="{base}/registry">Agent registry</Command.LinkItem>
+			<Command.LinkItem href="{base}/logs">Logs</Command.LinkItem>
+			<Command.LinkItem href="{base}/statistics">Statistics</Command.LinkItem>
 		</Command.Group>
 		<Command.Group heading="Threads">
 			{#each threads ?? [] as thread}
