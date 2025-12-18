@@ -313,7 +313,7 @@
 								}}
 								bind:ref={sessionSwitcher}>New</Button
 							>
-							<Popover.Content align="center" class="">
+							<Popover.Content align="start" class="p-1">
 								<Command.Root>
 									<Command.Input placeholder="Search" />
 									<Command.List>
@@ -322,6 +322,7 @@
 											<Command.Group>
 												{#each ctx.server.sessions as session}
 													<Command.Item
+														class="text-wrap break-all"
 														onSelect={() => {
 															value = session;
 															closeAndFocusTrigger();
