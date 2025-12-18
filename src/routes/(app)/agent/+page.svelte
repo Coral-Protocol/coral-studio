@@ -12,6 +12,8 @@
 	import { AgentLogs, logContext } from '$lib/logs.svelte';
 	import Logs from '$lib/components/logs.svelte';
 	import { appContext } from '$lib/context';
+	import { agentStateOf } from '$lib';
+	import { cn } from '$lib/utils';
 
 	let ctx = appContext.get();
 	let logCtx = logContext.get();
@@ -24,7 +26,7 @@
 	let agent = $derived(agentName ? agents[agentName] : undefined);
 
 	let memberThreads = $derived(
-		Object.values(threads).filter((thread) => thread.participants.indexOf(agentName) !== -1)
+		Object.values(threads).filter((thread) => thread.participants.has(agentName))
 	);
 
 	let logs = $derived(logCtx.logs[agentName]);
@@ -42,7 +44,7 @@
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator class="hidden md:block" />
 			<Breadcrumb.Item>
-				<Breadcrumb.Page>{agentName ?? ''} {agent?.id ?? ''}</Breadcrumb.Page>
+				<Breadcrumb.Page>{agentName ?? ''} {agent?.name ?? ''}</Breadcrumb.Page>
 			</Breadcrumb.Item>
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
@@ -56,8 +58,10 @@
 			</Tabs.List>
 			<Tabs.Content value="main">
 				<h1 class="text-3xl font-bold">{agentName}</h1>
-				<p>{agent.state}</p>
-				<!-- <p>{agent.description}</p> -->
+				<p>{agentStateOf(agent)}</p>
+				<p class={cn(agent.description && 'text-muted-foreground')}>
+					{agent.description || 'No description.'}
+				</p>
 				<Accordion.Root type="single" class="w-full sm:max-w-[70%]" value="threads">
 					<Accordion.Item value="threads">
 						<Accordion.Trigger>Threads</Accordion.Trigger>
