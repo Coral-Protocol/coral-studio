@@ -41,7 +41,7 @@ export class Session {
 		});
 
 		this.socket = new WebSocket(
-			`ws://${base}/ws/v1/events/session/${namespace}/${session}/?timeout=10000`
+			`ws://${window.location.host}${base}/ws/v1/events/session/${namespace}/${session}`
 		);
 
 		server.api
