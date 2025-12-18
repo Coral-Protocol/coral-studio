@@ -378,6 +378,49 @@
 			toast.error(message);
 		}
 	};
+
+	let lastDeletedAgent: {
+		agent: any;
+		index: number;
+	} | null = $state(null);
+
+	const removeAgent = () => {
+		if (selectedAgent === null) return;
+
+		const index = selectedAgent;
+		const agent = $formData.agents[index];
+
+		lastDeletedAgent = {
+			agent,
+			index
+		};
+
+		$formData.agents.splice(index, 1);
+		$formData.agents = $formData.agents;
+
+		selectedAgent = null;
+
+		toast('Agent "' + lastDeletedAgent.agent.name + '" deleted', {
+			action: {
+				label: 'Undo',
+				onClick: () => restoreAgent()
+			}
+		});
+	};
+
+	const restoreAgent = () => {
+		if (!lastDeletedAgent) return;
+		console.log('aaa');
+
+		$formData.agents.splice(lastDeletedAgent.index, 0, lastDeletedAgent.agent);
+
+		$formData.agents = $formData.agents;
+		toast.success('Agent "' + lastDeletedAgent.agent.name + '" restored');
+
+		lastDeletedAgent = null;
+	};
+
+	$inspect(lastDeletedAgent);
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -402,11 +445,42 @@
 	enctype="multipart/form-data"
 >
 	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
-		<ClipboardImportDialog onImport={importFromJson} {asJson}>
-			{#snippet child({ props })}
-				<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
-			{/snippet}
-		</ClipboardImportDialog>
+		<section class="flex justify-between gap-2">
+			<ClipboardImportDialog onImport={importFromJson} {asJson}>
+				{#snippet child({ props })}
+					<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
+				{/snippet}
+			</ClipboardImportDialog>
+
+			<Select.Root type="single">
+				<Select.Trigger class="w-[180px]"
+					>{selectedAgent != null
+						? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
+						: 'Select an agent'}</Select.Trigger
+				>
+				<Select.Content>
+					{#each $formData.agents as agent, i}
+						<Select.Item value={agent.name} onclick={() => (selectedAgent = i)}
+							>{agent.name}</Select.Item
+						>
+					{/each}
+				</Select.Content>
+			</Select.Root>
+			<Button
+				class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
+					? ''
+					: 'border-accent/50'} w-fit truncate "
+				onclick={addAgent}
+			>
+				<span>Add <span class="hidden lg:inline">agent</span></span>
+			</Button>
+			<TwostepButton
+				disabled={selectedAgent === null}
+				variant="destructive"
+				class="grow truncate"
+				onclick={removeAgent}>Remove <span class="hidden xl:inline">agent</span></TwostepButton
+			>
+		</section>
 
 		<Form.Button>Create Session</Form.Button>
 	</div>
