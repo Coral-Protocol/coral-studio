@@ -31,6 +31,7 @@
 			};
 		})
 	);
+	let filteredCount = $derived(filtered.reduce((acc, cur) => acc + cur.agents.length, 0));
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -58,7 +59,7 @@
 
 			<InputGroup.Addon align="inline-end"
 				>{#if search.length > 0}
-					<span transition:fade>12 results</span>
+					<span transition:fade={{ duration: 100 }}>{filteredCount} results</span>
 				{/if}
 			</InputGroup.Addon>
 		</InputGroup.Root>
