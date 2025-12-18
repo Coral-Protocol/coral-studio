@@ -60,7 +60,6 @@
 			await ctx.server.fetchAll();
 
 			connecting = false;
-			return agents;
 		} catch (e) {
 			connecting = false;
 			error = `${e}`;
@@ -116,27 +115,6 @@
 			triggerRef.focus();
 		});
 	}
-	// TODO: refactor below into one object
-	let agents = $derived(
-		conn
-			? Object.entries(conn.agents).map(([title, agent]) => ({
-					title,
-					url: `${base}/agent/${title}`,
-					state: agent.state ?? 'disconnected'
-				}))
-			: []
-	);
-
-	let threads = $derived(
-		conn
-			? Object.values(conn.threads).map((thread) => ({
-					id: thread.id,
-					title: thread.name,
-					url: `${base}/thread/${thread.id}`,
-					badge: thread.unread
-				}))
-			: []
-	);
 
 	let openQuickswitch = $state(false),
 		openShortcuts = $state(false),
@@ -195,7 +173,7 @@
 
 <svelte:window on:keydown={handleKeydown} />
 
-<Quickswitch {ctx} {agents} {threads} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
+<Quickswitch {ctx} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
 
@@ -347,7 +325,11 @@
 														onSelect={() => {
 															value = session;
 															closeAndFocusTrigger();
-															ctx.session = new Session({ session });
+															ctx.session = new Session({
+																session,
+																namespace: ctx.server.namespace,
+																server: ctx.server
+															});
 														}}
 													>
 														{session}
@@ -400,7 +382,11 @@
 									? Object.entries(conn.agents).map(([title, agent]) => ({
 											title,
 											url: `${base}/agent/${title}`,
-											state: agent.state ?? 'disconnected'
+											state: agent.isConnected
+												? agent.isWaiting
+													? 'listening'
+													: 'busy'
+												: 'disconnected'
 										}))
 									: []
 							}

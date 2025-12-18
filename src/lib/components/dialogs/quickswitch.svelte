@@ -1,13 +1,37 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import * as Command from '$lib/components/ui/command';
 	import { Input } from '$lib/components/ui/input';
+	import type { AppContext } from '$lib/context';
 	import { Session } from '$lib/session.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	// FIXME: prop typing
-	let { ctx, agents, threads, open = $bindable(), debugMenu = $bindable() } = $props();
+	let {
+		ctx,
+		open = $bindable(),
+		debugMenu = $bindable()
+	}: { ctx: AppContext; open: boolean; debugMenu: boolean } = $props();
+
+	let agents = $derived(
+		ctx.session &&
+			Object.entries(ctx.session.agents).map(([title, agent]) => ({
+				title,
+				url: `${base}/agent/${title}`,
+				state: agent.isConnected ? (agent.isWaiting ? 'listening' : 'busy') : 'disconnected'
+			}))
+	);
+
+	let threads = $derived(
+		ctx.session &&
+			Object.values(ctx.session.threads).map((thread) => ({
+				id: thread.id,
+				title: thread.name,
+				url: `${base}/thread/${thread.id}`,
+				badge: thread.unread
+			}))
+	);
 
 	let value = $state('');
 </script>
@@ -41,7 +65,7 @@
 			<Command.LinkItem href="/statistics">Statistics</Command.LinkItem>
 		</Command.Group>
 		<Command.Group heading="Threads">
-			{#each threads as thread}
+			{#each threads ?? [] as thread}
 				<Command.Item onSelect={() => (goto(thread.url), (open = false))}>
 					<IconChats />
 					<span class="truncate">{thread.title}</span>
@@ -49,7 +73,7 @@
 			{/each}
 		</Command.Group>
 		<Command.Group heading="Agents">
-			{#each agents as agent}
+			{#each agents ?? [] as agent}
 				<Command.Item onSelect={() => (goto(agent.url), (open = false))}>
 					<IconRobot />
 					<span class="truncate">{agent.title}</span>
@@ -58,11 +82,15 @@
 			{/each}
 		</Command.Group>
 		<Command.Group heading="Sessions">
-			{#if ctx.sessions && ctx.sessions.length > 0}
-				{#each ctx.sessions as session}
+			{#if ctx.server.sessions.length > 0}
+				{#each ctx.server.sessions as session}
 					<Command.Item
 						onSelect={() => {
-							ctx.session = new Session({ session });
+							ctx.session = new Session({
+								session,
+								namespace: ctx.server.namespace,
+								server: ctx.server
+							});
 							open = false;
 						}}
 					>
