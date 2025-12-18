@@ -248,7 +248,7 @@
 			<Sidebar.Menu>
 				<!-- <SidebarLink url="{base}/" icon={IconHome} title="Home" /> -->
 				<SidebarLink url="{base}/server/registry" icon={IconPackage} title="Agent Registry" />
-				<SidebarLink url="{base}/server/logs" icon={IconNotepad} title="Logs" />
+				<SidebarLink url="{base}/server/logs" icon={IconNotepad} title="Logs" disabled />
 			</Sidebar.Menu>
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
