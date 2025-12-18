@@ -288,8 +288,7 @@
 						<section class="my-2 flex w-full gap-2">
 							<Popover.Trigger
 								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive relative  w-full flex-1 grow justify-between truncate border-1 "
-								aria-invalid={ctx.server.sessions.length > 0 &&
-									(ctx.session === null || !ctx.session.connected)}
+								aria-invalid={ctx.session !== null && !ctx.session.connected}
 							>
 								{#snippet child({ props })}
 									<Button
@@ -297,11 +296,12 @@
 										{...props}
 										role="combobox"
 										aria-expanded={sessionSearcherOpen}
-										disabled={ctx.server.sessions.length === 0}
 										bind:ref={triggerRef}
 									>
 										<span class=" w-4/5 grow truncate overflow-hidden">
-											{ctx.session ? ctx.session.session : 'Select a Session'}
+											{ctx.session && ctx.server.sessions.indexOf(ctx.session.session) !== -1
+												? ctx.session.session
+												: 'Select a Session'}
 										</span>
 										<CaretUpDown />
 									</Button>
