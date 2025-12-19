@@ -185,6 +185,9 @@ export const AgentRegistryIdentifierSchema = z.object({
 export type AgentRegistryIdentifier = z.infer<typeof AgentRegistryIdentifierSchema>;
 
 const formSchema = z.object({
+	sessionRuntimeSettings: z.object({
+		ttl: z.number().optional()
+	}),
 	agents: z.array(
 		z.object({
 			id: z.object({

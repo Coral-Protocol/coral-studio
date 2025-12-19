@@ -178,6 +178,9 @@
 		const data: CreateSessionRequest = JSON.parse(json);
 		$formData = {
 			groups: data.agentGraphRequest.groups ?? [],
+			sessionRuntimeSettings: {
+				ttl: 50000 // FIXME: expose this in ui
+			},
 			agents: data.agentGraphRequest.agents.map((agent) => ({
 				id: agent.id,
 				name: agent.name,
@@ -280,7 +283,7 @@
 				customTools
 			},
 			sessionRuntimeSettings: {
-				ttl: undefined,
+				ttl: 50000,
 				holdForTtl: true
 			}
 		} satisfies CreateSessionRequest;
