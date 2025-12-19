@@ -1188,13 +1188,13 @@
           "customTools" : {
             "type" : "object",
             "additionalProperties" : {
-              "$ref" : "#/components/schemas/CustomTool"
+              "$ref" : "#/components/schemas/GraphAgentTool"
             },
             "description" : "A map of custom tools to provide to the agents in this graph",
-            "title" : "LinkedHashMap<String,CustomTool>"
+            "title" : "LinkedHashMap<String,GraphAgentTool>"
           }
         },
-        "required" : [ "agents", "customTools", "groups" ],
+        "required" : [ "agents" ],
         "title" : "AgentGraphRequest"
       },
       "GraphAgentRequest" : {
@@ -2148,7 +2148,7 @@
             "title" : "ArrayList<X402BudgetedResource>"
           }
         },
-        "required" : [ "customToolAccess", "id", "name", "options", "plugins", "provider", "x402Budgets" ],
+        "required" : [ "id", "name", "provider" ],
         "title" : "GraphAgentRequest"
       },
       "RegistryAgentIdentifier" : {
@@ -2375,7 +2375,7 @@
         "required" : [ "priority", "remainingBudget", "resource" ],
         "title" : "X402BudgetedResource"
       },
-      "CustomTool" : {
+      "GraphAgentTool" : {
         "type" : "object",
         "properties" : {
           "transport" : {
@@ -2389,7 +2389,11 @@
                 },
                 "url" : {
                   "type" : "string",
-                  "title" : "UriString"
+                  "title" : "String"
+                },
+                "signatureHeader" : {
+                  "type" : "string",
+                  "title" : "String"
                 }
               },
               "required" : [ "type", "url" ],
@@ -2398,14 +2402,14 @@
             "discriminator" : {
               "propertyName" : "type"
             },
-            "title" : "ToolTransport"
+            "title" : "GraphAgentToolTransport"
           },
-          "toolSchema" : {
+          "schema" : {
             "$ref" : "#/components/schemas/Tool"
           }
         },
-        "required" : [ "toolSchema", "transport" ],
-        "title" : "CustomTool"
+        "required" : [ "schema", "transport" ],
+        "title" : "GraphAgentTool"
       },
       "Tool" : {
         "type" : "object",
@@ -2523,14 +2527,88 @@
             "description" : "If specified, the session will never live longer than this many milliseconds.",
             "title" : "Long"
           },
-          "holdForTtl" : {
-            "type" : "boolean",
-            "description" : "If true, when a TTL is specified, even after the session naturally closes, the session will remain in memory until the TTL expires",
-            "title" : "Boolean"
+          "persistenceMode" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "description" : "Session will exist for at least the specified time (in milliseconds) after the session exits.  This time does not include the run time of the session.",
+              "properties" : {
+                "mode" : {
+                  "type" : "string",
+                  "enum" : [ "hold_after_exit" ],
+                  "title" : "String"
+                },
+                "duration" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "title" : "Long"
+                }
+              },
+              "required" : [ "duration", "mode" ],
+              "title" : "hold_after_exit"
+            }, {
+              "type" : "object",
+              "description" : "Session will exist for at least the specified time (in milliseconds).  This time includes the run time of the session.",
+              "properties" : {
+                "mode" : {
+                  "type" : "string",
+                  "enum" : [ "minimum_time" ],
+                  "title" : "String"
+                },
+                "time" : {
+                  "type" : "integer",
+                  "format" : "int64",
+                  "title" : "Long"
+                }
+              },
+              "required" : [ "mode", "time" ],
+              "title" : "minimum_time"
+            }, {
+              "type" : "object",
+              "description" : "No persistence",
+              "properties" : {
+                "mode" : {
+                  "type" : "string",
+                  "enum" : [ "none" ],
+                  "title" : "String"
+                }
+              },
+              "required" : [ "mode" ],
+              "title" : "none"
+            } ],
+            "description" : "Persistence mode for the session. Default is \"none\" meaning the session will be deleted as soon as it exits",
+            "discriminator" : {
+              "propertyName" : "mode"
+            },
+            "title" : "SessionPersistenceMode"
+          },
+          "webhooks" : {
+            "$ref" : "#/components/schemas/SessionWebhooks",
+            "description" : "Webhooks executed for this session"
           }
         },
-        "required" : [ "holdForTtl" ],
         "title" : "SessionRuntimeSettings"
+      },
+      "SessionWebhooks" : {
+        "type" : "object",
+        "properties" : {
+          "sessionEnd" : {
+            "$ref" : "#/components/schemas/SessionEndWebhook",
+            "description" : "The webhook that is called when this session ends.  The model sent is a SessionEndState"
+          }
+        },
+        "title" : "SessionWebhooks"
+      },
+      "SessionEndWebhook" : {
+        "type" : "object",
+        "description" : "The webhook that is called when this session ends.  The model sent is a SessionEndState",
+        "properties" : {
+          "url" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        },
+        "required" : [ "url" ],
+        "title" : "SessionEndWebhook"
       },
       "SessionRequest" : {
         "type" : "object",
@@ -2543,7 +2621,7 @@
             "$ref" : "#/components/schemas/SessionRuntimeSettings"
           }
         },
-        "required" : [ "agentGraphRequest", "sessionRuntimeSettings" ],
+        "required" : [ "agentGraphRequest" ],
         "title" : "SessionRequest"
       },
       "SessionIdentifier" : {
