@@ -63,6 +63,8 @@
 	const nodeLabel = (n: NodeDatum, i: number) => agents[i]?.name;
 	const nodeSubLabel = (n: NodeDatum, i: number) => agents[i]?.id.name;
 
+	const linkStyle = 'GraphLinkStyle.Dashed';
+
 	let selectedNodeId = $derived(
 		selectedAgent !== null && selectedAgent !== undefined ? agents[selectedAgent]?.name : undefined
 	);
@@ -85,12 +87,13 @@
 	};
 </script>
 
-<VisSingleContainer {data} class="size-full ">
+<VisSingleContainer {data} class="graph-theme-dark size-full">
 	<VisGraph
 		bind:this={graphRef}
 		{nodeLabel}
 		{nodeSubLabel}
 		{events}
+		{linkStyle}
 		{selectedNodeId}
 		disableBrush={true}
 		layoutNonConnectedAside={true}
@@ -99,3 +102,17 @@
 		linkNeighborSpacing={30}
 	/>
 </VisSingleContainer>
+
+<!-- for some reason the above css ONLY WORKS as a global, and ONLY WORKS when in this file, not in app.css -->
+
+<style>
+	:global(.graph-theme-dark) {
+		--vis-graph-node-label-background: #151923;
+		--vis-graph-node-label-text-color: #e6e9f0;
+		--vis-graph-node-sublabel-text-color: #9aa0b3;
+
+		--vis-dark-graph-node-label-background: #1b2030;
+		--vis-dark-graph-node-label-text-color: #f2f4f8;
+		--vis-dark-graph-node-sublabel-text-color: #8f95a8;
+	}
+</style>
