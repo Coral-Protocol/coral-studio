@@ -353,7 +353,7 @@
 						url="{base}/tools/user-input"
 						icon={IconChats}
 						title="Input Requests"
-						disable={!ctx.session &&
+						disabled={!ctx.session &&
 							Object.values(tools.userInput.requests).filter(
 								(req) => req.userQuestion === undefined
 							).length === 0}
