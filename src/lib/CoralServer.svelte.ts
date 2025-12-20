@@ -124,8 +124,25 @@ export class CoralServer {
 		await Promise.all([this.fetchRegistries(), this.fetchSessions()]);
 	}
 
+	private detailedRegistry: {
+		[catalog: string]: { [id: string]: Awaited<ReturnType<CoralServer['lookupAgentInner']>> };
+	} = {};
+	public async lookupAgent(agentId: RegistryAgentIdentifier) {
+		const catId = registryIdOf(agentId.registrySourceId);
+		if (!(catId in this.detailedRegistry)) {
+			this.detailedRegistry[catId] = {};
+		}
+		const agentKey = `${agentId.name}/${agentId.version}`;
+		if (!(agentKey in this.detailedRegistry[catId]!)) {
+			const res = await this.lookupAgentInner(agentId);
+			this.detailedRegistry[catId]![agentKey] = res;
+		}
+		// Safety: must exist because of above guards
+		return this.detailedRegistry[catId]![agentKey]!;
+	}
+
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async lookupAgent(agent: RegistryAgentIdentifier) {
+	private async lookupAgentInner(agent: RegistryAgentIdentifier) {
 		switch (agent.registrySourceId.type) {
 			case 'local': {
 				const res = await this.api.GET('/api/v1/registry/local/{agentName}/{agentVersion}', {

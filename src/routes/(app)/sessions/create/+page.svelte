@@ -295,26 +295,12 @@
 		curAgent && ctx.server.catalogs[registryIdOf(curAgent.id.registrySourceId)]
 	);
 
-	let detailedRegistry: {
-		[catalog: string]: { [id: string]: Awaited<ReturnType<CoralServer['lookupAgent']>> };
-	} = {};
 	const getDetailed = async (agentId: RegistryAgentIdentifier) => {
-		const catId = registryIdOf(agentId.registrySourceId);
-		if (!(catId in detailedRegistry)) {
-			detailedRegistry[catId] = {};
-		}
-		const agentKey = `${agentId.name}/${agentId.version}`;
-		if (!(agentKey in detailedRegistry[catId]!)) {
-			const res = await ctx.server.lookupAgent(agentId).catch((e) => {
-				toast.error(`${e}`);
-				console.error(e);
-				return {} as any;
-			});
-
-			detailedRegistry[catId]![agentKey] = res;
-		}
-		// Safety: must exist because of above guards
-		return detailedRegistry[catId]![agentKey]!;
+		return await ctx.server.lookupAgent(agentId).catch((e) => {
+			toast.error(`${e}`);
+			console.error(e);
+			return {} as any;
+		});
 	};
 
 	let isMobile = $state(false);
