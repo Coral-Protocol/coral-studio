@@ -1072,7 +1072,7 @@
 		<Resizable.Handle withHandle />
 		<Resizable.Pane
 			defaultSize={75}
-			minSize={50}
+			minSize={10}
 			class="relative flex min-h-0 flex-col overflow-hidden"
 		>
 			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
