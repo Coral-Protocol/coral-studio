@@ -283,8 +283,7 @@
 				customTools
 			},
 			sessionRuntimeSettings: {
-				ttl: 50000,
-				holdForTtl: true
+				ttl: 50000
 			}
 		} satisfies CreateSessionRequest;
 	});
