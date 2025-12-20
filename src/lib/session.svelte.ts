@@ -13,7 +13,7 @@ export class Session {
 	private socket: WebSocket;
 	public connected = $state(false);
 
-	readonly session: string;
+	readonly sessionId: string;
 	readonly namespace: string;
 
 	public agentId: string | null = $state(null);
@@ -28,11 +28,11 @@ export class Session {
 
 	constructor({
 		namespace,
-		session,
+		sessionId,
 		server
 	}: {
 		namespace: string;
-		session: string;
+		sessionId: string;
 		server: CoralServer;
 	}) {
 		let markInitialStateReady: (value?: any) => void;
@@ -41,12 +41,12 @@ export class Session {
 		});
 
 		this.socket = new WebSocket(
-			`ws://${window.location.host}${base}/ws/v1/events/session/${namespace}/${session}`
+			`ws://${window.location.host}${base}/ws/v1/events/session/${namespace}/${sessionId}`
 		);
 
 		server.api
 			.GET('/api/v1/sessions/{namespace}/{sessionId}', {
-				params: { path: { namespace, sessionId: session } }
+				params: { path: { namespace, sessionId: sessionId } }
 			})
 			.then((res) => {
 				if (res.error || !res.data) {
@@ -77,7 +77,7 @@ export class Session {
 			});
 
 		this.namespace = namespace;
-		this.session = session;
+		this.sessionId = sessionId;
 
 		this.socket.onopen = () => {
 			toast.success('Connected to session.');

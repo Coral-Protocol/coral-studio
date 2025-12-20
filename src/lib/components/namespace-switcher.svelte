@@ -30,7 +30,7 @@
 	let dialogOpen = $state(false);
 
 	let newNamespace = $state('Untitled Namespace');
-	let duplicate = $derived(newNamespace === 'default' || newNamespace in ctx.server.sessions);
+	let duplicate = $derived(newNamespace === 'default' || newNamespace in ctx.server.namespaces);
 
 	let { ref = $bindable(null) }: WithElementRef<{}, HTMLButtonElement> = $props();
 </script>

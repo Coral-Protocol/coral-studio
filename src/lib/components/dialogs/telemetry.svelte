@@ -55,7 +55,7 @@
 				params: {
 					path: {
 						messageId,
-						sessionId: session.session,
+						sessionId: session.sessionId,
 						threadId
 					}
 				}

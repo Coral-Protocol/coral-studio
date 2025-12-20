@@ -83,18 +83,19 @@
 		</Command.Group>
 		<Command.Group heading="Sessions">
 			{#if ctx.server.sessions.length > 0}
-				{#each ctx.server.sessions as session}
+				<!--TODO: Ensure no undefined sessionIds also to prevent duplicated keys-->
+				{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
 					<Command.Item
 						onSelect={() => {
 							ctx.session = new Session({
-								session,
+								sessionId: basicSession.sessionId,
 								namespace: ctx.server.namespace,
 								server: ctx.server
 							});
 							open = false;
 						}}
 					>
-						<span class="truncate">{session}</span>
+						<span class="truncate">{basicSession}</span>
 					</Command.Item>
 				{/each}
 			{/if}

@@ -3,9 +3,9 @@ import type { Session } from './session.svelte';
 import type { components, operations, paths } from '../generated/api';
 import type { Client } from 'openapi-fetch';
 
-export type Message = any; // components['schemas']['']; // FIXME: oub??
+export type Message = components['schemas']['SessionThreadMessage']; // FIXME: oub??
 
-export type Thread = any; // components['schemas']['ResolvedThread']; // FIXME: oub??
+export type Thread = components['schemas']['SessionThread']; // FIXME: oub??
 
 export type AgentOption = {
 	name: string;
@@ -27,4 +27,4 @@ export type ToolTransport = {
 	url: string;
 };
 
-export type CustomTool = components['schemas']['CustomTool'];
+export type CustomTool = components['schemas']['GraphAgentTool'];

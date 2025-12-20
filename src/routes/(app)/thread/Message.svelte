@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { pickTextColor, stringToColor } from '$lib/color';
+	import { stringToColor } from '$lib/color';
 	import * as Card from '$lib/components/ui/card';
 	import type { Message } from '$lib/threads';
 	import { cn } from '$lib/utils';
-	import { ArrowRight, ArrowRightIcon, LogsIcon } from '@lucide/svelte';
+	import { LogsIcon } from '@lucide/svelte';
 	import AgentName from './AgentName.svelte';
 	import type { SvelteSet } from 'svelte/reactivity';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import { toast } from 'svelte-sonner';
 	import Telemetry from '$lib/components/dialogs/telemetry.svelte';
 	import type { Session } from '$lib/session.svelte';
 
@@ -24,9 +23,9 @@
 		class?: string;
 	} = $props();
 
-	let senderColor = $derived(stringToColor(message.senderId));
+	let senderColor = $derived(stringToColor(message.senderName));
 	let date = $derived(new Date(message.timestamp));
-	let mentions = $derived(message.mentions ?? []);
+	let mentions = $derived(message.mentionNames ?? []);
 	let telemetryDialogOpen = $state(false);
 </script>
 
@@ -43,11 +42,11 @@
 	<Card.Header class="flex flex-row gap-1 px-4 text-sm leading-5">
 		<AgentName
 			color={senderColor}
-			name={message.senderId}
-			disabled={agentFilters && !agentFilters.has(message.senderId)}
+			name={message.senderName}
+			disabled={agentFilters && !agentFilters.has(message.senderName)}
 		/>
 		<span class="w-max">-></span>
-		{#each mentions as mention}
+		{#each mentions as mention (mention)}
 			{@const mentionColor = stringToColor(mention)}
 			<AgentName
 				color={mentionColor}
@@ -55,7 +54,7 @@
 				disabled={agentFilters && !agentFilters.has(mention)}
 			/>
 		{/each}
-		{#if mentions.length == 0}
+		{#if mentions.length === 0}
 			<span class="text-muted-foreground">nobody</span>
 		{/if}
 		<p class="flex-grow text-right" title={message.timestamp?.toString() ?? 'null'}>
@@ -83,6 +82,6 @@
 		</div>
 	</Card.Header>
 	<Card.Content class="px-4 whitespace-pre-wrap">
-		{message.content}
+		{message.text}
 	</Card.Content>
 </Card.Root>

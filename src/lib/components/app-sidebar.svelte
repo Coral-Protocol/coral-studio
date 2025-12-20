@@ -299,8 +299,8 @@
 										bind:ref={triggerRef}
 									>
 										<span class=" w-4/5 grow truncate overflow-hidden">
-											{ctx.session && ctx.server.sessions.indexOf(ctx.session.session) !== -1
-												? ctx.session.session
+											{ctx.session?.sessionId && ctx.server.sessions.findIndex(a => a.sessionId === ctx.session?.sessionId) !== -1
+												? ctx.session.sessionId
 												: 'Select a Session'}
 										</span>
 										<CaretUpDown />
@@ -320,20 +320,20 @@
 										<Command.Empty>No sessions found</Command.Empty>
 										{#if ctx.server.sessions.length > 0}
 											<Command.Group>
-												{#each ctx.server.sessions as session}
+												{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
 													<Command.Item
 														class="text-wrap break-all"
 														onSelect={() => {
-															value = session;
+															value = basicSession.sessionId;
 															closeAndFocusTrigger();
 															ctx.session = new Session({
-																session,
+																sessionId: basicSession.sessionId,
 																namespace: ctx.server.namespace,
 																server: ctx.server
 															});
 														}}
 													>
-														{session}
+														{basicSession.sessionId}
 													</Command.Item>
 												{/each}
 											</Command.Group>

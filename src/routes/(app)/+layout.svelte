@@ -33,14 +33,14 @@
 
 	watch([() => ctx.session, () => Object.keys(ctx.session?.agents ?? {})], () => {
 		if (!ctx.session) return;
-		if (logCtx.session !== null && logCtx.session !== ctx.session.session) {
+		if (logCtx.session !== null && logCtx.session !== ctx.session.sessionId) {
 			logCtx.logs = {};
 			console.log('invalidating session logs');
 		}
-		logCtx.session = ctx.session.session;
+		logCtx.session = ctx.session.sessionId;
 		for (const agent of Object.keys(ctx.session.agents)) {
 			if (!(agent in logCtx.logs)) {
-				logCtx.logs[agent] = new AgentLogs({ session: ctx.session.session }, agent);
+				logCtx.logs[agent] = new AgentLogs({ session: ctx.session.sessionId }, agent);
 				console.log(`opening agent logs for '${agent}'`);
 			}
 		}

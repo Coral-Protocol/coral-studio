@@ -137,9 +137,13 @@
 				if (res.data) {
 					if (!(ctx.server.namespace in ctx.server.allSessions))
 						ctx.server.allSessions[ctx.server.namespace] = [];
-					ctx.server.allSessions[ctx.server.namespace]!.push(res.data.sessionId);
+					// TODO @alan: replace with websocket notifications
+					ctx.server.allSessions[ctx.server.namespace]!.push({
+						sessionId: res.data.sessionId,
+						closing: false
+					});
 					ctx.session = new Session({
-						session: res.data.sessionId,
+						sessionId: res.data.sessionId,
 						namespace: ctx.server.namespace,
 						server: ctx.server
 					});
@@ -189,16 +193,16 @@
 					remote_request:
 						agent.provider.type === 'remote_request'
 							? {
-									maxCost: agent.provider.maxCost,
-									// ensure serverSource is the "servers" variant expected by the form model
-									serverSource:
-										agent.provider.serverSource &&
-										typeof (agent.provider.serverSource as any).type === 'string' &&
-										(agent.provider.serverSource as any).type === 'servers'
-											? (agent.provider.serverSource as any)
-											: { type: 'servers', servers: [] },
-									serverScoring: agent.provider.serverScoring
-								}
+								maxCost: agent.provider.maxCost,
+								// ensure serverSource is the "servers" variant expected by the form model
+								serverSource:
+									agent.provider.serverSource &&
+									typeof (agent.provider.serverSource as any).type === 'string' &&
+									(agent.provider.serverSource as any).type === 'servers'
+										? (agent.provider.serverSource as any)
+										: { type: 'servers', servers: [] },
+								serverScoring: agent.provider.serverScoring
+							}
 							: defaultProvider.remote_request
 				},
 				providerType: agent.provider.type,
@@ -440,14 +444,14 @@
 
 			<Select.Root type="single">
 				<Select.Trigger class="!text-foreground w-[180px]" disabled={$formData.agents.length === 0}
-					>{selectedAgent != null
-						? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
-						: 'Select an agent'}</Select.Trigger
+				>{selectedAgent != null
+					? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
+					: 'Select an agent'}</Select.Trigger
 				>
 				<Select.Content>
 					{#each $formData.agents as agent, i}
 						<Select.Item value={agent.name} onclick={() => (selectedAgent = i)}
-							>{agent.name}</Select.Item
+						>{agent.name}</Select.Item
 						>
 					{/each}
 				</Select.Content>
@@ -519,7 +523,8 @@
 								<Form.Control>
 									{#snippet children({ props })}
 										<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
-											>Name</TooltipLabel
+										>Name
+										</TooltipLabel
 										>
 										<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
 									{/snippet}
@@ -534,9 +539,7 @@
 									<Form.Control>
 										{#snippet children({ props })}
 											{@const id = $formData.agents[selectedAgent!]!.id}
-											<TooltipLabel tooltip={'Type of this agent'} class="m-0"
-												>Registry Type</TooltipLabel
-											>
+											<TooltipLabel tooltip={'Type of this agent'} class="m-0">Registry Type</TooltipLabel>
 											<Combobox
 												{...props}
 												class="w-auto grow pr-[2px]"

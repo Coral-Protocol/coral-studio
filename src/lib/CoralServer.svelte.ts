@@ -61,7 +61,7 @@ export class CoralServer {
 	} = $state({});
 
 	// TODO (alan): store Session classes here (supa svelty)
-	allSessions: { [namespace: string]: string[] } = $state({});
+	allSessions: { [namespace: string]: Array<components['schemas']['BasicSession']> } = $state({});
 
 	// TODO (alan): better server state repr
 	public alive = $state(false);
@@ -112,10 +112,12 @@ export class CoralServer {
 				return;
 			}
 			if (res.error) throw new Error(`Error fetching sessions - ${res.error}`);
+
 			this.allSessions[namespace] = res.data;
 		} else {
 			const res = await this.api.GET('/api/v1/sessions');
 			if (res.error) throw new Error(`Error fetching sessions`);
+
 			this.allSessions = Object.fromEntries(res.data.map((s) => [s.namespace, s.sessions]));
 		}
 	}

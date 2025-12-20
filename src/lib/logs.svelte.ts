@@ -7,7 +7,7 @@ export type Log = {
 	message: string;
 };
 export class AgentLogs {
-	private socket: WebSocket;
+	// private socket: WebSocket;
 	public connected = $state(false);
 
 	public logs: Log[] = $state([]);
@@ -20,31 +20,31 @@ export class AgentLogs {
 		},
 		agentId: string
 	) {
-		this.socket = new WebSocket(
-			`${base}/ws/v1/debug/` // FIXME: oub???
-		);
-		this.socket.onopen = () => {
-			this.connected = true;
-		};
-		this.socket.onerror = () => {
-			this.connected = false;
-			this.socket.close();
-		};
-		this.socket.onclose = (e) => {
-			this.logs = [];
-			this.connected = false;
-		};
-		this.socket.onmessage = (ev) => {
-			let data: Log | null = null;
-			try {
-				data = JSON.parse(ev.data);
-			} catch (e) {
-				console.log('??', e);
-				return;
-			}
-
-			data && this.logs.push(data);
-		};
+		// this.socket = new WebSocket(
+		// 	`${base}/ws/v1/debug/` // FIXME: oub???
+		// );
+		// this.socket.onopen = () => {
+		// 	this.connected = true;
+		// };
+		// this.socket.onerror = () => {
+		// 	this.connected = false;
+		// 	this.socket.close();
+		// };
+		// this.socket.onclose = (e) => {
+		// 	this.logs = [];
+		// 	this.connected = false;
+		// };
+		// this.socket.onmessage = (ev) => {
+		// 	let data: Log | null = null;
+		// 	try {
+		// 		data = JSON.parse(ev.data);
+		// 	} catch (e) {
+		// 		console.log('??', e);
+		// 		return;
+		// 	}
+		//
+		// 	data && this.logs.push(data);
+		// };
 	}
 }
 
