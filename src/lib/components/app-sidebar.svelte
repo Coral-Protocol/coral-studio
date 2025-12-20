@@ -20,6 +20,7 @@
 	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
+	import IconArrowLeft from 'phosphor-icons-svelte/IconArrowLeftRegular.svelte';
 
 	import { onMount, tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
@@ -291,6 +292,13 @@
 
 <Sidebar.Root>
 	<Sidebar.Header>
+		<Button
+			variant="outline"
+			onclick={() => {
+				window.location = '/' as any;
+			}}><IconArrowLeft /> Back to Cloud</Button
+		>
+
 		<ServerSwitcher bind:ref={namespaceSwitcher} />
 		<Sidebar.GroupLabel class="pr-0">
 			<span
