@@ -7,6 +7,7 @@
 
 	import { Input } from '$lib/components/ui/input';
 	import { Separator } from '$lib/components/ui/separator';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 
 	import IconCrane from 'phosphor-icons-svelte/IconCraneRegular.svelte';
 	import { appContext } from '$lib/context';
@@ -49,7 +50,7 @@
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 </header>
-<main class="h-full p-4">
+<main class="h-full max-w-1/3 p-4">
 	<header class="mb-2">
 		<InputGroup.Root>
 			<InputGroup.Input placeholder="Search..." bind:value={search} />
@@ -77,22 +78,38 @@
 					<span class="text-muted-foreground">No agents found.</span>
 				{/if}
 				{#each catalog.agents as agent}
-					<Item.Root variant="outline" class="p-2 px-2.5">
-						<Item.Content class="">
-							<Item.Title
-								>{agent.name}{#each agent.versions as version}<Badge variant="outline"
-										>{version}</Badge
-									>{/each}
-							</Item.Title>
-							<Item.Description class="line-clamp-1 truncate">
-								{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-									<Skeleton class="h-4 w-full" />
-								{:then details}
-									{details.registryAgent.info.description}
-								{/await}
-							</Item.Description>
-						</Item.Content>
-					</Item.Root>
+					<Dialog.Root>
+						<Dialog.Trigger class="text-left"
+							><Item.Root variant="outline" class="p-2 px-2.5">
+								<Item.Content class="">
+									<Item.Title
+										>{agent.name}{#each agent.versions as version}<Badge variant="outline"
+												>{version}</Badge
+											>{/each}
+									</Item.Title>
+									<Item.Description class="line-clamp-1 truncate">
+										{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+											<Skeleton class="h-4 w-full" />
+										{:then details}
+											{details.registryAgent.info.description}
+										{/await}
+									</Item.Description>
+								</Item.Content>
+							</Item.Root></Dialog.Trigger
+						>
+						<Dialog.Content>
+							<Dialog.Header>
+								<Dialog.Title>{agent.name}</Dialog.Title>
+								<Dialog.Description>
+									{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+										<Skeleton class="h-4 w-full" />
+									{:then details}
+										{details.registryAgent.info.description}
+									{/await}
+								</Dialog.Description>
+							</Dialog.Header>
+						</Dialog.Content>
+					</Dialog.Root>
 				{/each}
 			</Card.Content>
 		</Card.Root>
