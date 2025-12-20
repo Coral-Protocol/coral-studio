@@ -127,7 +127,7 @@ export class CoralServer {
 	}
 
 	private detailedRegistry: {
-		[catalog: string]: { [id: string]: Awaited<ReturnType<CoralServer['lookupAgentInner']>> };
+		[catalog: string]: { [id: string]: ReturnType<CoralServer['lookupAgentInner']> };
 	} = {};
 	public async lookupAgent(agentId: RegistryAgentIdentifier) {
 		const catId = registryIdOf(agentId.registrySourceId);
@@ -136,11 +136,11 @@ export class CoralServer {
 		}
 		const agentKey = `${agentId.name}/${agentId.version}`;
 		if (!(agentKey in this.detailedRegistry[catId]!)) {
-			const res = await this.lookupAgentInner(agentId);
+			const res = this.lookupAgentInner(agentId);
 			this.detailedRegistry[catId]![agentKey] = res;
 		}
 		// Safety: must exist because of above guards
-		return this.detailedRegistry[catId]![agentKey]!;
+		return await this.detailedRegistry[catId]![agentKey]!;
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
