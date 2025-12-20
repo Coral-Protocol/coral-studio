@@ -19,7 +19,7 @@
 	let conn = $derived(ctx.session);
 	let id = $derived(page.url.hash.substring(1));
 	let thread = $derived(id ? conn?.threads[id] : undefined);
-	let messages = $derived(id ? conn?.messages[id] : undefined);
+	let messages = $derived(thread && thread.messages);
 
 	let memberListOpen = $state(true);
 
