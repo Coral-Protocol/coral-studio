@@ -1,21 +1,15 @@
 <script lang="ts">
 	import type { components } from '$generated/api';
 	import type { Session } from '$lib/session.svelte';
-
-	import CheckIcon from '@lucide/svelte/icons/check';
-	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import { tick } from 'svelte';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
-	import { cn } from '$lib/utils.js';
-	import Input from '../ui/input/input.svelte';
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
 	import Textarea from '../ui/textarea/textarea.svelte';
 	import Checkbox from '../ui/checkbox/checkbox.svelte';
 	import Label from '../ui/label/label.svelte';
 	import { appContext } from '$lib/context';
 	import { toast } from 'svelte-sonner';
+	import ThreadPicker from '../thread-picker.svelte';
+  import * as Select from "$lib/components/ui/select/index.js";
+	import { SvelteSet } from 'svelte/reactivity';
 
 	let ctx = appContext.get();
 
@@ -27,24 +21,29 @@
 		session: Session;
 	} = $props();
 
-	let open = $state(false);
-	let selectedId = $state('');
 	let messageContent = $state('');
-	let triggerRef = $state<HTMLButtonElement>(null!);
+	let selectedId: string | undefined = $state();
 
 	let mentions = $state<string[]>([]);
-	let openThreads = $derived(
+	let openThreads: Session['threads']['string'][] = $derived(
 		Object.values(session.threads).filter((thread) => thread.state.state === 'open')
 	);
 
-	const selectedThread = $derived(openThreads.find((thread) => thread.id === selectedId));
+	let selectedThread = $derived(openThreads.find((thread) => thread.id === selectedId));
+  let otherParticipants = $derived.by(() => {
+    let set = selectedThread?.participants;
+    if (!set)
+      return new SvelteSet<string>();
 
-	function selectThread(threadId: string) {
-		selectedId = threadId;
-		mentions = [];
-	}
+    // can't mention self
+    set.delete(agent.name);
+    return set;
+  });
+
 
 	function sendMessage() {
+		if (selectedId === undefined) return;
+
 		ctx.server.sendMessage(session.sessionId, agent.name, {
 			threadId: selectedId,
 			content: messageContent,
@@ -52,79 +51,24 @@
 		});
 		toast.success('Message sent');
 	}
-
-	// from docs
-	function closeAndFocusTrigger() {
-		open = false;
-		tick().then(() => {
-			triggerRef.focus();
-		});
-	}
 </script>
 
 <p>Message:</p>
 <Textarea placeholder="Type your message..." bind:value={messageContent} />
 
 <p>Thread:</p>
-<Popover.Root bind:open>
-	<Popover.Trigger bind:ref={triggerRef}>
-		{#snippet child({ props })}
-			<Button
-				{...props}
-				variant="outline"
-				class="w-[200px] justify-between"
-				role="combobox"
-				aria-expanded={open}
-			>
-				{selectedThread?.name || 'Select thread...'}
-				<ChevronsUpDownIcon class="opacity-50" />
-			</Button>
-		{/snippet}
-	</Popover.Trigger>
+<ThreadPicker bind:selectedId threads={openThreads} />
 
-	<Popover.Content class="w-[200px] p-0">
-		<Command.Root>
-			<Command.Input placeholder="Search ..." />
-			<Command.List>
-				<Command.Empty>No thread found.</Command.Empty>
-				<Command.Group value="threads">
-					{#each openThreads as thread (thread.id)}
-						<Command.Item
-							value={thread.name}
-							onSelect={() => {
-								selectThread(thread.id);
-								closeAndFocusTrigger();
-							}}
-						>
-							<CheckIcon class={cn(selectedId !== thread.id && 'text-transparent')} />
-							{thread.name}
-						</Command.Item>
-					{/each}
-				</Command.Group>
-			</Command.List>
-		</Command.Root>
-	</Popover.Content>
-</Popover.Root>
+<p>Mentions:</p>
+<Select.Root type="multiple" disabled={otherParticipants.size === 0} bind:value={mentions}>
+  <Select.Trigger class="w-[280px]">{mentions.length === 0 ? 'Select mentions' : `Mentioning ${mentions.join(", ")}`}</Select.Trigger>
 
-{#each selectedThread?.participants as participant}
-	{#if participant !== agent.name}
-		<div class="flex items-start gap-3">
-			<Checkbox
-				id={participant}
-				checked={mentions.includes(participant)}
-				onCheckedChange={(checked) => {
-					if (mentions.includes(participant)) {
-						mentions = mentions.filter((p) => p !== participant);
-					} else {
-						mentions = [...mentions, participant];
-					}
-				}}
-			/>
-			<div class="grid gap-2">
-				<Label>Mention @{participant}</Label>
-			</div>
-		</div>
-	{/if}
-{/each}
+  <Select.Content>
+    {#each otherParticipants as participant}
+      <Select.Item value={participant}>{participant}</Select.Item>
+    {/each}
+  </Select.Content>
+</Select.Root>
 
 <Button disabled={selectedThread === undefined} onclick={sendMessage}>send</Button>
+
