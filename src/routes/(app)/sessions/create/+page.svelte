@@ -17,6 +17,7 @@
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import * as Card from '$lib/components/ui/card/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -117,7 +118,7 @@
 			}
 			try {
 				const body = await asJson;
-				console.log({ body });
+				// console.log({ body });
 				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
 					params: {
 						path: { namespace: ctx.server.namespace }
@@ -193,16 +194,16 @@
 					remote_request:
 						agent.provider.type === 'remote_request'
 							? {
-								maxCost: agent.provider.maxCost,
-								// ensure serverSource is the "servers" variant expected by the form model
-								serverSource:
-									agent.provider.serverSource &&
-									typeof (agent.provider.serverSource as any).type === 'string' &&
-									(agent.provider.serverSource as any).type === 'servers'
-										? (agent.provider.serverSource as any)
-										: { type: 'servers', servers: [] },
-								serverScoring: agent.provider.serverScoring
-							}
+									maxCost: agent.provider.maxCost,
+									// ensure serverSource is the "servers" variant expected by the form model
+									serverSource:
+										agent.provider.serverSource &&
+										typeof (agent.provider.serverSource as any).type === 'string' &&
+										(agent.provider.serverSource as any).type === 'servers'
+											? (agent.provider.serverSource as any)
+											: { type: 'servers', servers: [] },
+									serverScoring: agent.provider.serverScoring
+								}
 							: defaultProvider.remote_request
 				},
 				providerType: agent.provider.type,
@@ -243,17 +244,13 @@
 				options: Object.fromEntries(
 					Object.entries(agent.options ?? {})
 						.filter(([name, opt]: [string, any]) => {
-							// find the registry entry for this agent type/version
 							const defaultVal = reg.registryAgent.options[name]?.default;
-							// exclude options that are unset
 							if (!opt || opt.value === undefined) return false;
-							// include when value differs from registry default (deep compare via JSON)
 							try {
-								console.log(opt.value, defaultVal);
+								// console.log(opt.value, defaultVal);
 
 								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
 							} catch {
-								// if stringify fails, conservatively include the option
 								console.log('failed to stringify');
 								return true;
 							}
@@ -298,11 +295,19 @@
 		curAgent && ctx.server.catalogs[registryIdOf(curAgent.id.registrySourceId)]
 	);
 
+	let detailedAgent = $state<Awaited<ReturnType<typeof getDetailed>> | null>(null);
+
+	$effect(() => {
+		if (curAgent) {
+			getDetailed(curAgent.id).then((d) => (detailedAgent = d));
+		}
+	});
+
 	const getDetailed = async (agentId: RegistryAgentIdentifier) => {
 		return await ctx.server.lookupAgent(agentId).catch((e) => {
 			toast.error(`${e}`);
 			console.error(e);
-			return {} as any;
+			return null;
 		});
 	};
 
@@ -400,7 +405,6 @@
 
 	const restoreAgent = () => {
 		if (!lastDeletedAgent) return;
-		console.log('aaa');
 
 		$formData.agents.splice(lastDeletedAgent.index, 0, lastDeletedAgent.agent);
 
@@ -409,8 +413,6 @@
 
 		lastDeletedAgent = null;
 	};
-
-	$inspect(lastDeletedAgent);
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -436,32 +438,21 @@
 >
 	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
 		<section class="flex justify-between gap-2">
-			<ClipboardImportDialog onImport={importFromJson} {asJson}>
-				{#snippet child({ props })}
-					<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
-				{/snippet}
-			</ClipboardImportDialog>
-
 			<Select.Root type="single">
 				<Select.Trigger class="!text-foreground w-[180px]" disabled={$formData.agents.length === 0}
-				>{selectedAgent != null
-					? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
-					: 'Select an agent'}</Select.Trigger
+					>{selectedAgent != null
+						? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
+						: 'Select an agent'}</Select.Trigger
 				>
 				<Select.Content>
 					{#each $formData.agents as agent, i}
 						<Select.Item value={agent.name} onclick={() => (selectedAgent = i)}
-						>{agent.name}</Select.Item
+							>{agent.name}</Select.Item
 						>
 					{/each}
 				</Select.Content>
 			</Select.Root>
-			<Button
-				class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
-					? ''
-					: 'border-accent/50'} w-fit truncate "
-				onclick={addAgent}
-			>
+			<Button onclick={addAgent}>
 				<span>Add <span class="hidden lg:inline">agent</span></span>
 			</Button>
 			<TwostepButton
@@ -471,8 +462,15 @@
 				onclick={removeAgent}>Remove <span class="hidden xl:inline">agent</span></TwostepButton
 			>
 		</section>
+		<section class="flex gap-2">
+			<ClipboardImportDialog onImport={importFromJson} {asJson}>
+				{#snippet child({ props })}
+					<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
+				{/snippet}
+			</ClipboardImportDialog>
 
-		<Form.Button>Create Session</Form.Button>
+			<Form.Button>Create Session</Form.Button>
+		</section>
 	</div>
 	<Resizable.PaneGroup
 		direction={isMobile ? 'vertical' : 'horizontal'}
@@ -509,12 +507,17 @@
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
 							<span class=" m-auto hidden xl:inline">Provider</span>
 						</Tabs.Trigger>
+
+						<Tabs.Trigger value="groups" class="flex items-center truncate">
+							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
+							<span class=" m-auto hidden xl:inline">Groups</span>
+						</Tabs.Trigger>
 					</Tabs.List>
 
 					<Tabs.Content value="options" class="flex min-h-0 flex-col gap-4 overflow-scroll ">
-						{#await getDetailed(curAgent.id)}
+						{#if !detailedAgent}
 							<Skeleton />
-						{:then detailed}
+						{:else}
 							<Form.ElementField
 								{form}
 								name="agents[{selectedAgent}].name"
@@ -523,9 +526,8 @@
 								<Form.Control>
 									{#snippet children({ props })}
 										<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
-										>Name
-										</TooltipLabel
-										>
+											>Name
+										</TooltipLabel>
 										<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
 									{/snippet}
 								</Form.Control>
@@ -539,7 +541,9 @@
 									<Form.Control>
 										{#snippet children({ props })}
 											{@const id = $formData.agents[selectedAgent!]!.id}
-											<TooltipLabel tooltip={'Type of this agent'} class="m-0">Registry Type</TooltipLabel>
+											<TooltipLabel tooltip={'Type of this agent'} class="m-0"
+												>Registry Type</TooltipLabel
+											>
 											<Combobox
 												{...props}
 												class="w-auto grow pr-[2px]"
@@ -568,14 +572,14 @@
 												searchPlaceholder="Search types..."
 												onValueChange={(value) => {
 													$formData.agents[selectedAgent!]!.id = value;
-													$formData.agents = $formData.agents;
+													// $formData.agents = $formData.agents;
 													tick().then(() => {
 														for (const name in $formData.agents[selectedAgent!]!.options) {
 															if (!(name in availableOptions)) {
 																delete $formData.agents[selectedAgent!]!.options[name];
 															}
 														}
-														$formData.agents = $formData.agents;
+														// $formData.agents = $formData.agents;
 													});
 												}}
 											/>
@@ -602,14 +606,14 @@
 												searchPlaceholder="Search versions..."
 												onValueChange={(value: string) => {
 													$formData.agents[selectedAgent!]!.id.version = value;
-													$formData.agents = $formData.agents;
+													// $formData.agents = $formData.agents;
 													tick().then(() => {
 														for (const name in $formData.agents[selectedAgent!]!.options) {
 															if (!(name in availableOptions)) {
 																delete $formData.agents[selectedAgent!]!.options[name];
 															}
 														}
-														$formData.agents = $formData.agents;
+														// $formData.agents = $formData.agents;
 													});
 												}}
 											/>
@@ -618,7 +622,7 @@
 								</Form.ElementField>
 							</span>
 							<ol class="border-t">
-								{#each Object.entries(detailed.registryAgent.options) as [name, opt] (name)}
+								{#each Object.entries(detailedAgent?.registryAgent?.options ?? {}) as [name, opt] (name)}
 									<li class="hover:bg-muted/50 border-b p-2">
 										<Form.ElementField
 											class="flex gap-2"
@@ -681,7 +685,7 @@
 																			} as any;
 																		}
 																		// trigger reactivity
-																		$formData.agents = $formData.agents;
+																		// $formData.agents = $formData.agents;
 																	}}
 																	class="m-0 w-full">Add value</Button
 																>
@@ -715,7 +719,7 @@
 																							.value as any[]
 																					)[i] = value;
 																					// trigger reactivity
-																					$formData.agents = $formData.agents;
+																					// $formData.agents = $formData.agents;
 																				}
 																			}
 																		/>
@@ -729,7 +733,7 @@
 																				if (optObj && Array.isArray(optObj.value)) {
 																					(optObj.value as string[]).splice(i, 1);
 																					// trigger reactivity
-																					$formData.agents = $formData.agents;
+																					// $formData.agents = $formData.agents;
 																				}
 																			}}
 																		>
@@ -759,7 +763,7 @@
 																			value: true
 																		} as any;
 																	}
-																	$formData.agents = $formData.agents;
+																	// $formData.agents = $formData.agents;
 																}}>True</Button
 															>
 															<Button
@@ -780,7 +784,7 @@
 																			value: false
 																		} as any;
 																	}
-																	$formData.agents = $formData.agents;
+																	// $formData.agents = $formData.agents;
 																}}>False</Button
 															>
 														</ButtonGroup.Root>
@@ -821,7 +825,7 @@
 									</li>
 								{/each}
 							</ol>
-						{/await}
+						{/if}
 					</Tabs.Content>
 					<Tabs.Content value="prompt" class="overflow-scroll p-4">
 						<Form.ElementField
@@ -865,7 +869,7 @@
 														if (checked)
 															$formData.agents[selectedAgent!]!.customToolAccess.add(tool);
 														else $formData.agents[selectedAgent!]!.customToolAccess.delete(tool);
-														$formData.agents = $formData.agents;
+														// $formData.agents = $formData.agents;
 													}}
 												/>
 												<Form.Label>{tool}</Form.Label>
@@ -923,7 +927,7 @@
 											align="start"
 											options={[
 												{
-													items: Object.keys(detailed.registryAgent.runtimes)
+													items: Object.keys(detailed?.registryAgent?.runtimes ?? {})
 												}
 											]}
 											searchPlaceholder="Search runtimes..."
@@ -1056,7 +1060,7 @@
 											});
 
 											// trigger reactivity
-											$formData.agents = $formData.agents;
+											// $formData.agents = $formData.agents;
 
 											// clear inputs
 											newServerAddress = '';
@@ -1069,71 +1073,8 @@
 							{/if}
 						{/await}
 					</Tabs.Content>
-				</Tabs.Root>
-			{/if}
-		</Resizable.Pane>
-		<Resizable.Handle withHandle />
-		<Resizable.Pane
-			defaultSize={75}
-			minSize={10}
-			class="relative flex min-h-0 flex-col overflow-hidden"
-		>
-			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
-				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
-					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
-					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
-				</Tabs.List>
-				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto  py-4">
-					<Table.Root class="w-full">
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>Name</Table.Head>
-								<Table.Head>Type</Table.Head>
-								<Table.Head>Runtime</Table.Head>
-								<Table.Head>Provider Type</Table.Head>
-								<Table.Head>Agent Version</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each $formData.agents as agent, i}
-								<Table.Row
-									onclick={() => (selectedAgent = i)}
-									class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
-								>
-									<Table.Cell class="font-medium">
-										<p class="grow">{agent.name}</p>
-									</Table.Cell>
-									<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
-									<Table.Cell>{agent.provider.runtime}</Table.Cell>
-									<Table.Cell>{agent.providerType}</Table.Cell>
-									<Table.Cell>{agent.id.version}</Table.Cell>
-								</Table.Row>
-							{/each}
-						</Table.Body>
-					</Table.Root>
-				</Tabs.Content>
-				<Tabs.Content value="graph" class=" min-h-0 flex-1 overflow-hidden ">
-					{#if $formData.agents.length !== 0}
-						<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
-					{:else}
-						<div class="m-auto h-full w-full content-center text-center">
-							Add an agent to begin.
-						</div>
-					{/if}
-				</Tabs.Content>
-			</Tabs.Root>
-		</Resizable.Pane>
-		<Resizable.Handle withHandle />
 
-		<Resizable.Pane
-			defaultSize={25}
-			minSize={21}
-			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
-		>
-			<Accordion.Root type="single" value="item-1">
-				<Accordion.Item value="item-1">
-					<Accordion.Trigger>Groups</Accordion.Trigger>
-					<Accordion.Content>
+					<Tabs.Content value="groups" class="p-4">
 						<header class="flex gap-2">
 							<p class="text-muted-foreground leading-tight">
 								Agents require a shared group to communicate with each other.
@@ -1209,9 +1150,91 @@
 								</Accordion.Root>
 							{/each}
 						</ul>
-					</Accordion.Content>
-				</Accordion.Item>
-			</Accordion.Root>
+					</Tabs.Content>
+				</Tabs.Root>
+			{:else}
+				<div class="text-muted-foreground m-auto h-full w-full content-center text-center">
+					Add an agent to begin.
+				</div>
+			{/if}
+		</Resizable.Pane>
+		<Resizable.Handle withHandle />
+		<Resizable.Pane
+			defaultSize={75}
+			minSize={50}
+			class="relative flex min-h-0 flex-col overflow-hidden"
+		>
+			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
+				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
+					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
+					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
+				</Tabs.List>
+				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto  py-4">
+					<Table.Root class="w-full">
+						<Table.Header>
+							<Table.Row>
+								<Table.Head>Name</Table.Head>
+								<Table.Head>Type</Table.Head>
+								<Table.Head>Runtime</Table.Head>
+								<Table.Head>Provider Type</Table.Head>
+								<Table.Head>Agent Version</Table.Head>
+							</Table.Row>
+						</Table.Header>
+						<Table.Body>
+							{#each $formData.agents as agent, i}
+								<Table.Row
+									onclick={() => (selectedAgent = i)}
+									class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
+								>
+									<Table.Cell class="font-medium">
+										<p class="grow">{agent.name}</p>
+									</Table.Cell>
+									<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
+									<Table.Cell>{agent.provider.runtime}</Table.Cell>
+									<Table.Cell>{agent.providerType}</Table.Cell>
+									<Table.Cell>{agent.id.version}</Table.Cell>
+								</Table.Row>
+							{/each}
+						</Table.Body>
+					</Table.Root>
+				</Tabs.Content>
+				<Tabs.Content value="graph" class="flex min-h-0 flex-1 overflow-hidden ">
+					{#if $formData.agents.length !== 0}
+						<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
+					{:else}
+						<Card.Root class="m-auto w-1/4">
+							<Card.Header>
+								<Card.Title>Session creator</Card.Title>
+							</Card.Header>
+							<Card.Content class="flex flex-col gap-2 text-sm ">
+								<span>Sessions let agents coordinate.</span>
+
+								<span>Agents appear as nodes in a graph.</span>
+
+								<span>Connections represent agent groups.</span>
+							</Card.Content>
+							<Card.Footer>
+								<Button
+									class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
+										? ''
+										: 'bg-accent/90'} w-fit truncate "
+									onclick={addAgent}
+								>
+									<span>Add an agent</span>
+								</Button>
+							</Card.Footer>
+						</Card.Root>
+					{/if}
+				</Tabs.Content>
+			</Tabs.Root>
+		</Resizable.Pane>
+
+		<!-- <Resizable.Pane
+			defaultSize={25}
+			minSize={21}
+			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
+		>
+			
 
 			<Accordion.Root type="single">
 				<Accordion.Item value="item-1">
@@ -1232,6 +1255,6 @@
 					</Accordion.Content>
 				</Accordion.Item>
 			</Accordion.Root>
-		</Resizable.Pane>
+		</Resizable.Pane> -->
 	</Resizable.PaneGroup>
 </form>
