@@ -50,9 +50,8 @@
 
 	registerLoginDialog(openLoginDialog);
 
-	$inspect(ctx.server.loginRequired);
 	let loginOpen = $state(false);
-	$inspect('loginOpen:' + loginOpen);
+
 	function openLoginDialog() {
 		loginOpen = true;
 	}
