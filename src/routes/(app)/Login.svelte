@@ -12,10 +12,6 @@
 	let token = $state('');
 
 	let { open = $bindable(false) } = $props();
-
-	onMount(() => {
-		form.action = `/api/v1/auth/token?=`;
-	});
 </script>
 
 <Dialog.Root bind:open>
@@ -27,8 +23,7 @@
 					bind:this={form}
 					class="m-auto flex w-md flex-col items-center gap-4"
 					method="POST"
-					action="/api/v1/auth/token"
-					use:enhance
+					action="/api/v1/auth/token?="
 				>
 					<Field.Set class="w-full">
 						<Field.Group>
