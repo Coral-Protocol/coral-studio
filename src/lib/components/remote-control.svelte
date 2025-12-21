@@ -2,11 +2,10 @@
 	import type { components } from "$generated/api";
   import * as Accordion from '$lib/components/ui/accordion'
 	import type { Session } from "$lib/session.svelte";
-	import AddThreadParticipant from "./remote-control/add-thread-participant.svelte";
+	import ManageThreadParticipant from "./remote-control/manage-thread-participant.svelte";
 	import CloseThread from "./remote-control/close-thread.svelte";
 	import CreateThread from "./remote-control/create-thread.svelte";
 	import KillAgent from "./remote-control/kill-agent.svelte";
-	import RemoveThreadParticipant from "./remote-control/remove-thread-participant.svelte";
 	import SendMessage from "./remote-control/send-message.svelte";
 
 	const {
@@ -45,14 +44,14 @@
   <Accordion.Item value="addThreadParticipant">
     <Accordion.Trigger>Add thread participant</Accordion.Trigger>
     <Accordion.Content class="flex flex-col gap-4 text-balance">
-      <AddThreadParticipant {agent} {session} />
+      <ManageThreadParticipant {agent} {session} remove={false} />
     </Accordion.Content>
   </Accordion.Item>
 
   <Accordion.Item value="removeThreadParticipant">
     <Accordion.Trigger>Remove thread participant</Accordion.Trigger>
     <Accordion.Content class="flex flex-col gap-4 text-balance">
-      <RemoveThreadParticipant {agent} {session} />
+      <ManageThreadParticipant {agent} {session} remove={true} />
     </Accordion.Content>
   </Accordion.Item>
 
