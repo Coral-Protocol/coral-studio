@@ -7,7 +7,7 @@
 	import { onMount } from 'svelte';
 
 	let form: HTMLFormElement;
-	let token = '';
+	let token = $state('');
 
 	onMount(() => {
 		const to = page.url.searchParams.get('to') || '/';

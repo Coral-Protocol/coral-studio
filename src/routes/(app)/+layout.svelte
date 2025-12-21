@@ -5,7 +5,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import { appContext, type AppContext } from '$lib/context';
-	import { CoralServer } from '$lib/CoralServer.svelte';
+	import { CoralServer, registerLoginDialog } from '$lib/CoralServer.svelte';
 	import { onMount } from 'svelte';
 	import Login from './Login.svelte';
 
@@ -24,6 +24,7 @@
 		session: null,
 		logs: {}
 	});
+
 	logContext.set(logCtx);
 
 	onMount(() => {
@@ -47,17 +48,14 @@
 		}
 	});
 
-	watch(
-		() => ctx.server.loginRequired,
-		() => {
-			if (ctx.server.loginRequired === true) {
-				loginOpen = true;
-			} else loginOpen = false;
-		}
-	);
+	registerLoginDialog(openLoginDialog);
+
 	$inspect(ctx.server.loginRequired);
 	let loginOpen = $state(false);
-
+	$inspect('loginOpen:' + loginOpen);
+	function openLoginDialog() {
+		loginOpen = true;
+	}
 	let socket = $state({
 		userInput: new UserInput()
 	});
