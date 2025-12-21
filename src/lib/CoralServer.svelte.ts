@@ -126,7 +126,7 @@ export class CoralServer {
 				this.allSessions[namespace] = [];
 				return;
 			}
-			if (res.error) throw new Error(`Error fetching sessions - ${res.error}`);
+			if (res.error) throw new Error(`Error fetching sessions - ${res.error.message}`);
 
 			this.allSessions[namespace] = res.data;
 		} else {

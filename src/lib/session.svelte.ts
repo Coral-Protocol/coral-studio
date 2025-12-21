@@ -51,7 +51,7 @@ export class Session {
 			.then((res) => {
 				if (res.error || !res.data) {
 					this.connected = false;
-					toast.error(`Error fetching session state${res.error ? ` - ${res.error}.` : '.'}`);
+					toast.error(`Error fetching session state${res.error ? ` - ${res.error.message}.` : '.'}`);
 					this.socket.close();
 					return;
 				}
