@@ -25,18 +25,23 @@
   let summary = $state('');
 	let selectedId: string | undefined = $state();
 
-  function closeThread() {
+  async function closeThread() {
     if (selectedId === undefined)
      return;
 
-		ctx.server.closeThread(session.sessionId, agent.name, {
-      summary: summary,
-      threadId: selectedId
-		});
+    try {
+      await ctx.server.closeThread(session.sessionId, agent.name, {
+        summary: summary,
+        threadId: selectedId
+      });
 
-		toast.success('Thread closed');
-    selectedId = undefined;
-    summary = '';
+      toast.success('Thread closed');
+      selectedId = undefined;
+      summary = '';
+    }
+    catch (e) {
+      toast.error(`${e}`);
+    }
   }
 </script>
 

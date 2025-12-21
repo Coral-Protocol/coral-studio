@@ -40,16 +40,21 @@
     return set;
   });
 
-
-	function sendMessage() {
+	async function sendMessage() {
 		if (selectedId === undefined) return;
 
-		ctx.server.sendMessage(session.sessionId, agent.name, {
-			threadId: selectedId,
-			content: messageContent,
-			mentions: mentions
-		});
-		toast.success('Message sent');
+    try {
+      await ctx.server.sendMessage(session.sessionId, agent.name, {
+        threadId: selectedId,
+        content: messageContent,
+        mentions: mentions
+      });
+
+      toast.success('Message sent');
+    }
+    catch (e) {
+      toast.error(`${e}`);
+    }
 	}
 </script>
 

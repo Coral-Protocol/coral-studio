@@ -22,13 +22,21 @@
   let participantNames = $state<string[]>([]);
   let threadName = $state('');
 
-  function createThread() {
-		ctx.server.createThread(session.sessionId, agent.name, {
-			threadName: threadName,
-			participantNames
-		});
+  async function createThread() {
+    try {
+      await ctx.server.createThread(session.sessionId, agent.name, {
+        threadName: threadName,
+        participantNames
+      });
 
-		toast.success('Thread created');
+      participantNames = [];
+      threadName = '';
+
+      toast.success('Thread created');
+    }
+    catch (e) {
+      toast.error(`${e}`);
+    }
   }
 </script>
 
