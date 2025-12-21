@@ -7,6 +7,7 @@
 	import { appContext, type AppContext } from '$lib/context';
 	import { CoralServer } from '$lib/CoralServer.svelte';
 	import { onMount } from 'svelte';
+	import Login from './Login.svelte';
 
 	let { children } = $props();
 
@@ -46,11 +47,24 @@
 		}
 	});
 
+	watch(
+		() => ctx.server.loginRequired,
+		() => {
+			if (ctx.server.loginRequired === true) {
+				loginOpen = true;
+			} else loginOpen = false;
+		}
+	);
+	$inspect(ctx.server.loginRequired);
+	let loginOpen = $state(false);
+
 	let socket = $state({
 		userInput: new UserInput()
 	});
 	socketCtx.set(socket);
 </script>
+
+<Login bind:open={loginOpen} />
 
 <Sidebar.Provider>
 	<AppSidebar />

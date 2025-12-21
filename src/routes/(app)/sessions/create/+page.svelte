@@ -439,7 +439,9 @@
 	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
 		<section class="flex justify-between gap-2">
 			<Select.Root type="single">
-				<Select.Trigger class="!text-foreground w-[180px]" disabled={$formData.agents.length === 0}
+				<Select.Trigger
+					class="!text-foreground w-[180px] truncate"
+					disabled={$formData.agents.length === 0}
 					>{selectedAgent != null
 						? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
 						: 'Select an agent'}</Select.Trigger

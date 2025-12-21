@@ -6,9 +6,21 @@
 	import Logo from '$lib/icons/logo.svelte';
 	import { onMount } from 'svelte';
 
-	let form = $state() as HTMLFormElement;
+	let form: HTMLFormElement;
+	let token = '';
+
 	onMount(() => {
-		form.action = `/api/v1/auth/token?to=${encodeURIComponent(page.url.searchParams.get('to') || '/')}`;
+		const to = page.url.searchParams.get('to') || '/';
+		const tokenParam = page.url.searchParams.get('token');
+
+		form.action = `/api/v1/auth/token?to=${encodeURIComponent(to)}`;
+
+		if (tokenParam) {
+			token = tokenParam;
+			queueMicrotask(() => {
+				form.requestSubmit();
+			});
+		}
 	});
 </script>
 
@@ -30,12 +42,12 @@
 			<Field.Group>
 				<Field.Field>
 					<Field.Label for="token">Access token</Field.Label>
-					<Input id="token" type="password" name="token" />
+					<Input id="token" type="password" name="token" bind:value={token} />
 				</Field.Field>
 			</Field.Group>
 		</Field.Set>
 		<Field.Field orientation="horizontal" class="flex justify-between">
-			<Button variant="outline" type="button">Help</Button>
+			<Button variant="outline" type="button" href="https://docs.coralprotocol.org/">Help</Button>
 			<Button type="submit">Enter</Button>
 		</Field.Field>
 	</form>

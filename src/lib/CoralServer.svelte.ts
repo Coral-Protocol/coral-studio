@@ -32,18 +32,33 @@ export class CoralServer {
 	});
 
 	/** Wrapper around our openapi-fetch API client **/
+
+	public loginRequired = $state(false);
+	private authToastShown = false;
+
 	public api: { GET: APIClient['GET']; POST: APIClient['POST'] } = {
 		GET: async (url, ...init) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const res = await this.rawApi.GET(url, ...(init as any));
 			switch (res.response.status) {
 				case 401: {
-					toast.error('Invalid auth token!');
 					this.alive = false;
+
+					if (!this.authToastShown) {
+						this.authToastShown = true;
+
+						toast('Invalid auth token! Please login.', {
+							duration: Infinity,
+							dismissable: false,
+							richColors: true,
+							action: {
+								label: 'Login',
+								onClick: (event) => (event.preventDefault(), (this.loginRequired = true))
+							}
+						});
+					}
+
 					throw new Error('Invalid auth token!');
-				}
-				case 200: {
-					this.alive = true;
 				}
 			}
 			return res;
@@ -143,7 +158,6 @@ export class CoralServer {
 		return await this.detailedRegistry[catId]![agentKey]!;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	private async lookupAgentInner(agent: RegistryAgentIdentifier) {
 		switch (agent.registrySourceId.type) {
 			case 'local': {
