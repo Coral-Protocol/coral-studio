@@ -184,11 +184,12 @@
 		$formData = {
 			groups: data.agentGraphRequest.groups ?? [],
 			sessionRuntimeSettings: {
-				ttl: 50000 // FIXME: expose this in ui
+				ttl: data.sessionRuntimeSettings?.ttl ?? 50000
 			},
 			agents: data.agentGraphRequest.agents.map((agent) => ({
 				id: agent.id,
 				name: agent.name,
+				description: agent.description ?? '',
 				provider: {
 					runtime: agent.provider.runtime,
 					remote_request:
@@ -228,8 +229,7 @@
 			return {
 				id: agent.id,
 				name: agent.name,
-				description: undefined,
-
+				description: agent.description,
 				provider: {
 					type: agent.providerType as ProviderType,
 					runtime: agent.provider.runtime,
@@ -284,7 +284,7 @@
 				customTools
 			},
 			sessionRuntimeSettings: {
-				ttl: 50000
+				ttl: $formData.sessionRuntimeSettings.ttl
 			}
 		} satisfies CreateSessionRequest;
 	});
@@ -353,6 +353,7 @@
 					registrySourceId: { ...catalog.identifier }
 				},
 				name: agent.name + (existingCount > 0 ? `-${existingCount}` : ''),
+				description: '',
 				provider: {
 					remote_request: {
 						maxCost: { type: 'micro_coral', amount: 1000 },
@@ -488,35 +489,35 @@
 
 				<!--{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}-->
 				{@const availableOptions = {}}
-				<Tabs.Root value="options" class="w-full grow overflow-hidden">
+				<Tabs.Root value="agent" class="w-full grow overflow-hidden">
 					<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
-						<Tabs.Trigger value="options" class="items-centertruncate flex">
+						<Tabs.Trigger value="agent" class="items-centertruncate flex">
 							<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Options</span>
+							<span class=" m-auto hidden xl:inline">Agent</span>
 						</Tabs.Trigger>
 
-						<Tabs.Trigger value="prompt" class="flex items-center truncate">
+						<!-- <Tabs.Trigger value="prompt" class="flex items-center truncate">
 							<IconPrompt class="m-auto size-6 xl:hidden xl:size-0 " />
 							<span class=" m-auto hidden xl:inline">Prompt</span>
-						</Tabs.Trigger>
-
-						<Tabs.Trigger value="tools" class="flex items-center truncate">
-							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Tools</span>
-						</Tabs.Trigger>
+						</Tabs.Trigger> -->
 
 						<Tabs.Trigger value="provider" class="flex items-center truncate">
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
 							<span class=" m-auto hidden xl:inline">Provider</span>
 						</Tabs.Trigger>
 
-						<Tabs.Trigger value="groups" class="flex items-center truncate">
+						<!-- <Tabs.Trigger value="tools" class="flex items-center truncate">
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Groups</span>
+							<span class=" m-auto hidden xl:inline">Tools</span>
+						</Tabs.Trigger> -->
+
+						<Tabs.Trigger value="settings" class="flex items-center truncate">
+							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
+							<span class=" m-auto hidden xl:inline">Settings</span>
 						</Tabs.Trigger>
 					</Tabs.List>
 
-					<Tabs.Content value="options" class="flex min-h-0 flex-col gap-4 overflow-scroll ">
+					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-scroll ">
 						{#if !detailedAgent}
 							<Skeleton />
 						{:else}
@@ -543,8 +544,9 @@
 									<Form.Control>
 										{#snippet children({ props })}
 											{@const id = $formData.agents[selectedAgent!]!.id}
-											<TooltipLabel tooltip={'Type of this agent'} class="m-0"
-												>Registry Type</TooltipLabel
+											<TooltipLabel
+												tooltip={'Agent type from the server agent registry'}
+												class="m-0">Registry Type</TooltipLabel
 											>
 											<Combobox
 												{...props}
@@ -623,9 +625,23 @@
 									</Form.Control>
 								</Form.ElementField>
 							</span>
+							<Form.ElementField
+								{form}
+								name="agents[{selectedAgent}].description"
+								class="flex items-center gap-2  px-4"
+							>
+								<Form.Control>
+									{#snippet children({ props })}
+										<TooltipLabel tooltip={'Optional agent description'} class="m-0"
+											>Description
+										</TooltipLabel>
+										<Input {...props} bind:value={$formData.agents[selectedAgent!]!.description} />
+									{/snippet}
+								</Form.Control>
+							</Form.ElementField>
 							<ol class="border-t">
 								{#each Object.entries(detailedAgent?.registryAgent?.options ?? {}) as [name, opt] (name)}
-									<li class="hover:bg-muted/50 border-b p-2">
+									<li class="hover:bg-muted/50 border-b px-4 py-2">
 										<Form.ElementField
 											class="flex gap-2"
 											{form}
@@ -686,8 +702,7 @@
 																				value: ['']
 																			} as any;
 																		}
-																		// trigger reactivity
-																		// $formData.agents = $formData.agents;
+																		$formData.agents = $formData.agents;
 																	}}
 																	class="m-0 w-full">Add value</Button
 																>
@@ -829,7 +844,7 @@
 							</ol>
 						{/if}
 					</Tabs.Content>
-					<Tabs.Content value="prompt" class="overflow-scroll p-4">
+					<!-- <Tabs.Content value="prompt" class="overflow-scroll p-4">
 						<Form.ElementField
 							{form}
 							class="flex h-full flex-col gap-2"
@@ -848,8 +863,8 @@
 								{/snippet}
 							</Form.Control>
 						</Form.ElementField>
-					</Tabs.Content>
-					<Tabs.Content value="tools" class="p-4">
+					</Tabs.Content> -->
+					<!-- <Tabs.Content value="tools" class="p-4">
 						<Form.Fieldset {form} name="agents[{selectedAgent}].customToolAccess">
 							<ul class="flex flex-col gap-2">
 								Found {[Object.keys(tools).length]} available tools:
@@ -880,11 +895,113 @@
 									</li>{/each}
 							</ul>
 						</Form.Fieldset>
+					</Tabs.Content> -->
+					<Tabs.Content value="settings" class="flex flex-col gap-4 p-4">
+						<h1>Session settings</h1>
+
+						<Form.ElementField
+							{form}
+							name="sessionRuntimeSettings.ttl"
+							class="flex items-center gap-2  px-4"
+						>
+							<Form.Control>
+								{#snippet children({ props })}
+									<TooltipLabel
+										tooltip={'Session time to live (TTL) is measured in milliseconds '}
+										class="m-0"
+										>Time to live (TTL)
+									</TooltipLabel>
+									<Input
+										{...props}
+										bind:value={$formData.sessionRuntimeSettings.ttl}
+										defaultValue={50000}
+										placeholder="time in milliseconds"
+										type="number"
+									/>
+								{/snippet}
+							</Form.Control>
+						</Form.ElementField>
+						<Separator />
+						<h1>Agent Groups</h1>
+						<header class="flex gap-2">
+							<p class="text-muted-foreground leading-tight">
+								Agents require a shared group to communicate with each other.
+							</p>
+							{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
+								<Tooltip.Provider>
+									<Tooltip.Root delayDuration={100}>
+										<Tooltip.Trigger
+											><Button
+												size="icon"
+												class="w-fit gap-1 px-3"
+												disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
+												onclick={() => {
+													$formData.groups = [...$formData.groups, []];
+												}}>Create a new group</Button
+											></Tooltip.Trigger
+										>
+										<Tooltip.Content>
+											Empty group already exists, please add agents to it before creating another.
+										</Tooltip.Content>
+									</Tooltip.Root>
+								</Tooltip.Provider>
+							{:else}
+								<Button
+									size="icon"
+									class="w-fit gap-1 px-3"
+									onclick={() => {
+										$formData.groups = [...$formData.groups, []];
+									}}>Create a new group</Button
+								>
+							{/if}
+						</header>
+						<ul class="mt-2 flex flex-col gap-1">
+							{#each $formData.groups as link, i}
+								<Accordion.Root type="single">
+									<Accordion.Item value="item-1">
+										<Accordion.Trigger>
+											<span
+												>Group {i + 1}
+												<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
+												></span
+											>
+										</Accordion.Trigger>
+										<Accordion.Content>
+											<Select.Root
+												type="multiple"
+												value={link}
+												onValueChange={(value) => {
+													$formData.groups[i] = value;
+													$formData.groups = $formData.groups;
+												}}
+											>
+												<Select.Trigger>
+													<span>Invite agents</span>
+												</Select.Trigger>
+												<Select.Content>
+													{#if $formData.agents.length == 0}
+														<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
+													{/if}
+													{#each new Set($formData.agents.map((agent) => agent.name)) as id}
+														<Select.Item value={id}>{id}</Select.Item>
+													{/each}
+												</Select.Content>
+											</Select.Root>
+											<ol>
+												{#each link as agentName, j}
+													<li>{agentName}</li>
+												{/each}
+											</ol>
+										</Accordion.Content>
+									</Accordion.Item>
+								</Accordion.Root>
+							{/each}
+						</ul>
 					</Tabs.Content>
 					<Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
-						{#await getDetailed(curAgent.id)}
+						{#if !detailedAgent}
 							<Skeleton />
-						{:then detailed}
+						{:else}
 							<Form.ElementField
 								{form}
 								name="agents[{selectedAgent}].providerType"
@@ -919,7 +1036,7 @@
 									{#snippet children({ props })}
 										{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
 										<TooltipLabel
-											tooltip={'Agent runtime, will only show available options for the selected agent type'}
+											tooltip={'Will only show available options for the selected agent type'}
 											class="m-0">Runtime</TooltipLabel
 										>
 										<Combobox
@@ -929,7 +1046,7 @@
 											align="start"
 											options={[
 												{
-													items: Object.keys(detailed?.registryAgent?.runtimes ?? {})
+													items: Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})
 												}
 											]}
 											searchPlaceholder="Search runtimes..."
@@ -1073,85 +1190,7 @@
 									</Button>
 								</div>
 							{/if}
-						{/await}
-					</Tabs.Content>
-
-					<Tabs.Content value="groups" class="p-4">
-						<header class="flex gap-2">
-							<p class="text-muted-foreground leading-tight">
-								Agents require a shared group to communicate with each other.
-							</p>
-
-							{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
-								<Tooltip.Provider>
-									<Tooltip.Root delayDuration={100}>
-										<Tooltip.Trigger
-											><Button
-												size="icon"
-												class="w-fit gap-1 px-3"
-												disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
-												onclick={() => {
-													$formData.groups = [...$formData.groups, []];
-												}}>Create a new group</Button
-											></Tooltip.Trigger
-										>
-										<Tooltip.Content>
-											Empty group already exists, please add agents to it before creating another.
-										</Tooltip.Content>
-									</Tooltip.Root>
-								</Tooltip.Provider>
-							{:else}
-								<Button
-									size="icon"
-									class="w-fit gap-1 px-3"
-									onclick={() => {
-										$formData.groups = [...$formData.groups, []];
-									}}>Create a new group</Button
-								>
-							{/if}
-						</header>
-						<ul class="mt-2 flex flex-col gap-1">
-							{#each $formData.groups as link, i}
-								<Accordion.Root type="single">
-									<Accordion.Item value="item-1">
-										<Accordion.Trigger>
-											<span
-												>Group {i + 1}
-												<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
-												></span
-											>
-										</Accordion.Trigger>
-										<Accordion.Content>
-											<Select.Root
-												type="multiple"
-												value={link}
-												onValueChange={(value) => {
-													$formData.groups[i] = value;
-													$formData.groups = $formData.groups;
-												}}
-											>
-												<Select.Trigger>
-													<span>Invite agents</span>
-												</Select.Trigger>
-												<Select.Content>
-													{#if $formData.agents.length == 0}
-														<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
-													{/if}
-													{#each new Set($formData.agents.map((agent) => agent.name)) as id}
-														<Select.Item value={id}>{id}</Select.Item>
-													{/each}
-												</Select.Content>
-											</Select.Root>
-											<ol>
-												{#each link as agentName, j}
-													<li>{agentName}</li>
-												{/each}
-											</ol>
-										</Accordion.Content>
-									</Accordion.Item>
-								</Accordion.Root>
-							{/each}
-						</ul>
+						{/if}
 					</Tabs.Content>
 				</Tabs.Root>
 			{:else}
@@ -1166,39 +1205,64 @@
 			minSize={50}
 			class="relative flex min-h-0 flex-col overflow-hidden"
 		>
-			<Tabs.Root value="graph" class="min-h-0 flex-1 overflow-hidden">
+			<Tabs.Root value="table" class="min-h-0 flex-1 overflow-hidden">
 				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
 					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
 					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
 				</Tabs.List>
-				<Tabs.Content value="table" class="b-8 min-h-0 flex-1 overflow-auto  py-4">
-					<Table.Root class="w-full">
-						<Table.Header>
-							<Table.Row>
-								<Table.Head>Name</Table.Head>
-								<Table.Head>Type</Table.Head>
-								<Table.Head>Runtime</Table.Head>
-								<Table.Head>Provider Type</Table.Head>
-								<Table.Head>Agent Version</Table.Head>
-							</Table.Row>
-						</Table.Header>
-						<Table.Body>
-							{#each $formData.agents as agent, i}
-								<Table.Row
-									onclick={() => (selectedAgent = i)}
-									class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
-								>
-									<Table.Cell class="font-medium">
-										<p class="grow">{agent.name}</p>
-									</Table.Cell>
-									<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
-									<Table.Cell>{agent.provider.runtime}</Table.Cell>
-									<Table.Cell>{agent.providerType}</Table.Cell>
-									<Table.Cell>{agent.id.version}</Table.Cell>
+				<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
+					{#if $formData.agents.length !== 0}
+						<Table.Root class="w-full">
+							<Table.Header>
+								<Table.Row>
+									<Table.Head>Name</Table.Head>
+									<Table.Head>Type</Table.Head>
+									<Table.Head>Runtime</Table.Head>
+									<Table.Head>Provider Type</Table.Head>
+									<Table.Head>Agent Version</Table.Head>
 								</Table.Row>
-							{/each}
-						</Table.Body>
-					</Table.Root>
+							</Table.Header>
+							<Table.Body>
+								{#each $formData.agents as agent, i}
+									<Table.Row
+										onclick={() => (selectedAgent = i)}
+										class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
+									>
+										<Table.Cell class="font-medium">
+											<p class="grow">{agent.name}</p>
+										</Table.Cell>
+										<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
+										<Table.Cell>{agent.provider.runtime}</Table.Cell>
+										<Table.Cell>{agent.providerType}</Table.Cell>
+										<Table.Cell>{agent.id.version}</Table.Cell>
+									</Table.Row>
+								{/each}
+							</Table.Body>
+						</Table.Root>
+					{:else}
+						<Card.Root class="m-auto w-1/4">
+							<Card.Header>
+								<Card.Title>Session creator</Card.Title>
+							</Card.Header>
+							<Card.Content class="flex flex-col gap-2 text-sm ">
+								<span>Sessions let agents coordinate.</span>
+
+								<span>Agents appear as nodes in a graph.</span>
+
+								<span>Connections represent agent groups.</span>
+							</Card.Content>
+							<Card.Footer>
+								<Button
+									class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
+										? ''
+										: 'bg-accent/90'} w-fit truncate "
+									onclick={addAgent}
+								>
+									<span>Add an agent</span>
+								</Button>
+							</Card.Footer>
+						</Card.Root>
+					{/if}
 				</Tabs.Content>
 				<Tabs.Content value="graph" class="flex min-h-0 flex-1 overflow-hidden ">
 					{#if $formData.agents.length !== 0}

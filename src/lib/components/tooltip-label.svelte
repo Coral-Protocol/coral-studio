@@ -21,7 +21,7 @@
 </script>
 
 <Tooltip.Provider>
-	<Tooltip.Root disabled={!tooltip} delayDuration={100}>
+	<Tooltip.Root disabled={!tooltip} delayDuration={100} disableHoverableContent>
 		<Tooltip.Trigger>
 			{#snippet child({ props })}
 				<Label {...props} class="{className} !m-0 ">
