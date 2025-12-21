@@ -487,6 +487,437 @@
         } ]
       }
     },
+    "/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread" : {
+      "post" : {
+        "tags" : [ "puppet" ],
+        "summary" : "Create thread",
+        "description" : "Creates a new thread masquerading as the specified agent",
+        "operationId" : "puppetCreateThread",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The session's namespace",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session's ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Thread creation input",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateThreadInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreateThreadOutput"
+                }
+              }
+            }
+          },
+          "404" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "puppet" ],
+        "summary" : "Close thread",
+        "description" : "Closes a thread masquerading as the specified agent",
+        "operationId" : "puppetCloseThread",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The session's namespace",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session's ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Thread close input",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CloseThreadInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "404" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/message" : {
+      "post" : {
+        "tags" : [ "puppet" ],
+        "summary" : "Send message",
+        "description" : "Sends a message in a thread masquerading as the specified agent",
+        "operationId" : "puppetSendMessage",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The session's namespace",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session's ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Message input",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SendMessageInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SendMessageOutput"
+                }
+              }
+            }
+          },
+          "404" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant" : {
+      "post" : {
+        "tags" : [ "puppet" ],
+        "summary" : "Add thread participant",
+        "description" : "Adds an agent to a thread masquerading as the specified agent",
+        "operationId" : "puppetAddThreadParticipant",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The session's namespace",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session's ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Thread and participant information details",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddParticipantInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "404" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "puppet" ],
+        "summary" : "Remove thread participant",
+        "description" : "Removes an agent from a thread masquerading as the specified agent",
+        "operationId" : "puppetRemoveThreadParticipant",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The session's namespace",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session's ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Thread and participant information details",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RemoveParticipantInput"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "404" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/puppet/{namespace}/{sessionId}/{agentName}" : {
+      "delete" : {
+        "tags" : [ "puppet" ],
+        "summary" : "End agent runtime",
+        "description" : "Forcefully cause an agent to exit it's own runtime",
+        "operationId" : "puppetKillAgent",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The session's namespace",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The session's ID",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "404" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      }
+    },
     "/api/v1/agent-rpc/rental-claim" : {
       "post" : {
         "tags" : [ "agent-rpc" ],
@@ -3912,6 +4343,9 @@
           },
           "docker" : {
             "$ref" : "#/components/schemas/docker"
+          },
+          "function" : {
+            "$ref" : "#/components/schemas/FunctionRuntime"
           }
         },
         "title" : "runtime"
@@ -3949,6 +4383,11 @@
         },
         "required" : [ "image" ],
         "title" : "docker"
+      },
+      "FunctionRuntime" : {
+        "type" : "object",
+        "properties" : { },
+        "title" : "FunctionRuntime"
       },
       "AgentOptionDisplay" : {
         "type" : "object",
@@ -4970,6 +5409,130 @@
         },
         "required" : [ "registryAgent", "restrictions" ],
         "title" : "RestrictedRegistryAgent"
+      },
+      "CreateThreadInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadName" : {
+            "type" : "string",
+            "description" : "The name of the thread to create, this should be a short summary of the intended topic",
+            "title" : "String"
+          },
+          "participantIds" : {
+            "type" : "array",
+            "description" : "The list of participants to include in the thread, this should include any agent that is expected to be involved in the thread's topic.  You do not need to include yourself in this list.",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "participantIds", "threadName" ],
+        "title" : "CreateThreadInput"
+      },
+      "CreateThreadOutput" : {
+        "type" : "object",
+        "properties" : {
+          "thread" : {
+            "$ref" : "#/components/schemas/SessionThread"
+          }
+        },
+        "required" : [ "thread" ],
+        "title" : "CreateThreadOutput"
+      },
+      "CloseThreadInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadId" : {
+            "type" : "string",
+            "description" : "The unique identifier for the thread to close",
+            "title" : "String"
+          },
+          "summary" : {
+            "type" : "string",
+            "description" : "A shortened summary of all important details in this thread.  This could also be considered the thread's \"conclusion\".",
+            "title" : "String"
+          }
+        },
+        "required" : [ "summary", "threadId" ],
+        "title" : "CloseThreadInput"
+      },
+      "SendMessageInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadId" : {
+            "type" : "string",
+            "description" : "The unique identifier for the thread to send a message in",
+            "title" : "String"
+          },
+          "content" : {
+            "type" : "string",
+            "description" : "The content of the message to send",
+            "title" : "String"
+          },
+          "mentions" : {
+            "type" : "array",
+            "description" : "",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          }
+        },
+        "required" : [ "content", "mentions", "threadId" ],
+        "title" : "SendMessageInput"
+      },
+      "SendMessageOutput" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "title" : "String"
+          },
+          "message" : {
+            "$ref" : "#/components/schemas/SessionThreadMessage"
+          }
+        },
+        "required" : [ "message", "status" ],
+        "title" : "SendMessageOutput"
+      },
+      "AddParticipantInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadId" : {
+            "type" : "string",
+            "description" : "The unique identifier for the thread to add participants to",
+            "title" : "String"
+          },
+          "participantId" : {
+            "type" : "string",
+            "description" : "The name of the agent to add as a participant to the thread",
+            "title" : "String"
+          }
+        },
+        "required" : [ "participantId", "threadId" ],
+        "title" : "AddParticipantInput"
+      },
+      "RemoveParticipantInput" : {
+        "type" : "object",
+        "properties" : {
+          "threadId" : {
+            "type" : "string",
+            "description" : "The unique identifier for the thread to remove participants from",
+            "title" : "String"
+          },
+          "participantId" : {
+            "type" : "string",
+            "description" : "The name of the agent to remove as a participant of the thread",
+            "title" : "String"
+          }
+        },
+        "required" : [ "participantId", "threadId" ],
+        "title" : "RemoveParticipantInput"
       },
       "AgentPaymentClaimRequest" : {
         "type" : "object",

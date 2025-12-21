@@ -11,6 +11,7 @@
 	import ExternalLink from 'phosphor-icons-svelte/IconArrowsOutRegular.svelte';
 	import { AgentLogs, logContext } from '$lib/logs.svelte';
 	import Logs from '$lib/components/logs.svelte';
+  import RemoteControl from '$lib/components/remote-control.svelte';
 	import { appContext } from '$lib/context';
 	import { agentStateOf } from '$lib';
 	import { cn } from '$lib/utils';
@@ -55,6 +56,7 @@
 			<Tabs.List>
 				<Tabs.Trigger value="main">Overview</Tabs.Trigger>
 				<Tabs.Trigger value="logs">Logs</Tabs.Trigger>
+        <Tabs.Trigger value="rcon">Remote control</Tabs.Trigger>
 			</Tabs.List>
 			<Tabs.Content value="main">
 				<h1 class="text-3xl font-bold">{agentName}</h1>
@@ -96,6 +98,11 @@
 			<Tabs.Content value="logs" class="h-full min-h-0 basis-0">
 				<Logs logs={logs?.logs ?? []} class="h-full max-h-full" />
 			</Tabs.Content>
+      {#if conn !== null}
+        <Tabs.Content value="rcon" class="h-full min-h-0 basis-0">
+          <RemoteControl {agent} session={conn} />
+        </Tabs.Content>
+      {/if}
 		</Tabs.Root>
 	</main>
 {:else}
