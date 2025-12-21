@@ -192,4 +192,14 @@ export class CoralServer {
 			}
 		}
 	}
+
+	public async sendMessage(sessionId: string, agentName: string, input: components['schemas']['SendMessageInput']) {
+		const res = await this.api.POST('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/message', {
+			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: agentName } },
+			body: input
+		});
+
+		if (res.error) 
+			throw new Error(`Error sending message - ${res.error.message}`);
+	}
 }
