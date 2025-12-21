@@ -70,5 +70,5 @@
   </Select.Content>
 </Select.Root>
 
-<Button disabled={selectedThread === undefined} onclick={sendMessage}>send</Button>
+<Button disabled={selectedThread === undefined} onclick={sendMessage}>Send message</Button>
 

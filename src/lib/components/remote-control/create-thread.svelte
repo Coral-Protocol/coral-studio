@@ -46,4 +46,4 @@
   </Select.Content>
 </Select.Root>
 
-<Button disabled={threadName === ""} onclick={createThread}>send</Button>
+<Button disabled={threadName === ""} onclick={createThread}>Create thread</Button>
