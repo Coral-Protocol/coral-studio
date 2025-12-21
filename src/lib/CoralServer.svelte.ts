@@ -21,6 +21,13 @@ export const agentIdOf = (agentId: RegistryAgentIdentifier) =>
 	`${registryIdOf(agentId.registrySourceId)}/${agentId.name}:${agentId.version}`;
 
 type APIClient = Client<paths, `${string}/${string}`>;
+
+let loginDialog: (() => void) | null = null;
+
+export function registerLoginDialog(fn: () => void) {
+	loginDialog = fn;
+}
+
 export class CoralServer {
 	/** Unwrapped API Client. DO NOT use this without good reason - if the wrapped `api` is missing a method then add it there. **/
 	public rawApi = $derived.by(() => {
@@ -53,7 +60,7 @@ export class CoralServer {
 							richColors: true,
 							action: {
 								label: 'Login',
-								onClick: (event) => (event.preventDefault(), (this.loginRequired = true))
+								onClick: (event) => (event.preventDefault(), loginDialog?.())
 							}
 						});
 					}
