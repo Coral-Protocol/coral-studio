@@ -5418,7 +5418,7 @@
             "description" : "The name of the thread to create, this should be a short summary of the intended topic",
             "title" : "String"
           },
-          "participantIds" : {
+          "participantNames" : {
             "type" : "array",
             "description" : "The list of participants to include in the thread, this should include any agent that is expected to be involved in the thread's topic.  You do not need to include yourself in this list.",
             "items" : {
@@ -5429,7 +5429,7 @@
             "uniqueItems" : true
           }
         },
-        "required" : [ "participantIds", "threadName" ],
+        "required" : [ "participantNames", "threadName" ],
         "title" : "CreateThreadInput"
       },
       "CreateThreadOutput" : {
@@ -5508,13 +5508,13 @@
             "description" : "The unique identifier for the thread to add participants to",
             "title" : "String"
           },
-          "participantId" : {
+          "participantName" : {
             "type" : "string",
             "description" : "The name of the agent to add as a participant to the thread",
             "title" : "String"
           }
         },
-        "required" : [ "participantId", "threadId" ],
+        "required" : [ "participantName", "threadId" ],
         "title" : "AddParticipantInput"
       },
       "RemoveParticipantInput" : {
@@ -5525,13 +5525,13 @@
             "description" : "The unique identifier for the thread to remove participants from",
             "title" : "String"
           },
-          "participantId" : {
+          "participantName" : {
             "type" : "string",
             "description" : "The name of the agent to remove as a participant of the thread",
             "title" : "String"
           }
         },
-        "required" : [ "participantId", "threadId" ],
+        "required" : [ "participantName", "threadId" ],
         "title" : "RemoveParticipantInput"
       },
       "AgentPaymentClaimRequest" : {
