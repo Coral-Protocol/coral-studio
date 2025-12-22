@@ -50,7 +50,7 @@
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 </header>
-<main class="h-full max-w-1/3 p-4">
+<main class="m-auto h-full max-w-3xl p-4">
 	<header class="mb-2">
 		<InputGroup.Root>
 			<InputGroup.Input placeholder="Search..." bind:value={search} />
@@ -73,14 +73,14 @@
 						catalog.identifier.type.slice(1)} Agents</Card.Title
 				>
 			</Card.Header>
-			<Card.Content class="flex flex-col gap-2">
+			<Card.Content class="flex  flex-col gap-2">
 				{#if catalog.agents.length == 0}
 					<span class="text-muted-foreground">No agents found.</span>
 				{/if}
 				{#each catalog.agents as agent}
 					<Dialog.Root>
 						<Dialog.Trigger class="text-left"
-							><Item.Root variant="outline" class="p-2 px-2.5">
+							><Item.Root variant="outline" class="hover:bg-sidebar p-2 px-2.5">
 								<Item.Content class="">
 									<Item.Title
 										>{agent.name}{#each agent.versions as version}<Badge variant="outline"
@@ -100,7 +100,7 @@
 						<Dialog.Content>
 							<Dialog.Header>
 								<Dialog.Title>{agent.name}</Dialog.Title>
-								<Dialog.Description>
+								<Dialog.Description class="min-h-52">
 									{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
 										<Skeleton class="h-4 w-full" />
 									{:then details}
