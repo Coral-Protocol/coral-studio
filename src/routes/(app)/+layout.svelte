@@ -5,7 +5,7 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import { appContext, type AppContext } from '$lib/context';
-	import { CoralServer, registerLoginDialog } from '$lib/CoralServer.svelte';
+	import { CoralServer } from '$lib/CoralServer.svelte';
 	import { onMount } from 'svelte';
 	import Login from './Login.svelte';
 
@@ -47,8 +47,6 @@
 			}
 		}
 	});
-
-	registerLoginDialog(openLoginDialog);
 
 	let loginOpen = $state(false);
 
