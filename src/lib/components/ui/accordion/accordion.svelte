@@ -13,5 +13,5 @@
 	bind:value={value as never}
 	data-slot="accordion"
 	{...restProps}
-	class="bg-sidebar rounded-2xl px-4 font-[Urbanist] shadow"
+	class="  font-[Urbanist] "
 />
