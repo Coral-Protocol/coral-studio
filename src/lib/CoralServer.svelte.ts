@@ -3,7 +3,6 @@ import { base } from '$app/paths';
 import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
 import createClient, { type Client } from 'openapi-fetch';
-import { toast } from 'svelte-sonner';
 
 export type Registry =
 	paths['/api/v1/registry']['get']['responses']['200']['content']['application/json'][number];
@@ -22,12 +21,6 @@ export const agentIdOf = (agentId: RegistryAgentIdentifier) =>
 
 type APIClient = Client<paths, `${string}/${string}`>;
 
-let loginDialog: (() => void) | null = null;
-
-export function registerLoginDialog(fn: () => void) {
-	loginDialog = fn;
-}
-
 export class CoralServer {
 	/** Unwrapped API Client. DO NOT use this without good reason - if the wrapped `api` is missing a method then add it there. **/
 	public rawApi = $derived.by(() => {
@@ -40,9 +33,6 @@ export class CoralServer {
 
 	/** Wrapper around our openapi-fetch API client **/
 
-	public loginRequired = $state(false);
-	private authToastShown = false;
-
 	public api: { GET: APIClient['GET']; POST: APIClient['POST']; DELETE: APIClient['DELETE'] } = {
 		GET: async (url, ...init) => {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,23 +40,9 @@ export class CoralServer {
 			switch (res.response.status) {
 				case 401: {
 					this.alive = false;
-
-					if (!this.authToastShown) {
-						this.authToastShown = true;
-
-						toast('Invalid auth token! Please login.', {
-							duration: Infinity,
-							dismissable: false,
-							richColors: true,
-							action: {
-								label: 'Login',
-								onClick: (event) => (event.preventDefault(), loginDialog?.())
-							}
-						});
-					}
-
 					throw new Error('Invalid auth token!');
 				}
+
 				case 200: {
 					this.alive = true;
 					break;
