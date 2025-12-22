@@ -128,6 +128,7 @@
 					},
 					body
 				});
+				sendingForm = false;
 
 				if (res.error) {
 					// todo @alan there should probably be an api class where we can generic-ify the handling of this error
@@ -136,7 +137,6 @@
 					console.error(error.stackTrace);
 
 					toast.error(`Failed to create session: ${error.message}`);
-					sendingForm = false;
 					return;
 				}
 				if (res.data) {
@@ -152,7 +152,6 @@
 						namespace: ctx.server.namespace,
 						server: ctx.server
 					});
-					sendingForm = false;
 				} else {
 					throw new Error('no data received');
 					sendingForm = false;
