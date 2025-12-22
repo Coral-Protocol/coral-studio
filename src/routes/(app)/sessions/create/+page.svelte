@@ -37,6 +37,7 @@
 
 	import { toast } from 'svelte-sonner';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import * as Dialog from '$lib/components/ui/dialog/index.js';
 
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
@@ -54,6 +55,7 @@
 	import { appContext } from '$lib/context';
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { derived } from 'svelte/store';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -414,7 +416,235 @@
 
 		lastDeletedAgent = null;
 	};
+
+	const UNGROUPED = '__ungrouped';
+
+	let groupedOptions = $derived(
+		Object.entries(detailedAgent?.registryAgent?.options ?? {}).reduce<
+			Record<string, [string, any][]>
+		>((acc, [name, opt]) => {
+			const group = opt?.display?.group ?? UNGROUPED;
+			(acc[group] ??= []).push([name, opt]);
+			return acc;
+		}, {})
+	);
 </script>
+
+{#snippet optionRow(name: any, opt: any)}
+	<li class="hover:bg-muted/50 border-b px-4 py-2">
+		<Form.ElementField
+			class="flex gap-2"
+			{form}
+			name="agents[{selectedAgent!}].options.{name}.value"
+		>
+			<Form.Control>
+				{#snippet children({ props })}
+					<TooltipLabel
+						class="relative inline w-full max-w-1/4 min-w-1/4 cursor-help content-center truncate hover:max-w-fit {opt.required
+							? 'hover:pr-[0.5em]'
+							: ''}"
+						title={name}
+						tooltip={opt?.display?.description ?? 'No description found'}
+						type={opt.type}
+						required={opt.required}
+					>
+						{opt?.display?.label ?? name}
+						{#if opt.required}
+							<span class="text-accent absolute top-1 right-0 select-none">*</span>
+						{/if}
+					</TooltipLabel>
+
+					{#if opt.type === 'blob'}
+						<Input
+							{...props}
+							class="m-0"
+							type={inputTypes[opt.type as keyof typeof inputTypes]}
+							bind:value={
+								() => $formData.agents[selectedAgent!]!.options[name]?.value,
+								(value) => {
+									$formData.agents[selectedAgent!]!.options[name] = {
+										type: opt.type,
+										value
+									} as any; // FIXME: !!
+								}
+							}
+							aria-invalid={$allErrors.length > 0 &&
+								opt.required &&
+								$formData.agents[selectedAgent!]!.options[name]?.value === undefined}
+							placeholder={'default' in opt ? opt.default?.toString() : undefined}
+						/>
+					{:else if opt.type.includes('list')}
+						{@const list = Array.isArray($formData.agents[selectedAgent!]!.options[name]?.value)
+							? ($formData.agents[selectedAgent!]!.options[name]!.value as any[])
+							: []}
+						<ol class="flex w-full flex-col gap-1 rounded-md">
+							<li>
+								<Button
+									onclick={() => {
+										const optObj = $formData.agents[selectedAgent!]!.options[name];
+										if (optObj && Array.isArray(optObj.value)) {
+											(optObj.value as string[]).push('');
+										} else {
+											$formData.agents[selectedAgent!]!.options[name] = {
+												type: opt.type,
+												value: ['']
+											} as any;
+										}
+										$formData.agents = $formData.agents;
+									}}
+									class="m-0 w-full">Add value</Button
+								>
+							</li>
+							{#each list, i}
+								<li>
+									<ButtonGroup.Root class="m-0 w-full">
+										<Input
+											type={inputTypes[opt.type as keyof typeof inputTypes]}
+											bind:value={
+												() => {
+													const optObj = $formData.agents[selectedAgent!]!.options[name];
+													const arr = Array.isArray(optObj?.value)
+														? (optObj.value as any[])
+														: undefined;
+													return arr ? arr[i] : '';
+												},
+												(value) => {
+													const optObj = $formData.agents[selectedAgent!]!.options[name];
+													if (!optObj || !Array.isArray(optObj.value)) {
+														// initialize as array and set the i'th element
+														$formData.agents[selectedAgent!]!.options[name] = {
+															type: opt.type,
+															value: []
+														} as any;
+													}
+													($formData.agents[selectedAgent!]!.options[name]!.value as any[])[i] =
+														value;
+													// trigger reactivity
+													$formData.agents = $formData.agents;
+												}
+											}
+										/>
+										<Button
+											variant="outline"
+											class="m-0"
+											size="icon"
+											onclick={() => {
+												const optObj = $formData.agents[selectedAgent!]!.options[name];
+												if (optObj && Array.isArray(optObj.value)) {
+													(optObj.value as string[]).splice(i, 1);
+													// trigger reactivity
+													// $formData.agents = $formData.agents;
+												}
+											}}
+										>
+											<IconXRegular />
+										</Button>
+									</ButtonGroup.Root>
+								</li>
+							{/each}
+						</ol>
+					{:else if opt.type === 'bool'}
+						<ButtonGroup.Root class="m-0 justify-start">
+							<Button
+								class=" {$formData.agents[selectedAgent!]!.options[name]?.value === true ||
+								($formData.agents[selectedAgent!]!.options[name]?.value === undefined &&
+									opt.default === true)
+									? 'bg-accent text-accent-foreground'
+									: ''}"
+								onclick={() => {
+									const optObj = $formData.agents[selectedAgent!]!.options[name];
+									if (optObj) {
+										optObj.value = true;
+									} else {
+										$formData.agents[selectedAgent!]!.options[name] = {
+											type: opt.type,
+											value: true
+										} as any;
+									}
+									// $formData.agents = $formData.agents;
+								}}>True</Button
+							>
+							<Button
+								class=" {$formData.agents[selectedAgent!]!.options[name]?.value === false ||
+								($formData.agents[selectedAgent!]!.options[name]?.value === undefined &&
+									opt.default === false)
+									? 'bg-accent text-accent-foreground'
+									: ''}"
+								onclick={() => {
+									const optObj = $formData.agents[selectedAgent!]!.options[name];
+									if (optObj) {
+										optObj.value = false;
+									} else {
+										$formData.agents[selectedAgent!]!.options[name] = {
+											type: opt.type,
+											value: false
+										} as any;
+									}
+									// $formData.agents = $formData.agents;
+								}}>False</Button
+							>
+						</ButtonGroup.Root>
+					{:else if opt?.display?.multiline === true}
+						<Textarea
+							{...props}
+							class="relative m-0 h-42 resize-none"
+							bind:value={
+								() => {
+									const v = $formData.agents[selectedAgent!]!.options[name]?.value;
+									return typeof v === 'string' || typeof v === 'number' ? String(v) : '';
+								},
+								(value) => {
+									$formData.agents[selectedAgent!]!.options[name] = {
+										type: opt.type,
+										value
+									} as any;
+								}
+							}
+							defaultValue={opt.default}
+							aria-invalid={(() => {
+								const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
+								if (error && JSON.stringify(error).includes('{}')) return undefined;
+								else if (error) return true;
+								else return undefined;
+							})()}
+							placeholder={'default' in opt ? opt.default?.toString() : undefined}
+						/>
+					{:else}
+						<Input
+							{...props}
+							type={opt.secret ? 'password' : inputTypes[opt.type as keyof typeof inputTypes]}
+							bind:value={
+								() => $formData.agents[selectedAgent!]!.options[name]?.value,
+								(value) => {
+									$formData.agents[selectedAgent!]!.options[name] = {
+										type: opt.type,
+										value
+									} as any; // FIXME: !!
+								}
+							}
+							class="m-0 "
+							defaultValue={opt.default}
+							aria-invalid={(() => {
+								const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
+								if (error && JSON.stringify(error).includes('{}')) return undefined;
+								else if (error) return true;
+								else return undefined;
+							})()}
+							placeholder={'default' in opt ? opt.default?.toString() : undefined}
+						/>
+					{/if}
+				{/snippet}
+			</Form.Control>
+		</Form.ElementField>
+
+		{#if JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name]) !== '{}' && JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name])}
+			<span class="text-xs">
+				{$errors?.agents?.[selectedAgent!]?.options?.[name]?.value ??
+					$errors?.agents?.[selectedAgent!]?.options?.[name]}
+			</span>
+		{/if}
+	</li>
+{/snippet}
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
 	<Sidebar.Trigger class="-ml-1" />
@@ -511,9 +741,11 @@
 							<span class=" m-auto hidden xl:inline">Tools</span>
 						</Tabs.Trigger> -->
 
-						<Tabs.Trigger value="settings" class="flex items-center truncate">
+						<Separator orientation="vertical" class="mx-2 " />
+
+						<Tabs.Trigger value="session" class="flex items-center truncate">
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Settings</span>
+							<span class=" m-auto hidden xl:inline">Session</span>
 						</Tabs.Trigger>
 					</Tabs.List>
 
@@ -535,22 +767,22 @@
 									{/snippet}
 								</Form.Control>
 							</Form.ElementField>
-							<span class="flex w-full gap-1 px-4">
+							<span class="flex max-w-full gap-1 px-4">
 								<Form.ElementField
 									{form}
 									name="agents[{selectedAgent}].id.name"
-									class="flex grow items-center gap-2"
+									class="flex grow items-center gap-2 truncate"
 								>
 									<Form.Control>
 										{#snippet children({ props })}
 											{@const id = $formData.agents[selectedAgent!]!.id}
 											<TooltipLabel
 												tooltip={'Agent type from the server agent registry'}
-												class="m-0">Registry Type</TooltipLabel
+												class="m-0 truncate">Registry Type</TooltipLabel
 											>
 											<Combobox
 												{...props}
-												class="w-auto grow pr-[2px]"
+												class=" grow truncate pr-[2px] "
 												side="right"
 												align="start"
 												bind:selected={
@@ -640,204 +872,30 @@
 								</Form.Control>
 							</Form.ElementField>
 							<ol class="border-t">
-								{#each Object.entries(detailedAgent?.registryAgent?.options ?? {}) as [name, opt] (name)}
-									<li class="hover:bg-muted/50 border-b px-4 py-2">
-										<Form.ElementField
-											class="flex gap-2"
-											{form}
-											name="agents[{selectedAgent}].options.{name}.value"
-										>
-											<Form.Control>
-												{#snippet children({ props })}
-													<TooltipLabel
-														class="relative inline w-full max-w-1/4 min-w-1/4 cursor-help content-center truncate hover:max-w-fit {opt.required
-															? 'hover:pr-[0.5em]'
-															: ''}"
-														title={name}
-														tooltip={opt.description ?? 'No description found'}
-														type={opt.type}
-														required={opt.required}
-													>
-														{name}
-														{#if opt.required}
-															<span class="text-accent absolute top-1 right-0 select-none">*</span>
-														{/if}
-													</TooltipLabel>
-													{#if opt.type === 'blob'}
-														<Input
-															{...props}
-															class="m-0"
-															type={inputTypes[opt.type]}
-															bind:value={
-																() => $formData.agents[selectedAgent!]!.options[name]?.value,
-																(value) => {
-																	$formData.agents[selectedAgent!]!.options[name] = {
-																		type: opt.type,
-																		value
-																	} as any; // FIXME: !!
-																}
-															}
-															aria-invalid={$allErrors.length > 0 &&
-																opt.required &&
-																$formData.agents[selectedAgent!]!.options[name]?.value ===
-																	undefined}
-															placeholder={'default' in opt ? opt.default?.toString() : undefined}
-														/>
-													{:else if opt.type.includes('list')}
-														{@const list = Array.isArray(
-															$formData.agents[selectedAgent!]!.options[name]?.value
-														)
-															? ($formData.agents[selectedAgent!]!.options[name]!.value as any[])
-															: []}
-														<ol class="flex w-full flex-col gap-1 rounded-md">
-															<li>
-																<Button
-																	onclick={() => {
-																		const optObj = $formData.agents[selectedAgent!]!.options[name];
-																		if (optObj && Array.isArray(optObj.value)) {
-																			(optObj.value as string[]).push('');
-																		} else {
-																			$formData.agents[selectedAgent!]!.options[name] = {
-																				type: opt.type,
-																				value: ['']
-																			} as any;
-																		}
-																		$formData.agents = $formData.agents;
-																	}}
-																	class="m-0 w-full">Add value</Button
-																>
-															</li>
-															{#each list, i}
-																<li>
-																	<ButtonGroup.Root class="m-0 w-full">
-																		<Input
-																			type={inputTypes[opt.type]}
-																			bind:value={
-																				() => {
-																					const optObj =
-																						$formData.agents[selectedAgent!]!.options[name];
-																					const arr = Array.isArray(optObj?.value)
-																						? (optObj.value as any[])
-																						: undefined;
-																					return arr ? arr[i] : '';
-																				},
-																				(value) => {
-																					const optObj =
-																						$formData.agents[selectedAgent!]!.options[name];
-																					if (!optObj || !Array.isArray(optObj.value)) {
-																						// initialize as array and set the i'th element
-																						$formData.agents[selectedAgent!]!.options[name] = {
-																							type: opt.type,
-																							value: []
-																						} as any;
-																					}
-																					(
-																						$formData.agents[selectedAgent!]!.options[name]!
-																							.value as any[]
-																					)[i] = value;
-																					// trigger reactivity
-																					// $formData.agents = $formData.agents;
-																				}
-																			}
-																		/>
-																		<Button
-																			variant="outline"
-																			class="m-0"
-																			size="icon"
-																			onclick={() => {
-																				const optObj =
-																					$formData.agents[selectedAgent!]!.options[name];
-																				if (optObj && Array.isArray(optObj.value)) {
-																					(optObj.value as string[]).splice(i, 1);
-																					// trigger reactivity
-																					// $formData.agents = $formData.agents;
-																				}
-																			}}
-																		>
-																			<IconXRegular />
-																		</Button>
-																	</ButtonGroup.Root>
-																</li>
+								{#each Object.entries(groupedOptions) as [group, entries]}
+									<li>
+										{#if group !== '__ungrouped'}
+											<Accordion.Root type="multiple" value={[group]}>
+												<Accordion.Item value={group}>
+													<Accordion.Trigger variant="compact" class="p-4 ">
+														{group}
+													</Accordion.Trigger>
+
+													<Accordion.Content class="bg-sidebar/80">
+														<ol>
+															{#each entries as [name, opt] (name)}
+																{@render optionRow(name, opt)}
 															{/each}
 														</ol>
-													{:else if opt.type === 'bool'}
-														<ButtonGroup.Root class="m-0 justify-start">
-															<Button
-																class=" {$formData.agents[selectedAgent!]!.options[name]?.value ===
-																	true ||
-																($formData.agents[selectedAgent!]!.options[name]?.value ===
-																	undefined &&
-																	opt.default === true)
-																	? 'bg-accent text-accent-foreground'
-																	: ''}"
-																onclick={() => {
-																	const optObj = $formData.agents[selectedAgent!]!.options[name];
-																	if (optObj) {
-																		optObj.value = true;
-																	} else {
-																		$formData.agents[selectedAgent!]!.options[name] = {
-																			type: opt.type,
-																			value: true
-																		} as any;
-																	}
-																	// $formData.agents = $formData.agents;
-																}}>True</Button
-															>
-															<Button
-																class=" {$formData.agents[selectedAgent!]!.options[name]?.value ===
-																	false ||
-																($formData.agents[selectedAgent!]!.options[name]?.value ===
-																	undefined &&
-																	opt.default === false)
-																	? 'bg-accent text-accent-foreground'
-																	: ''}"
-																onclick={() => {
-																	const optObj = $formData.agents[selectedAgent!]!.options[name];
-																	if (optObj) {
-																		optObj.value = false;
-																	} else {
-																		$formData.agents[selectedAgent!]!.options[name] = {
-																			type: opt.type,
-																			value: false
-																		} as any;
-																	}
-																	// $formData.agents = $formData.agents;
-																}}>False</Button
-															>
-														</ButtonGroup.Root>
-													{:else}
-														<Input
-															{...props}
-															type={inputTypes[opt.type]}
-															bind:value={
-																() => $formData.agents[selectedAgent!]!.options[name]?.value,
-																(value) => {
-																	$formData.agents[selectedAgent!]!.options[name] = {
-																		type: opt.type,
-																		value
-																	} as any; // FIXME: !!
-																}
-															}
-															class="m-0 "
-															defaultValue={opt.default}
-															aria-invalid={(() => {
-																const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
-																if (error && JSON.stringify(error).includes('{}')) return undefined;
-																else if (error) return true;
-																else return undefined;
-															})()}
-															placeholder={'default' in opt ? opt.default?.toString() : undefined}
-														/>
-													{/if}
-												{/snippet}
-											</Form.Control>
-										</Form.ElementField>
-										{#if JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name]) !== '{}' && JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name])}
-											<span class="text-xs">
-												{$errors?.agents?.[selectedAgent!]?.options?.[name]?.value
-													? $errors?.agents?.[selectedAgent!]?.options?.[name]?.value
-													: $errors?.agents?.[selectedAgent!]?.options?.[name]}
-											</span>
+													</Accordion.Content>
+												</Accordion.Item>
+											</Accordion.Root>
+										{:else}
+											<ol>
+												{#each entries as [name, opt] (name)}
+													{@render optionRow(name, opt)}
+												{/each}
+											</ol>
 										{/if}
 									</li>
 								{/each}
@@ -896,20 +954,20 @@
 							</ul>
 						</Form.Fieldset>
 					</Tabs.Content> -->
-					<Tabs.Content value="settings" class="flex flex-col gap-4 p-4">
+					<Tabs.Content value="session" class="flex flex-col gap-4 p-4">
 						<h1>Session settings</h1>
 
 						<Form.ElementField
 							{form}
 							name="sessionRuntimeSettings.ttl"
-							class="flex items-center gap-2  px-4"
+							class="flex items-center gap-2 px-4"
 						>
 							<Form.Control>
 								{#snippet children({ props })}
 									<TooltipLabel
 										tooltip={'Session time to live (TTL) is measured in milliseconds '}
 										class="m-0"
-										>Time to live (TTL)
+										>Time to live
 									</TooltipLabel>
 									<Input
 										{...props}
