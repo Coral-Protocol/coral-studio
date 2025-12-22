@@ -200,7 +200,7 @@ const formSchema = z.object({
 				])
 			}),
 			name: z.string().nonempty(),
-			description: z.string().nonempty(),
+			description: z.string().optional(),
 			provider: ProviderSchema,
 			providerType: z.string(),
 			systemPrompt: z.string().optional(),
