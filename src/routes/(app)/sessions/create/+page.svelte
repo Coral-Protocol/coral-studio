@@ -1122,7 +1122,11 @@
 												}
 											]}
 											searchPlaceholder="Search runtimes..."
-											bind:selected={() => runtime, () => {}}
+											bind:selected={
+												() =>
+													runtime || Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0],
+												() => {}
+											}
 											onValueChange={(selected: string) => {
 												$formData.agents[selectedAgent!]!.provider.runtime = selected as any;
 											}}

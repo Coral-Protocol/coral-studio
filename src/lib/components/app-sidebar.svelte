@@ -19,7 +19,7 @@
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
 
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as InputGroup from '$lib/components/ui/input-group/index.js';
@@ -340,12 +340,12 @@
 									</Button>
 								{/snippet}
 							</Popover.Trigger>
-							<Button
+							<!-- <Button
 								onclick={() => {
 									goto(`${base}/sessions/create`);
 								}}
 								bind:ref={sessionSwitcher}>New</Button
-							>
+							> -->
 							<Popover.Content align="start" class="p-1">
 								<Command.Root>
 									<Command.Input placeholder="Search" />
@@ -383,16 +383,11 @@
 						disable={!sessCtx.session}
 					/> -->
 					<SidebarLink
-						url="{base}/tools/user-input"
+						url="{base}/sessions/create"
 						icon={IconChats}
-						title="Input Requests"
-						disabled={!ctx.session &&
-							Object.values(tools.userInput.requests).filter(
-								(req) => req.userQuestion === undefined
-							).length === 0}
-						badge={Object.values(tools.userInput.requests).filter(
-							(req) => req.userQuestion === undefined
-						).length}
+						title="Create a session"
+						disabled={ctx.server.alive === false}
+						badge={ctx.server.sessions.length === 0 && ctx.server.alive !== false ? '!' : undefined}
 					/>
 					<NavBundle
 						items={[

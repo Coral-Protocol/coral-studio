@@ -20,7 +20,7 @@
 		title: string;
 		url?: string;
 		icon?: Component;
-		badge?: number;
+		badge?: number | string;
 		collapsible?: boolean;
 		disabled?: boolean | null;
 	} = $props();
