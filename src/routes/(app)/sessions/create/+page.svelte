@@ -104,6 +104,7 @@
 
 	let formSchema = $derived(schemas.makeFormSchema(ctx.server));
 
+	let sendingForm = $state(false);
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
 		SPA: true,
@@ -111,7 +112,7 @@
 		// svelte-ignore state_referenced_locally
 		validators: zod4(formSchema),
 		validationMethod: 'onblur',
-
+		resetForm: false,
 		async onUpdate({ form: f }) {
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
@@ -119,6 +120,7 @@
 				return;
 			}
 			try {
+				sendingForm = true;
 				const body = await asJson;
 				// console.log({ body });
 				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
@@ -135,6 +137,7 @@
 					console.error(error.stackTrace);
 
 					toast.error(`Failed to create session: ${error.message}`);
+					sendingForm = false;
 					return;
 				}
 				if (res.data) {
@@ -150,12 +153,15 @@
 						namespace: ctx.server.namespace,
 						server: ctx.server
 					});
+					sendingForm = false;
 				} else {
 					throw new Error('no data received');
+					sendingForm = false;
 				}
 			} catch (e) {
 				console.log(e);
 				toast.error(`Failed to create session: ${e}`);
+				sendingForm = false;
 			}
 		}
 	});
@@ -561,7 +567,7 @@
 											value: true
 										} as any;
 									}
-									// $formData.agents = $formData.agents;
+									$formData.agents = $formData.agents;
 								}}>True</Button
 							>
 							<Button
@@ -580,7 +586,7 @@
 											value: false
 										} as any;
 									}
-									// $formData.agents = $formData.agents;
+									$formData.agents = $formData.agents;
 								}}>False</Button
 							>
 						</ButtonGroup.Root>
@@ -702,7 +708,7 @@
 				{/snippet}
 			</ClipboardImportDialog>
 
-			<Form.Button>Create Session</Form.Button>
+			<Form.Button disabled={sendingForm}>Create Session</Form.Button>
 		</section>
 	</div>
 	<Resizable.PaneGroup
@@ -749,159 +755,164 @@
 						</Tabs.Trigger>
 					</Tabs.List>
 
-					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-scroll ">
-						{#if !detailedAgent}
-							<Skeleton />
-						{:else}
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].name"
-								class="flex items-center gap-2  px-4"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
-											>Name
-										</TooltipLabel>
-										<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
-							<span class="flex max-w-full gap-1 px-4">
+					{#key selectedAgent}
+						<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-scroll ">
+							{#if !detailedAgent}
+								<Skeleton />
+							{:else}
 								<Form.ElementField
 									{form}
-									name="agents[{selectedAgent}].id.name"
-									class="flex grow items-center gap-2 truncate"
+									name="agents[{selectedAgent}].name"
+									class="flex items-center gap-2  px-4"
 								>
 									<Form.Control>
 										{#snippet children({ props })}
-											{@const id = $formData.agents[selectedAgent!]!.id}
-											<TooltipLabel
-												tooltip={'Agent type from the server agent registry'}
-												class="m-0 truncate">Registry Type</TooltipLabel
-											>
-											<Combobox
-												{...props}
-												class=" grow truncate pr-[2px] "
-												side="right"
-												align="start"
-												bind:selected={
-													() => ({
-														label: `${id.name}`,
-														key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
-														value: id
-													}),
-													() => {}
-												}
-												options={Object.values(ctx.server.catalogs).map((catalog) => ({
-													heading: catalog.identifier.type,
-													items: Object.values(catalog.agents).map((a) => ({
-														label: `${a.name}`,
-														key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-														value: {
-															registrySourceId: catalog.identifier,
-															name: a.name,
-															version: a.versions.at(-1)! // won't be in registry if 0 versions
-														}
-													}))
-												}))}
-												searchPlaceholder="Search types..."
-												onValueChange={(value) => {
-													$formData.agents[selectedAgent!]!.id = value;
-													// $formData.agents = $formData.agents;
-													tick().then(() => {
-														for (const name in $formData.agents[selectedAgent!]!.options) {
-															if (!(name in availableOptions)) {
-																delete $formData.agents[selectedAgent!]!.options[name];
+											<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
+												>Name
+											</TooltipLabel>
+											<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
+										{/snippet}
+									</Form.Control>
+								</Form.ElementField>
+								<span class="flex max-w-full gap-1 px-4">
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].id.name"
+										class="flex grow items-center gap-2 truncate"
+									>
+										<Form.Control>
+											{#snippet children({ props })}
+												{@const id = $formData.agents[selectedAgent!]!.id}
+												<TooltipLabel
+													tooltip={'Agent type from the server agent registry'}
+													class="m-0 truncate">Registry Type</TooltipLabel
+												>
+												<Combobox
+													{...props}
+													class=" grow truncate pr-[2px] "
+													side="right"
+													align="start"
+													bind:selected={
+														() => ({
+															label: `${id.name}`,
+															key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
+															value: id
+														}),
+														() => {}
+													}
+													options={Object.values(ctx.server.catalogs).map((catalog) => ({
+														heading: catalog.identifier.type,
+														items: Object.values(catalog.agents).map((a) => ({
+															label: `${a.name}`,
+															key: `${registryIdOf(catalog.identifier)}/${a.name}`,
+															value: {
+																registrySourceId: catalog.identifier,
+																name: a.name,
+																version: a.versions.at(-1)! // won't be in registry if 0 versions
 															}
-														}
-														// $formData.agents = $formData.agents;
-													});
-												}}
+														}))
+													}))}
+													searchPlaceholder="Search types..."
+													onValueChange={(value) => {
+														$formData.agents[selectedAgent!]!.id = value;
+														$formData.agents = $formData.agents;
+														tick().then(() => {
+															for (const name in $formData.agents[selectedAgent!]!.options) {
+																if (!(name in availableOptions)) {
+																	delete $formData.agents[selectedAgent!]!.options[name];
+																}
+															}
+															$formData.agents = $formData.agents;
+														});
+													}}
+												/>
+											{/snippet}
+										</Form.Control>
+									</Form.ElementField>
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].id.version"
+										class="flex items-center gap-2"
+									>
+										<Form.Control>
+											{#snippet children({ props })}
+												{@const id = curAgent.id}
+												{@const reg = curCatalog.agents[id.name]!}
+
+												<Combobox
+													{...props}
+													class="w-auto grow pr-[2px]"
+													side="right"
+													align="start"
+													bind:selected={() => id.version, () => {}}
+													options={[{ items: reg.versions }]}
+													searchPlaceholder="Search versions..."
+													onValueChange={(value: string) => {
+														$formData.agents[selectedAgent!]!.id.version = value;
+														$formData.agents = $formData.agents;
+														tick().then(() => {
+															for (const name in $formData.agents[selectedAgent!]!.options) {
+																if (!(name in availableOptions)) {
+																	delete $formData.agents[selectedAgent!]!.options[name];
+																}
+															}
+															$formData.agents = $formData.agents;
+														});
+													}}
+												/>
+											{/snippet}
+										</Form.Control>
+									</Form.ElementField>
+								</span>
+								<Form.ElementField
+									{form}
+									name="agents[{selectedAgent}].description"
+									class="flex items-center gap-2  px-4"
+								>
+									<Form.Control>
+										{#snippet children({ props })}
+											<TooltipLabel tooltip={'Optional agent description'} class="m-0"
+												>Description
+											</TooltipLabel>
+											<Input
+												{...props}
+												bind:value={$formData.agents[selectedAgent!]!.description}
 											/>
 										{/snippet}
 									</Form.Control>
 								</Form.ElementField>
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].id.version"
-									class="flex items-center gap-2"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											{@const id = curAgent.id}
-											{@const reg = curCatalog.agents[id.name]!}
+								<ol class="border-t">
+									{#each Object.entries(groupedOptions) as [group, entries]}
+										<li>
+											{#if group !== '__ungrouped'}
+												<Accordion.Root type="multiple" value={[group]}>
+													<Accordion.Item value={group}>
+														<Accordion.Trigger variant="compact" class="p-4 ">
+															{group}
+														</Accordion.Trigger>
 
-											<Combobox
-												{...props}
-												class="w-auto grow pr-[2px]"
-												side="right"
-												align="start"
-												bind:selected={() => id.version, () => {}}
-												options={[{ items: reg.versions }]}
-												searchPlaceholder="Search versions..."
-												onValueChange={(value: string) => {
-													$formData.agents[selectedAgent!]!.id.version = value;
-													// $formData.agents = $formData.agents;
-													tick().then(() => {
-														for (const name in $formData.agents[selectedAgent!]!.options) {
-															if (!(name in availableOptions)) {
-																delete $formData.agents[selectedAgent!]!.options[name];
-															}
-														}
-														// $formData.agents = $formData.agents;
-													});
-												}}
-											/>
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-							</span>
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].description"
-								class="flex items-center gap-2  px-4"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										<TooltipLabel tooltip={'Optional agent description'} class="m-0"
-											>Description
-										</TooltipLabel>
-										<Input {...props} bind:value={$formData.agents[selectedAgent!]!.description} />
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
-							<ol class="border-t">
-								{#each Object.entries(groupedOptions) as [group, entries]}
-									<li>
-										{#if group !== '__ungrouped'}
-											<Accordion.Root type="multiple" value={[group]}>
-												<Accordion.Item value={group}>
-													<Accordion.Trigger variant="compact" class="p-4 ">
-														{group}
-													</Accordion.Trigger>
-
-													<Accordion.Content class="bg-sidebar/80">
-														<ol>
-															{#each entries as [name, opt] (name)}
-																{@render optionRow(name, opt)}
-															{/each}
-														</ol>
-													</Accordion.Content>
-												</Accordion.Item>
-											</Accordion.Root>
-										{:else}
-											<ol>
-												{#each entries as [name, opt] (name)}
-													{@render optionRow(name, opt)}
-												{/each}
-											</ol>
-										{/if}
-									</li>
-								{/each}
-							</ol>
-						{/if}
-					</Tabs.Content>
+														<Accordion.Content class="bg-sidebar/80">
+															<ol>
+																{#each entries as [name, opt] (name)}
+																	{@render optionRow(name, opt)}
+																{/each}
+															</ol>
+														</Accordion.Content>
+													</Accordion.Item>
+												</Accordion.Root>
+											{:else}
+												<ol>
+													{#each entries as [name, opt] (name)}
+														{@render optionRow(name, opt)}
+													{/each}
+												</ol>
+											{/if}
+										</li>
+									{/each}
+								</ol>
+							{/if}
+						</Tabs.Content>
+					{/key}
 					<!-- <Tabs.Content value="prompt" class="overflow-scroll p-4">
 						<Form.ElementField
 							{form}
@@ -1237,7 +1248,7 @@
 											});
 
 											// trigger reactivity
-											// $formData.agents = $formData.agents;
+											$formData.agents = $formData.agents;
 
 											// clear inputs
 											newServerAddress = '';
