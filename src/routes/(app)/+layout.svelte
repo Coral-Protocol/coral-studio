@@ -7,7 +7,6 @@
 	import { appContext, type AppContext } from '$lib/context';
 	import { CoralServer } from '$lib/CoralServer.svelte';
 	import { onMount } from 'svelte';
-	import Login from './Login.svelte';
 
 	let { children } = $props();
 
@@ -48,18 +47,11 @@
 		}
 	});
 
-	let loginOpen = $state(false);
-
-	function openLoginDialog() {
-		loginOpen = true;
-	}
 	let socket = $state({
 		userInput: new UserInput()
 	});
 	socketCtx.set(socket);
 </script>
-
-<Login bind:open={loginOpen} />
 
 <Sidebar.Provider>
 	<AppSidebar />

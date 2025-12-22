@@ -6,6 +6,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
+	import Login from './Login.svelte';
 
 	import IconFileArchive from 'phosphor-icons-svelte/IconFileArchiveRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
@@ -39,6 +40,7 @@
 	import Shortcuts from './dialogs/shortcuts.svelte';
 	import { appContext } from '$lib/context';
 	import { base } from '$app/paths';
+	import { watch } from 'runed';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -52,13 +54,39 @@
 
 	let tourOpen = $state(false);
 
+	watch(
+		() => ctx.server.alive,
+		(alive) => {
+			if (alive === false) {
+				toast('Disconnected from server. Please login again.', {
+					duration: Infinity,
+					dismissable: false,
+					richColors: true,
+					id: 'server-disconnected',
+					action: {
+						label: 'Login',
+						onClick: (event) => (event.preventDefault(), (loginOpen = true))
+					}
+				});
+			} else if (alive === true) {
+				console.log('alive');
+
+				toast.success('Reconnected to server.');
+				toast.dismiss('server-disconnected');
+				refreshAgents();
+			}
+		}
+	);
+
+	let loginOpen = $state(false);
+
 	const refreshAgents = async () => {
 		try {
 			connecting = true;
 			error = null;
 
 			await ctx.server.fetchAll();
-
+			ctx.server.alive = true;
 			connecting = false;
 		} catch (e) {
 			connecting = false;
@@ -172,6 +200,8 @@
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
+
+<Login bind:open={loginOpen} />
 
 <Quickswitch {ctx} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
@@ -299,7 +329,10 @@
 										bind:ref={triggerRef}
 									>
 										<span class=" w-4/5 grow truncate overflow-hidden">
-											{ctx.session?.sessionId && ctx.server.sessions.findIndex(a => a.sessionId === ctx.session?.sessionId) !== -1
+											{ctx.session?.sessionId &&
+											ctx.server.sessions.findIndex(
+												(a) => a.sessionId === ctx.session?.sessionId
+											) !== -1
 												? ctx.session.sessionId
 												: 'Select a Session'}
 										</span>
