@@ -9,6 +9,7 @@
 
 	let ctx = appContext.get();
 
+	let form: HTMLFormElement;
 	let token = $state('');
 
 	let { open = $bindable(false) } = $props();
