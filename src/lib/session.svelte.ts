@@ -41,7 +41,7 @@ export class Session {
 		});
 
 		this.socket = new WebSocket(
-			`ws://${window.location.host}${base}/ws/v1/events/session/${namespace}/${sessionId}`
+			`${location.protocol == "https:" ? "wss" : "ws"}://${window.location.host}${base}/ws/v1/events/session/${namespace}/${sessionId}`
 		);
 
 		server.api
