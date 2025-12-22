@@ -1292,9 +1292,9 @@
 							<Table.Header>
 								<Table.Row>
 									<Table.Head>Name</Table.Head>
-									<Table.Head>Type</Table.Head>
+									<Table.Head>Source Type</Table.Head>
 									<Table.Head>Runtime</Table.Head>
-									<Table.Head>Provider Type</Table.Head>
+									<Table.Head>Registry Type</Table.Head>
 									<Table.Head>Agent Version</Table.Head>
 								</Table.Row>
 							</Table.Header>
@@ -1304,13 +1304,25 @@
 										onclick={() => (selectedAgent = i)}
 										class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
 									>
-										<Table.Cell class="font-medium">
-											<p class="grow">{agent.name}</p>
+										<Table.Cell class="max-w-[100px]">
+											<p class="truncate font-medium">{agent.name}</p>
 										</Table.Cell>
-										<Table.Cell class="truncate">{agent.id.name}</Table.Cell>
-										<Table.Cell>{agent.provider.runtime}</Table.Cell>
-										<Table.Cell>{agent.providerType}</Table.Cell>
-										<Table.Cell>{agent.id.version}</Table.Cell>
+
+										<Table.Cell class="max-w-[120px]">
+											<p class="truncate">{agent.id.registrySourceId.type}</p>
+										</Table.Cell>
+
+										<Table.Cell class="max-w-[120px]">
+											<p class="truncate">{agent.provider.runtime}</p>
+										</Table.Cell>
+
+										<Table.Cell class="max-w-[240px]">
+											<p class="truncate">{agent.id.name}</p>
+										</Table.Cell>
+
+										<Table.Cell class="max-w-[120px]">
+											<p class="truncate">{agent.id.version}</p>
+										</Table.Cell>
 									</Table.Row>
 								{/each}
 							</Table.Body>
