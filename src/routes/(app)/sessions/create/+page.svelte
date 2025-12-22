@@ -533,7 +533,7 @@
 												if (optObj && Array.isArray(optObj.value)) {
 													(optObj.value as string[]).splice(i, 1);
 													// trigger reactivity
-													// $formData.agents = $formData.agents;
+													$formData.agents = $formData.agents;
 												}
 											}}
 										>
