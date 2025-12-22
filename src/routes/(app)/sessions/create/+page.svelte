@@ -55,6 +55,7 @@
 	import { appContext } from '$lib/context';
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -706,7 +707,11 @@
 				{/snippet}
 			</ClipboardImportDialog>
 
-			<Form.Button disabled={sendingForm}>Create Session</Form.Button>
+			<Form.Button disabled={sendingForm}
+				>{#if sendingForm}
+					<Spinner />
+				{/if}Create Session</Form.Button
+			>
 		</section>
 	</div>
 	<Resizable.PaneGroup
