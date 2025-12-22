@@ -55,7 +55,6 @@
 	import { appContext } from '$lib/context';
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { derived } from 'svelte/store';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
