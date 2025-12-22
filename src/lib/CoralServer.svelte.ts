@@ -67,6 +67,10 @@ export class CoralServer {
 
 					throw new Error('Invalid auth token!');
 				}
+				case 200: {
+					this.alive = true;
+					break;
+				}
 			}
 			return res;
 		},
@@ -201,68 +205,103 @@ export class CoralServer {
 		}
 	}
 
-	public async createThread(sessionId: string, puppetAgentName: string, input: components['schemas']['CreateThreadInput']): Promise<components['schemas']['CreateThreadOutput']> {
+	public async createThread(
+		sessionId: string,
+		puppetAgentName: string,
+		input: components['schemas']['CreateThreadInput']
+	): Promise<components['schemas']['CreateThreadOutput']> {
 		const res = await this.api.POST('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread', {
-			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName } },
+			params: {
+				path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
+			},
 			body: input
 		});
 
-		if (res.error)
-			throw new Error(`Error creating thread - ${res.error.message}`);
+		if (res.error) throw new Error(`Error creating thread - ${res.error.message}`);
 
 		return res.data;
 	}
 
-	public async closeThread(sessionId: string, puppetAgentName: string, input: components['schemas']['CloseThreadInput']) {
+	public async closeThread(
+		sessionId: string,
+		puppetAgentName: string,
+		input: components['schemas']['CloseThreadInput']
+	) {
 		const res = await this.api.DELETE('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread', {
-			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName } },
+			params: {
+				path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
+			},
 			body: input
 		});
 
-		if (res.error)
-			throw new Error(`Error closing thread - ${res.error.message}`);
+		if (res.error) throw new Error(`Error closing thread - ${res.error.message}`);
 
 		return res.data;
 	}
 
-	public async sendMessage(sessionId: string, puppetAgentName: string, input: components['schemas']['SendMessageInput']): Promise<components['schemas']['SendMessageOutput']> {
-		const res = await this.api.POST('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/message', {
-			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName } },
-			body: input
-		});
+	public async sendMessage(
+		sessionId: string,
+		puppetAgentName: string,
+		input: components['schemas']['SendMessageInput']
+	): Promise<components['schemas']['SendMessageOutput']> {
+		const res = await this.api.POST(
+			'/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/message',
+			{
+				params: {
+					path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
+				},
+				body: input
+			}
+		);
 
-		if (res.error)
-			throw new Error(`Error sending message - ${res.error.message}`);
+		if (res.error) throw new Error(`Error sending message - ${res.error.message}`);
 
 		return res.data;
 	}
 
-	public async addThreadParticipant(sessionId: string, puppetAgentName: string, input: components['schemas']['AddParticipantInput']) {
-		const res = await this.api.POST('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant', {
-			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName } },
-			body: input
-		});
+	public async addThreadParticipant(
+		sessionId: string,
+		puppetAgentName: string,
+		input: components['schemas']['AddParticipantInput']
+	) {
+		const res = await this.api.POST(
+			'/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant',
+			{
+				params: {
+					path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
+				},
+				body: input
+			}
+		);
 
-		if (res.error)
-			throw new Error(`Error adding participant - ${res.error.message}`);
+		if (res.error) throw new Error(`Error adding participant - ${res.error.message}`);
 	}
 
-	public async removeThreadParticipant(sessionId: string, puppetAgentName: string, input: components['schemas']['RemoveParticipantInput']) {
-		const res = await this.api.DELETE('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant', {
-			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName } },
-			body: input
-		});
+	public async removeThreadParticipant(
+		sessionId: string,
+		puppetAgentName: string,
+		input: components['schemas']['RemoveParticipantInput']
+	) {
+		const res = await this.api.DELETE(
+			'/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant',
+			{
+				params: {
+					path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
+				},
+				body: input
+			}
+		);
 
-		if (res.error)
-			throw new Error(`Error removing participant - ${res.error.message}`);
+		if (res.error) throw new Error(`Error removing participant - ${res.error.message}`);
 	}
 
 	public async killAgent(sessionId: string, puppetAgentName: string) {
 		const res = await this.api.DELETE('/api/v1/puppet/{namespace}/{sessionId}/{agentName}', {
-			params: { path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName } }
+			params: {
+				path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
+			}
 		});
 
-		if (res.error)
-			throw new Error(`Error removing participant - ${res.error.message}`);
+		if (res.error) throw new Error(`Error removing participant - ${res.error.message}`);
 	}
 }
