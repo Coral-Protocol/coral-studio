@@ -504,7 +504,9 @@
 								<li>
 									<ButtonGroup.Root class="m-0 w-full">
 										<Input
-											type={inputTypes[opt.type as keyof typeof inputTypes]}
+											type={opt.secret
+												? 'password'
+												: inputTypes[opt.type as keyof typeof inputTypes]}
 											bind:value={
 												() => {
 													const optObj = $formData.agents[selectedAgent!]!.options[name];
@@ -735,22 +737,10 @@
 							<span class=" m-auto hidden xl:inline">Agent</span>
 						</Tabs.Trigger>
 
-						<!-- <Tabs.Trigger value="prompt" class="flex items-center truncate">
-							<IconPrompt class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Prompt</span>
-						</Tabs.Trigger> -->
-
 						<Tabs.Trigger value="provider" class="flex items-center truncate">
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
 							<span class=" m-auto hidden xl:inline">Provider</span>
 						</Tabs.Trigger>
-
-						<!-- <Tabs.Trigger value="tools" class="flex items-center truncate">
-							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Tools</span>
-						</Tabs.Trigger> -->
-
-						<Separator orientation="vertical" class="mx-2 " />
 
 						<Tabs.Trigger value="session" class="flex items-center truncate">
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
@@ -890,11 +880,11 @@
 											{#if group !== '__ungrouped'}
 												<Accordion.Root type="multiple" value={[group]}>
 													<Accordion.Item value={group}>
-														<Accordion.Trigger variant="compact" class="p-4 ">
+														<Accordion.Trigger variant="compact">
 															{group}
 														</Accordion.Trigger>
 
-														<Accordion.Content class="bg-sidebar/80">
+														<Accordion.Content>
 															<ol>
 																{#each entries as [name, opt] (name)}
 																	{@render optionRow(name, opt)}
@@ -916,58 +906,6 @@
 							{/if}
 						</Tabs.Content>
 					{/key}
-					<!-- <Tabs.Content value="prompt" class="overflow-scroll p-4">
-						<Form.ElementField
-							{form}
-							class="flex h-full flex-col gap-2"
-							name="agents[{selectedAgent}].systemPrompt"
-						>
-							<Form.Control>
-								{#snippet children({ props })}
-									<Form.Label class=" text-muted-foreground mb-0 leading-tight"
-										>Additional system prompt to add to this agent.</Form.Label
-									>
-									<Textarea
-										{...props}
-										class="min-h-32 grow"
-										bind:value={$formData.agents[selectedAgent!]!.systemPrompt}
-									/>
-								{/snippet}
-							</Form.Control>
-						</Form.ElementField>
-					</Tabs.Content> -->
-					<!-- <Tabs.Content value="tools" class="p-4">
-						<Form.Fieldset {form} name="agents[{selectedAgent}].customToolAccess">
-							<ul class="flex flex-col gap-2">
-								Found {[Object.keys(tools).length]} available tools:
-								{#each Object.keys(tools) as tool (tool)}
-									<li class="flex gap-2">
-										<Form.Control>
-											{#snippet children({ props })}
-												<Checkbox
-													{...props}
-													value={tool}
-													bind:checked={
-														() =>
-															$formData.agents[selectedAgent!]?.customToolAccess?.has(tool) ??
-															false,
-														() => {}
-													}
-													onCheckedChange={(checked) => {
-														if (selectedAgent === null || !$formData.agents[selectedAgent]) return;
-														if (checked)
-															$formData.agents[selectedAgent!]!.customToolAccess.add(tool);
-														else $formData.agents[selectedAgent!]!.customToolAccess.delete(tool);
-														// $formData.agents = $formData.agents;
-													}}
-												/>
-												<Form.Label>{tool}</Form.Label>
-											{/snippet}
-										</Form.Control>
-									</li>{/each}
-							</ul>
-						</Form.Fieldset>
-					</Tabs.Content> -->
 					<Tabs.Content value="session" class="flex flex-col gap-4 p-4">
 						<h1>Session settings</h1>
 
@@ -1328,7 +1266,7 @@
 							</Table.Body>
 						</Table.Root>
 					{:else}
-						<Card.Root class="m-auto w-1/4">
+						<Card.Root class="m-auto w-md max-w-lg">
 							<Card.Header>
 								<Card.Title>Session creator</Card.Title>
 							</Card.Header>
