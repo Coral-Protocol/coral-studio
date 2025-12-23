@@ -455,10 +455,11 @@
 							type: opt.type
 						}}
 					>
-						<span class="relative"
-							>{opt?.display?.label ?? name}
+						<span class="flex items-center overflow-hidden">
+							<span class="truncate">{opt?.display?.label ?? name}</span>
+
 							{#if opt.required}
-								<span class="text-accent absolute top-0 -right-1 select-none">*</span>
+								<span class="text-accent ml-1 flex-shrink-0 select-none">*</span>
 							{/if}
 						</span>
 					</TooltipLabel>
