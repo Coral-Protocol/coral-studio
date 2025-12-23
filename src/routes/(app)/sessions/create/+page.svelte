@@ -908,7 +908,7 @@
 															{group}
 														</Accordion.Trigger>
 
-														<Accordion.Content>
+														<Accordion.Content class="!p-0">
 															<ol>
 																{#each entries as [name, opt] (name)}
 																	{@render optionRow(name, opt)}
@@ -964,9 +964,7 @@
 						<Separator />
 						<h1>Agent Groups</h1>
 						<header class="flex gap-2">
-							<p class="text-muted-foreground leading-tight">
-								Agents require a shared group to communicate with each other.
-							</p>
+							<p class="text-sm">Agents require a shared group to communicate with each other.</p>
 							{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
 								<Tooltip.Provider>
 									<Tooltip.Root delayDuration={100}>
@@ -995,11 +993,11 @@
 								>
 							{/if}
 						</header>
-						<ul class="mt-2 flex flex-col gap-1">
+						<ul class="mt-2 flex flex-col gap-4">
 							{#each $formData.groups as link, i}
 								<Accordion.Root type="single">
 									<Accordion.Item value="item-1">
-										<Accordion.Trigger>
+										<Accordion.Trigger variant="compact">
 											<span
 												>Group {i + 1}
 												<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
@@ -1027,7 +1025,7 @@
 													{/each}
 												</Select.Content>
 											</Select.Root>
-											<ol>
+											<ol class="list-decimal pl-4">
 												{#each link as agentName, j}
 													<li>{agentName}</li>
 												{/each}
