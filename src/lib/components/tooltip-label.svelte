@@ -35,8 +35,19 @@
 	<Tooltip.Root disabled={!tooltip} delayDuration={100} disableHoverableContent>
 		<Tooltip.Trigger>
 			{#snippet child({ props })}
-				<Label {...props} class="{className} !m-0 ">
-					{@render labelChild?.()}
+				<Label
+					{...props}
+					class="{className} relative !m-0 inline w-full max-w-fit min-w-1/4 cursor-help content-center truncate hover:max-w-fit "
+				>
+					<span class="flex items-center overflow-hidden">
+						<span class="truncate">
+							{@render labelChild?.()}
+						</span>
+
+						{#if extra && extra.required === true}
+							<span class="text-accent ml-1 flex-shrink-0 select-none">*</span>
+						{/if}
+					</span>
 				</Label>
 			{/snippet}
 		</Tooltip.Trigger>

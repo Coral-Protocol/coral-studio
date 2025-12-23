@@ -445,9 +445,7 @@
 			<Form.Control>
 				{#snippet children({ props })}
 					<TooltipLabel
-						class="relative inline w-full max-w-1/4 min-w-1/4 cursor-help content-center truncate hover:max-w-fit {opt.required
-							? 'hover:pr-[0.5em]'
-							: ''}"
+						class={opt.required ? 'hover:pr-[0.5em]' : ''}
 						title={name}
 						tooltip={opt?.display?.description ?? 'No description found'}
 						extra={{
@@ -455,13 +453,7 @@
 							type: opt.type
 						}}
 					>
-						<span class="flex items-center overflow-hidden">
-							<span class="truncate">{opt?.display?.label ?? name}</span>
-
-							{#if opt.required}
-								<span class="text-accent ml-1 flex-shrink-0 select-none">*</span>
-							{/if}
-						</span>
+						{opt?.display?.label ?? name}
 					</TooltipLabel>
 
 					{#if opt.type === 'blob'}
@@ -938,27 +930,33 @@
 							{/if}
 						</Tabs.Content>
 					{/key}
-					<Tabs.Content value="session" class="flex flex-col gap-4 p-4">
+					<Tabs.Content value="session" class="flex flex-col gap-4 px-4">
 						<h1>Session settings</h1>
 
 						<Form.ElementField
 							{form}
 							name="sessionRuntimeSettings.ttl"
-							class="flex items-center gap-2 px-4"
+							class="flex items-center gap-2 "
 						>
 							<Form.Control>
 								{#snippet children({ props })}
 									<TooltipLabel
-										tooltip={'Session time to live (TTL) is measured in milliseconds '}
-										class="m-0"
-										>Time to live
+										title="Time to live (TTL)"
+										tooltip="Measured in milliseconds, the time to live is the maximum duration a session can last"
+										extra={{
+											required: true,
+											type: 'number'
+										}}
+									>
+										Time to live
 									</TooltipLabel>
 									<Input
 										{...props}
 										bind:value={$formData.sessionRuntimeSettings.ttl}
-										defaultValue={50000}
+										required
 										placeholder="time in milliseconds"
 										type="number"
+										class="grow"
 									/>
 								{/snippet}
 							</Form.Control>
