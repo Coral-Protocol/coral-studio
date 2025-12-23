@@ -725,26 +725,14 @@
 		direction={isMobile ? 'vertical' : 'horizontal'}
 		class="min-h-0 flex-1 overflow-hidden"
 	>
-		<Resizable.Pane
-			defaultSize={25}
-			minSize={21}
-			class="bg-card flex min-h-0 flex-col gap-4 !overflow-scroll"
-		>
+		<Resizable.Pane defaultSize={25} minSize={21} class="bg-card flex min-h-0 flex-col gap-4">
 			{#if selectedAgent !== null && curAgent && curCatalog}
-				{@const agent = curAgent}
-
-				<!--{@const availableOptions = agent && registry[idAsKey(agent.id)]?.options}-->
 				{@const availableOptions = {}}
 				<Tabs.Root value="agent" class="w-full grow overflow-hidden">
 					<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
 						<Tabs.Trigger value="agent" class="items-centertruncate flex">
 							<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
 							<span class=" m-auto hidden xl:inline">Agent</span>
-						</Tabs.Trigger>
-
-						<Tabs.Trigger value="provider" class="flex items-center truncate">
-							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Provider</span>
 						</Tabs.Trigger>
 
 						<Tabs.Trigger value="session" class="flex items-center truncate">
@@ -754,131 +742,170 @@
 					</Tabs.List>
 
 					{#key selectedAgent}
-						<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-scroll ">
+						<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-y-scroll ">
 							{#if !detailedAgent}
 								<Skeleton />
 							{:else}
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].name"
-									class="flex items-center gap-2  px-4"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
-												>Name
-											</TooltipLabel>
-											<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-								<span class="flex max-w-full gap-1 px-4">
+								<header class="flex flex-col gap-2 px-4">
 									<Form.ElementField
 										{form}
-										name="agents[{selectedAgent}].id.name"
-										class="flex grow items-center gap-2 truncate"
+										name="agents[{selectedAgent}].name"
+										class="flex items-center gap-2"
 									>
 										<Form.Control>
 											{#snippet children({ props })}
-												{@const id = $formData.agents[selectedAgent!]!.id}
-												<TooltipLabel
-													tooltip={'Agent type from the server agent registry'}
-													class="m-0 truncate">Registry Type</TooltipLabel
-												>
-												<Combobox
-													{...props}
-													class=" grow truncate pr-[2px] "
-													side="right"
-													align="start"
-													bind:selected={
-														() => ({
-															label: `${id.name}`,
-															key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
-															value: id
-														}),
-														() => {}
-													}
-													options={Object.values(ctx.server.catalogs).map((catalog) => ({
-														heading: catalog.identifier.type,
-														items: Object.values(catalog.agents).map((a) => ({
-															label: `${a.name}`,
-															key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-															value: {
-																registrySourceId: catalog.identifier,
-																name: a.name,
-																version: a.versions.at(-1)! // won't be in registry if 0 versions
-															}
-														}))
-													}))}
-													searchPlaceholder="Search types..."
-													onValueChange={(value) => {
-														$formData.agents[selectedAgent!]!.id = value;
-														$formData.agents = $formData.agents;
-														tick().then(() => {
-															for (const name in $formData.agents[selectedAgent!]!.options) {
-																if (!(name in availableOptions)) {
-																	delete $formData.agents[selectedAgent!]!.options[name];
-																}
-															}
-															$formData.agents = $formData.agents;
-														});
-													}}
-												/>
+												<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
+													>Name
+												</TooltipLabel>
+												<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
 											{/snippet}
 										</Form.Control>
 									</Form.ElementField>
 									<Form.ElementField
 										{form}
-										name="agents[{selectedAgent}].id.version"
+										name="agents[{selectedAgent}].description"
 										class="flex items-center gap-2"
 									>
 										<Form.Control>
 											{#snippet children({ props })}
-												{@const id = curAgent.id}
-												{@const reg = curCatalog.agents[id.name]!}
+												<TooltipLabel tooltip={'Optional agent description'} class="m-0"
+													>Description
+												</TooltipLabel>
+												<Input
+													{...props}
+													bind:value={$formData.agents[selectedAgent!]!.description}
+												/>
+											{/snippet}
+										</Form.Control>
+									</Form.ElementField>
+									<span class="flex max-w-full gap-1">
+										<Form.ElementField
+											{form}
+											name="agents[{selectedAgent}].id.name"
+											class="flex grow items-center gap-2 truncate"
+										>
+											<Form.Control>
+												{#snippet children({ props })}
+													{@const id = $formData.agents[selectedAgent!]!.id}
+													<TooltipLabel
+														tooltip={'Agent type from the server agent registry'}
+														class="m-0 truncate">Registry Type</TooltipLabel
+													>
+													<Combobox
+														{...props}
+														class=" grow truncate pr-[2px] "
+														side="right"
+														align="start"
+														bind:selected={
+															() => ({
+																label: `${id.name}`,
+																key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
+																value: id
+															}),
+															() => {}
+														}
+														options={Object.values(ctx.server.catalogs).map((catalog) => ({
+															heading: catalog.identifier.type,
+															items: Object.values(catalog.agents).map((a) => ({
+																label: `${a.name}`,
+																key: `${registryIdOf(catalog.identifier)}/${a.name}`,
+																value: {
+																	registrySourceId: catalog.identifier,
+																	name: a.name,
+																	version: a.versions.at(-1)! // won't be in registry if 0 versions
+																}
+															}))
+														}))}
+														searchPlaceholder="Search types..."
+														onValueChange={(value) => {
+															$formData.agents[selectedAgent!]!.id = value;
+															$formData.agents = $formData.agents;
+															tick().then(() => {
+																for (const name in $formData.agents[selectedAgent!]!.options) {
+																	if (!(name in availableOptions)) {
+																		delete $formData.agents[selectedAgent!]!.options[name];
+																	}
+																}
+																$formData.agents = $formData.agents;
+															});
+														}}
+													/>
+												{/snippet}
+											</Form.Control>
+										</Form.ElementField>
+										<Form.ElementField
+											{form}
+											name="agents[{selectedAgent}].id.version"
+											class="flex items-center gap-2"
+										>
+											<Form.Control>
+												{#snippet children({ props })}
+													{@const id = curAgent.id}
+													{@const reg = curCatalog.agents[id.name]!}
 
+													<Combobox
+														{...props}
+														class="w-auto grow pr-[2px]"
+														side="right"
+														align="start"
+														bind:selected={() => id.version, () => {}}
+														options={[{ items: reg.versions }]}
+														searchPlaceholder="Search versions..."
+														onValueChange={(value: string) => {
+															$formData.agents[selectedAgent!]!.id.version = value;
+															$formData.agents = $formData.agents;
+															tick().then(() => {
+																for (const name in $formData.agents[selectedAgent!]!.options) {
+																	if (!(name in availableOptions)) {
+																		delete $formData.agents[selectedAgent!]!.options[name];
+																	}
+																}
+																$formData.agents = $formData.agents;
+															});
+														}}
+													/>
+												{/snippet}
+											</Form.Control>
+										</Form.ElementField>
+									</span>
+
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].provider.runtime"
+										class="flex items-center gap-2"
+									>
+										<Form.Control>
+											{#snippet children({ props })}
+												{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
+												<TooltipLabel
+													tooltip={'Will only show available options for the selected agent type'}
+													class="m-0">Runtime</TooltipLabel
+												>
 												<Combobox
 													{...props}
 													class="w-auto grow pr-[2px]"
 													side="right"
 													align="start"
-													bind:selected={() => id.version, () => {}}
-													options={[{ items: reg.versions }]}
-													searchPlaceholder="Search versions..."
-													onValueChange={(value: string) => {
-														$formData.agents[selectedAgent!]!.id.version = value;
-														$formData.agents = $formData.agents;
-														tick().then(() => {
-															for (const name in $formData.agents[selectedAgent!]!.options) {
-																if (!(name in availableOptions)) {
-																	delete $formData.agents[selectedAgent!]!.options[name];
-																}
-															}
-															$formData.agents = $formData.agents;
-														});
+													options={[
+														{
+															items: Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})
+														}
+													]}
+													searchPlaceholder="Search runtimes..."
+													bind:selected={
+														() =>
+															runtime ||
+															Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0],
+														() => {}
+													}
+													onValueChange={(selected: string) => {
+														$formData.agents[selectedAgent!]!.provider.runtime = selected as any;
 													}}
 												/>
 											{/snippet}
 										</Form.Control>
 									</Form.ElementField>
-								</span>
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].description"
-									class="flex items-center gap-2  px-4"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'Optional agent description'} class="m-0"
-												>Description
-											</TooltipLabel>
-											<Input
-												{...props}
-												bind:value={$formData.agents[selectedAgent!]!.description}
-											/>
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
+								</header>
 								<ol class="border-t">
 									{#each Object.entries(groupedOptions) as [group, entries]}
 										<li>
@@ -1013,7 +1040,7 @@
 							{/each}
 						</ul>
 					</Tabs.Content>
-					<Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
+					<!-- <Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
 						{#if !detailedAgent}
 							<Skeleton />
 						{:else}
@@ -1042,41 +1069,7 @@
 									{/snippet}
 								</Form.Control>
 							</Form.ElementField>
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].provider.runtime"
-								class="flex items-center gap-2"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
-										<TooltipLabel
-											tooltip={'Will only show available options for the selected agent type'}
-											class="m-0">Runtime</TooltipLabel
-										>
-										<Combobox
-											{...props}
-											class="w-auto grow pr-[2px]"
-											side="right"
-											align="start"
-											options={[
-												{
-													items: Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})
-												}
-											]}
-											searchPlaceholder="Search runtimes..."
-											bind:selected={
-												() =>
-													runtime || Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0],
-												() => {}
-											}
-											onValueChange={(selected: string) => {
-												$formData.agents[selectedAgent!]!.provider.runtime = selected as any;
-											}}
-										/>
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
+							
 							{#if selectedAgent !== null && $formData.agents.length > selectedAgent && agent.providerType === 'remote_request'}
 								<Form.ElementField
 									{form}
@@ -1210,7 +1203,7 @@
 								</div>
 							{/if}
 						{/if}
-					</Tabs.Content>
+					</Tabs.Content> -->
 				</Tabs.Root>
 			{:else}
 				<div class="text-muted-foreground m-auto h-full w-full content-center text-center">
