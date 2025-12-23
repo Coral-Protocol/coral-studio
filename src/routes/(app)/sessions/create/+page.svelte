@@ -449,7 +449,7 @@
 						title={name}
 						tooltip={opt?.display?.description ?? 'No description found'}
 						extra={{
-							required: true,
+							required: opt.required,
 							type: opt.type
 						}}
 					>
