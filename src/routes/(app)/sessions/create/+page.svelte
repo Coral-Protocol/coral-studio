@@ -445,7 +445,7 @@
 			<Form.Control>
 				{#snippet children({ props })}
 					<TooltipLabel
-						class={opt.required ? 'hover:pr-[0.5em]' : ''}
+						class="min-w-1/4 {opt.required ? 'hover:pr-[0.5em]' : ''}"
 						title={name}
 						tooltip={opt?.display?.description ?? 'No description found'}
 						extra={{
@@ -626,7 +626,7 @@
 									} as any; // FIXME: !!
 								}
 							}
-							class="m-0 "
+							class="m-0 w-full "
 							defaultValue={opt.default}
 							aria-invalid={(() => {
 								const error = $errors?.agents?.[selectedAgent!]?.options?.[name];

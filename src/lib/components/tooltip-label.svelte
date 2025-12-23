@@ -37,7 +37,7 @@
 			{#snippet child({ props })}
 				<Label
 					{...props}
-					class="{className} relative !m-0 inline w-full max-w-fit min-w-1/4 cursor-help content-center truncate hover:max-w-fit "
+					class="{className} relative !m-0 inline w-full max-w-1/4  cursor-help content-center truncate hover:max-w-max "
 				>
 					<span class="flex items-center overflow-hidden">
 						<span class="truncate">
