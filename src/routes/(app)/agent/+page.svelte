@@ -11,10 +11,11 @@
 	import ExternalLink from 'phosphor-icons-svelte/IconArrowsOutRegular.svelte';
 	import { AgentLogs, logContext } from '$lib/logs.svelte';
 	import Logs from '$lib/components/logs.svelte';
-  import RemoteControl from '$lib/components/remote-control.svelte';
+	import RemoteControl from '$lib/components/remote-control.svelte';
 	import { appContext } from '$lib/context';
 	import { agentStateOf } from '$lib';
 	import { cn } from '$lib/utils';
+	import { base } from '$app/paths';
 
 	let ctx = appContext.get();
 	let logCtx = logContext.get();
@@ -56,7 +57,7 @@
 			<Tabs.List>
 				<Tabs.Trigger value="main">Overview</Tabs.Trigger>
 				<Tabs.Trigger value="logs">Logs</Tabs.Trigger>
-        <Tabs.Trigger value="rcon">Remote control</Tabs.Trigger>
+				<Tabs.Trigger value="rcon">Remote control</Tabs.Trigger>
 			</Tabs.List>
 			<Tabs.Content value="main">
 				<h1 class="text-3xl font-bold">{agentName}</h1>
@@ -75,14 +76,14 @@
 								{#each memberThreads as thread (thread.id)}
 									<li class="flex items-center">
 										<CaretRight class="size-4" />
-										<Button variant="link" href={`/thread/#${thread.id}`} class="font-bold">
+										<Button variant="link" href={`${base}/thread/#${thread.id}`} class="font-bold">
 											{thread.name}<ExternalLink class="size-3" />
 										</Button>
 										<span>
 											with:
 											{#each thread.participants as part}
 												{#if part !== agentName}
-													<Button variant="link" href={`/agent/#${part}`} class="m-0 px-2"
+													<Button variant="link" href={`${base}/agent/#${part}`} class="m-0 px-2"
 														>{part}</Button
 													>
 												{/if}
@@ -98,11 +99,11 @@
 			<Tabs.Content value="logs" class="h-full min-h-0 basis-0">
 				<Logs logs={logs?.logs ?? []} class="h-full max-h-full" />
 			</Tabs.Content>
-      {#if conn !== null}
-        <Tabs.Content value="rcon" class="h-full min-h-0 basis-0">
-          <RemoteControl {agent} session={conn} />
-        </Tabs.Content>
-      {/if}
+			{#if conn !== null}
+				<Tabs.Content value="rcon" class="h-full min-h-0 basis-0">
+					<RemoteControl {agent} session={conn} />
+				</Tabs.Content>
+			{/if}
 		</Tabs.Root>
 	</main>
 {:else}
