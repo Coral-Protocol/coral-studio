@@ -2,15 +2,18 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Label } from '$lib/components/ui/label';
 	import type { Snippet } from 'svelte';
+	import type { string } from 'zod';
 
 	const {
 		tooltip,
+		extra,
 		type,
 		required,
 		title,
 		class: className,
 		children: labelChild
 	}: {
+		extra?: Record<string, ExtraValue>;
 		tooltip?: string;
 		type?: string;
 		title?: string;
@@ -18,6 +21,14 @@
 		class?: string;
 		children?: Snippet;
 	} = $props();
+
+	type ExtraValue =
+		| true
+		| string
+		| {
+				value: string | true;
+				showKey?: boolean;
+		  };
 </script>
 
 <Tooltip.Provider>
@@ -33,12 +44,24 @@
 			{#if title}
 				<p class="font-bold">{title}</p>
 			{/if}
-			<p>{tooltip}</p>
-			{#if type}
-				<p><span class="font-bold">type:</span> {type}</p>
+			{#if tooltip}
+				<p>{tooltip}</p>
 			{/if}
-			{#if required}
-				<p class="font-bold">required</p>
+			{#if extra}
+				{#each Object.entries(extra) as [key, item]}
+					{#if item === true}
+						<p><span class="font-bold">{key}</span></p>
+					{:else if typeof item === 'string'}
+						<p><span class="font-bold">{key}:</span> {item}</p>
+					{:else}
+						<p>
+							{#if item.showKey !== false}
+								<span class="font-bold">{key}:</span>
+							{/if}
+							{item.value === true ? '' : item.value}
+						</p>
+					{/if}
+				{/each}
 			{/if}
 		</Tooltip.Content>
 	</Tooltip.Root>

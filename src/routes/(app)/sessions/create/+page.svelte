@@ -450,13 +450,17 @@
 							: ''}"
 						title={name}
 						tooltip={opt?.display?.description ?? 'No description found'}
-						type={opt.type}
-						required={opt.required}
+						extra={{
+							required: true,
+							type: opt.type
+						}}
 					>
-						{opt?.display?.label ?? name}
-						{#if opt.required}
-							<span class="text-accent absolute top-1 right-0 select-none">*</span>
-						{/if}
+						<span class="relative"
+							>{opt?.display?.label ?? name}
+							{#if opt.required}
+								<span class="text-accent absolute top-0 -right-1 select-none">*</span>
+							{/if}
+						</span>
 					</TooltipLabel>
 
 					{#if opt.type === 'blob'}
