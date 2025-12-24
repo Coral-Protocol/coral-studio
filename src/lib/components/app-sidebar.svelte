@@ -197,6 +197,8 @@
 			}
 		}
 	};
+
+	$inspect(ctx.server.sessions);
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -328,13 +330,8 @@
 										aria-expanded={sessionSearcherOpen}
 										bind:ref={triggerRef}
 									>
-										<span class=" w-4/5 grow truncate overflow-hidden">
-											{ctx.session?.sessionId &&
-											ctx.server.sessions.findIndex(
-												(a) => a.sessionId === ctx.session?.sessionId
-											) !== -1
-												? ctx.session.sessionId
-												: 'Select a Session'}
+										<span class="w-4/5 grow truncate overflow-hidden">
+											{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a Session'}
 										</span>
 										<CaretUpDown />
 									</Button>
@@ -350,8 +347,9 @@
 								<Command.Root>
 									<Command.Input placeholder="Search" />
 									<Command.List>
-										<Command.Empty>No sessions found</Command.Empty>
-										{#if ctx.server.sessions.length > 0}
+										{#if ctx.server.sessions.length === 0 && !ctx.session}
+											<Command.Empty>No sessions found</Command.Empty>
+										{:else}
 											<Command.Group>
 												{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
 													<Command.Item
@@ -369,6 +367,21 @@
 														{basicSession.sessionId}
 													</Command.Item>
 												{/each}
+
+												{#if ctx.session && !ctx.server.sessions.find((s) => s.sessionId === ctx.session?.sessionId)}
+													<!-- Show current session even if it's not in ctx.server.sessions -->
+													<Command.Item
+														class="font-bold text-wrap break-all"
+														onSelect={() => {
+															if (ctx.session) {
+																value = ctx.session.sessionId;
+																closeAndFocusTrigger();
+															}
+														}}
+													>
+														{ctx.session.sessionId} (current)
+													</Command.Item>
+												{/if}
 											</Command.Group>
 										{/if}
 									</Command.List>
