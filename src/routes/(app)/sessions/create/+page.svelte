@@ -56,6 +56,7 @@
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import { derived } from 'svelte/store';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -104,6 +105,8 @@
 
 	let formSchema = $derived(schemas.makeFormSchema(ctx.server));
 
+	let currentTab = $state('agent');
+
 	let sendingForm = $state(false);
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
@@ -113,6 +116,10 @@
 		validators: zod4(formSchema),
 		validationMethod: 'onblur',
 		resetForm: false,
+		onSubmit({ action, formData, formElement, controller, submitter, cancel }) {
+			console.log('aa');
+		},
+
 		async onUpdate({ form: f }) {
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
@@ -171,6 +178,26 @@
 	});
 
 	let { form: formData, errors, allErrors, enhance } = $derived(form);
+
+	function formatMsToHHMMSS(ms: number): string {
+		const totalSeconds = Math.floor(ms / 1000);
+		const hours = Math.floor(totalSeconds / 3600);
+		const minutes = Math.floor((totalSeconds % 3600) / 60);
+		const seconds = totalSeconds % 60;
+
+		return [hours, minutes, seconds].map((v) => String(v).padStart(2, '0')).join(':');
+	}
+
+	const usdFormatter = new Intl.NumberFormat('en-US', {
+		style: 'currency',
+		currency: 'USD',
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2
+	});
+
+	const maxCostEstimate = $derived(
+		(($formData.sessionRuntimeSettings.ttl ?? 0) * $formData.agents.length * 10) / 60000
+	);
 
 	const defaultProvider = {
 		runtime: 'executable',
@@ -433,6 +460,8 @@
 			return acc;
 		}, {})
 	);
+
+	let mainTabs: HTMLElement | null = $state(null);
 </script>
 
 {#snippet optionRow(name: any, opt: any)}
@@ -445,7 +474,7 @@
 			<Form.Control>
 				{#snippet children({ props })}
 					<TooltipLabel
-						class="min-w-1/4 {opt.required ? 'hover:pr-[0.5em]' : ''}"
+						class="max-w-1/4 min-w-1/4 {opt.required ? 'hover:pr-[0.5em]' : ''}"
 						title={name}
 						tooltip={opt?.display?.description ?? 'No description found'}
 						extra={{
@@ -671,7 +700,7 @@
 	class="flex h-full flex-col overflow-hidden"
 	enctype="multipart/form-data"
 >
-	<div class="flex w-full items-center justify-between gap-4 border-b p-4">
+	<section class="flex w-full items-center justify-between gap-4 border-b p-4">
 		<section class="flex justify-between gap-2">
 			<Select.Root type="single">
 				<Select.Trigger
@@ -699,7 +728,17 @@
 				onclick={removeAgent}>Remove <span class="hidden xl:inline">agent</span></TwostepButton
 			>
 		</section>
-		<section class="flex gap-2">
+		<section class="flex w-fit gap-4">
+			<span class="text-muted-foreground flex flex-col justify-between">
+				<TooltipLabel tooltip="Based off Session time to live settings" class=" max-w-fit">
+					Maximum session duration: {formatMsToHHMMSS($formData.sessionRuntimeSettings.ttl ?? 0) ??
+						'HH:MM:SS'}
+				</TooltipLabel>
+
+				<TooltipLabel tooltip="Import session configuration from JSON" class="max-w-fit">
+					Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
+				</TooltipLabel>
+			</span>
 			<ClipboardImportDialog onImport={importFromJson} {asJson}>
 				{#snippet child({ props })}
 					<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
@@ -712,7 +751,7 @@
 				{/if}Create Session</Form.Button
 			>
 		</section>
-	</div>
+	</section>
 	<Resizable.PaneGroup
 		direction={isMobile ? 'vertical' : 'horizontal'}
 		class="min-h-0 flex-1 overflow-hidden"
@@ -720,7 +759,7 @@
 		<Resizable.Pane defaultSize={25} minSize={21} class="bg-card flex min-h-0 flex-col gap-4">
 			{#if selectedAgent !== null && curAgent && curCatalog}
 				{@const availableOptions = {}}
-				<Tabs.Root value="agent" class="w-full grow overflow-hidden">
+				<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
 					<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
 						<Tabs.Trigger value="agent" class="items-centertruncate flex">
 							<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
@@ -746,7 +785,9 @@
 									>
 										<Form.Control>
 											{#snippet children({ props })}
-												<TooltipLabel tooltip={'Name of the agent in this session'} class="m-0"
+												<TooltipLabel
+													tooltip={'Name of the agent in this session'}
+													class="m-0 max-w-1/4"
 													>Name
 												</TooltipLabel>
 												<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
@@ -760,7 +801,7 @@
 									>
 										<Form.Control>
 											{#snippet children({ props })}
-												<TooltipLabel tooltip={'Optional agent description'} class="m-0"
+												<TooltipLabel tooltip={'Optional agent description'} class="m-0 max-w-1/4"
 													>Description
 												</TooltipLabel>
 												<Input
@@ -770,62 +811,59 @@
 											{/snippet}
 										</Form.Control>
 									</Form.ElementField>
-									<span class="flex max-w-full gap-1">
-										<Form.ElementField
-											{form}
-											name="agents[{selectedAgent}].id.name"
-											class="flex grow items-center gap-2 truncate"
-										>
-											<Form.Control>
-												{#snippet children({ props })}
-													{@const id = $formData.agents[selectedAgent!]!.id}
-													<TooltipLabel
-														tooltip={'Agent type from the server agent registry'}
-														class="m-0 truncate">Registry Type</TooltipLabel
-													>
-													<Combobox
-														{...props}
-														class=" grow truncate pr-[2px] "
-														side="right"
-														align="start"
-														bind:selected={
-															() => ({
-																label: `${id.name}`,
-																key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
-																value: id
-															}),
-															() => {}
-														}
-														options={Object.values(ctx.server.catalogs).map((catalog) => ({
-															heading: catalog.identifier.type,
-															items: Object.values(catalog.agents).map((a) => ({
-																label: `${a.name}`,
-																key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-																value: {
-																	registrySourceId: catalog.identifier,
-																	name: a.name,
-																	version: a.versions.at(-1)! // won't be in registry if 0 versions
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].id.name"
+										class="flex grow items-center gap-2 truncate"
+									>
+										<Form.Control>
+											{#snippet children({ props })}
+												{@const id = $formData.agents[selectedAgent!]!.id}
+												<TooltipLabel
+													tooltip={'Agent type from the server agent registry'}
+													class="w m-0 max-w-1/4 truncate">Registry Type</TooltipLabel
+												>
+												<Combobox
+													{...props}
+													class=" m-0 w-0 grow truncate pr-[2px] "
+													side="right"
+													align="start"
+													bind:selected={
+														() => ({
+															label: `${id.name}`,
+															key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
+															value: id
+														}),
+														() => {}
+													}
+													options={Object.values(ctx.server.catalogs).map((catalog) => ({
+														heading: catalog.identifier.type,
+														items: Object.values(catalog.agents).map((a) => ({
+															label: `${a.name}`,
+															key: `${registryIdOf(catalog.identifier)}/${a.name}`,
+															value: {
+																registrySourceId: catalog.identifier,
+																name: a.name,
+																version: a.versions.at(-1)! // won't be in registry if 0 versions
+															}
+														}))
+													}))}
+													searchPlaceholder="Search types..."
+													onValueChange={(value) => {
+														$formData.agents[selectedAgent!]!.id = value;
+														$formData.agents = $formData.agents;
+														tick().then(() => {
+															for (const name in $formData.agents[selectedAgent!]!.options) {
+																if (!(name in availableOptions)) {
+																	delete $formData.agents[selectedAgent!]!.options[name];
 																}
-															}))
-														}))}
-														searchPlaceholder="Search types..."
-														onValueChange={(value) => {
-															$formData.agents[selectedAgent!]!.id = value;
+															}
 															$formData.agents = $formData.agents;
-															tick().then(() => {
-																for (const name in $formData.agents[selectedAgent!]!.options) {
-																	if (!(name in availableOptions)) {
-																		delete $formData.agents[selectedAgent!]!.options[name];
-																	}
-																}
-																$formData.agents = $formData.agents;
-															});
-														}}
-													/>
-												{/snippet}
-											</Form.Control>
-										</Form.ElementField>
-										<Form.ElementField
+														});
+													}}
+												/>
+											{/snippet}
+										</Form.Control><Form.ElementField
 											{form}
 											name="agents[{selectedAgent}].id.version"
 											class="flex items-center gap-2"
@@ -837,7 +875,7 @@
 
 													<Combobox
 														{...props}
-														class="w-auto grow pr-[2px]"
+														class="w-auto grow pr-[2px] "
 														side="right"
 														align="start"
 														bind:selected={() => id.version, () => {}}
@@ -859,7 +897,7 @@
 												{/snippet}
 											</Form.Control>
 										</Form.ElementField>
-									</span>
+									</Form.ElementField>
 
 									<Form.ElementField
 										{form}
@@ -871,7 +909,7 @@
 												{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
 												<TooltipLabel
 													tooltip={'Will only show available options for the selected agent type'}
-													class="m-0">Runtime</TooltipLabel
+													class="m-0 max-w-1/4">Runtime</TooltipLabel
 												>
 												<Combobox
 													{...props}
@@ -947,6 +985,7 @@
 											required: true,
 											type: 'number'
 										}}
+										class="max-w-1/4 min-w-1/4"
 									>
 										Time to live
 									</TooltipLabel>
