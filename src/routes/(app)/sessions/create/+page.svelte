@@ -768,7 +768,11 @@
 
 						<Tabs.Trigger value="session" class="flex items-center truncate">
 							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Session</span>
+							<span
+								class=" m-auto hidden xl:inline {$errors?.sessionRuntimeSettings?.ttl
+									? 'text-destructive'
+									: ''}">Session</span
+							>
 						</Tabs.Trigger>
 					</Tabs.List>
 
@@ -992,14 +996,19 @@
 									<Input
 										{...props}
 										bind:value={$formData.sessionRuntimeSettings.ttl}
-										required
 										placeholder="time in milliseconds"
+										maxlength={15778476000}
 										type="number"
 										class="grow"
 									/>
 								{/snippet}
 							</Form.Control>
 						</Form.ElementField>
+						{#if $errors?.sessionRuntimeSettings?.ttl && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}' && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}'}
+							<span class="text-xs">
+								{$errors?.sessionRuntimeSettings?.ttl}
+							</span>
+						{/if}
 						<Separator />
 						<h1>Agent Groups</h1>
 						<header class="flex gap-2">

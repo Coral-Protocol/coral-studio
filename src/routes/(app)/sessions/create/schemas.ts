@@ -186,7 +186,7 @@ export type AgentRegistryIdentifier = z.infer<typeof AgentRegistryIdentifierSche
 
 const formSchema = z.object({
 	sessionRuntimeSettings: z.object({
-		ttl: z.number().optional()
+		ttl: z.number().min(10000).max(15778476000)
 	}),
 	agents: z.array(
 		z.object({
