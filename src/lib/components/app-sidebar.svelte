@@ -4,8 +4,9 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
-	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
+ import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
+	import Welcome from '$lib/components/dialogs/welcome.svelte';
 	import Login from './Login.svelte';
 
 	import IconFileArchive from 'phosphor-icons-svelte/IconFileArchiveRegular.svelte';
@@ -15,7 +16,8 @@
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
+ import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
+	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
 
@@ -146,7 +148,8 @@
 
 	let openQuickswitch = $state(false),
 		openShortcuts = $state(false),
-		debugToolsOpen = $state(false);
+		debugToolsOpen = $state(false),
+		welcomeOpen = $state(false);
 
 	const handleKeydown = (event: KeyboardEvent) => {
 		const target = event.target as HTMLElement | null;
@@ -208,20 +211,41 @@
 <Quickswitch {ctx} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
+<Welcome bind:open={welcomeOpen} />
 
-<button
-	class="bg-primary fixed top-3 right-3 z-50 flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
-	onclick={() => (openQuickswitch = true)}
->
-	<div class="text-muted-foreground flex items-center gap-2">
-		<IconSearch class="" />
-		<span class="text-sm">Search</span>
-	</div>
-	<Kbd.Group>
-		<Kbd.Root>CTRL</Kbd.Root>
-		<Kbd.Root>K</Kbd.Root>
-	</Kbd.Group>
-</button>
+<div class="fixed top-3 right-3 z-50 flex items-center gap-2">
+	<button
+		class="bg-primary flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
+		onclick={() => (openQuickswitch = true)}
+	>
+		<div class="text-muted-foreground flex items-center gap-2">
+			<IconSearch class="" />
+			<span class="text-sm">Search</span>
+		</div>
+		<Kbd.Group>
+			<Kbd.Root>CTRL</Kbd.Root>
+			<Kbd.Root>K</Kbd.Root>
+		</Kbd.Group>
+	</button>
+	<Tooltip.Provider delayDuration={0}>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<button
+						{...props}
+						class="bg-primary text-muted-foreground flex size-9 items-center justify-center rounded-md border"
+						onclick={() => (welcomeOpen = true)}
+					>
+						<IconQuestion class="size-4" />
+					</button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content>
+				<p>Help & Documentation</p>
+			</Tooltip.Content>
+		</Tooltip.Root>
+	</Tooltip.Provider>
+</div>
 
 <!-- <Tour
 	open={tourOpen}
