@@ -393,7 +393,8 @@
 						maxCost: { type: 'micro_coral', amount: 1000 },
 						serverSource: { type: 'servers', servers: [] }
 					},
-					runtime: 'executable'
+					runtime: (Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0] ??
+						'executable') as any
 				},
 				providerType: 'local',
 				customToolAccess: new Set(),
@@ -735,7 +736,10 @@
 						'HH:MM:SS'}
 				</TooltipLabel>
 
-				<TooltipLabel tooltip="Import session configuration from JSON" class="max-w-fit">
+				<TooltipLabel
+					tooltip="Maximum cost of the session, calculated by number of agents, per minute."
+					class="max-w-fit"
+				>
 					Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
 				</TooltipLabel>
 			</span>
@@ -853,17 +857,33 @@
 														}))
 													}))}
 													searchPlaceholder="Search types..."
-													onValueChange={(value) => {
+													onValueChange={async (value) => {
 														$formData.agents[selectedAgent!]!.id = value;
-														$formData.agents = $formData.agents;
-														tick().then(() => {
-															for (const name in $formData.agents[selectedAgent!]!.options) {
-																if (!(name in availableOptions)) {
-																	delete $formData.agents[selectedAgent!]!.options[name];
-																}
+
+														await tick();
+
+														// Clean up options that are no longer valid
+														for (const name in $formData.agents[selectedAgent!]!.options) {
+															if (!(name in availableOptions)) {
+																delete $formData.agents[selectedAgent!]!.options[name];
 															}
-															$formData.agents = $formData.agents;
-														});
+														}
+
+														// Refresh the agents object to trigger reactivity
+														$formData.agents = $formData.agents;
+
+														// Fetch detailed info for the new agent
+														const detailed = await getDetailed(value);
+														if (detailed && detailed.registryAgent.runtimes) {
+															// Pick the first available runtime
+															const firstRuntimeKey = Object.keys(
+																detailed.registryAgent.runtimes
+															)[0];
+															if (firstRuntimeKey) {
+																$formData.agents[selectedAgent!]!.provider.runtime =
+																	firstRuntimeKey as any;
+															}
+														}
 													}}
 												/>
 											{/snippet}
