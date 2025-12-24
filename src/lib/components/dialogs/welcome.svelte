@@ -29,7 +29,7 @@
 				<section>
 					<h3 class="mb-2 text-lg font-medium">What is Coral Console?</h3>
 					<p class="text-muted-foreground">
-						Coral Console is a playground for <strong>Coral</strong> — a framework for building AI agents. 
+						Coral Console is a playground for <strong>Coral</strong> — a framework for orchestrating AI agents.
 						Use this console to browse available agents and try them out interactively.
 					</p>
 				</section>
