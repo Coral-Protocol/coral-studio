@@ -1,9 +1,8 @@
 ---
-name: "Build and deploy docker image"
+name: "Build and deploy bundle"
 on:  # yamllint disable-line rule:truthy
   push:
     branches:
-      - 'main'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,13 +36,21 @@ jobs:
           # and collect garbage in the Nix store until it reaches this size in bytes
           gc-max-store-size: 0
 
-      - uses: imjasonh/setup-crane@v0.1
       - run: |
           set -eu
 
-          OCI_ARCHIVE=$(nix build --no-link --print-out-paths .#docker)
-          DOCKER_REPOSITORY="docker://ghcr.io/coral-protocol/coral-studio"
+          BUNDLE_DIR=$(nix build --no-link --print-out-paths .#)
+          ARCHIVE_NAME="coral-console_${{ github.ref_name }}-${{ github.sha }}.tar.gz"
 
-          gzip --decompress --stdout --force < $OCI_ARCHIVE > result.tar
-          crane push ./result.tar "ghcr.io/coral-protocol/coral-studio"
-        if: github.ref == 'refs/heads/main'
+          tar -zcvf "$ARCHIVE_NAME" "$BUNDLE_DIR"
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coral-console_${{ github.ref_name }}-${{ github.sha }}
+          path: |
+            ./coral-console_${{ github.ref_name }}-${{ github.sha }}.tar.gz
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: ./coral-console_${{ github.ref_name }}-${{ github.sha }}.tar.gz
