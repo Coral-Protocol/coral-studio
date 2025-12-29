@@ -1,15 +1,14 @@
 {
   inputs = {
-    # nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     systems.url = "github:nix-systems/default";
   };
 
   outputs = {
-    self,
     systems,
     nixpkgs,
     ...
-  } @ inputs: let
+  }: let
     eachSystem = f:
       nixpkgs.lib.genAttrs (import systems) (
         system:
@@ -22,44 +21,36 @@
           }
       );
   in {
-    packages = eachSystem ({
-      pkgs,
-      system,
-    }: let
-      lib = nixpkgs.lib;
-      packageJson = lib.importJSON ./package.json;
-      cleanName = lib.last (lib.split "/" packageJson.name);
+    packages = eachSystem ({pkgs, ...}: let
+      inherit (nixpkgs) lib;
+      package = lib.importJSON ./package.json;
+      cleanName = lib.last (lib.split "/" package.name);
+      bundle = {basePath}:
+        pkgs.mkYarnPackage {
+          inherit (package) version;
+          name = cleanName;
+          src = ./.;
+          packageJson = ./package.json;
+          yarnLock = ./yarn.lock;
 
-      app-src = pkgs.mkYarnPackage {
-        inherit (packageJson) name version;
-        src = ./.;
-        packageJson = ./package.json;
-        yarnLock = ./yarn.lock;
+          BASE_PATH = basePath;
 
-        buildPhase = ''
-          yarn --offline --frozen-lockfile build
-        '';
-        distPhase = "true";
-      };
-    in rec {
-      inherit app-src;
-      default = pkgs.writeShellApplication {
-        name = cleanName;
-        runtimeInputs = [app-src pkgs.nodejs];
-        text = ''
-          ${pkgs.nodejs}/bin/node ${app-src}/libexec/${packageJson.name}/deps/${packageJson.name}/build/server.js
-        '';
-      };
-      docker = pkgs.dockerTools.buildLayeredImage {
-        name = cleanName;
-        tag = packageJson.version;
-        contents = [pkgs.nodejs default];
-        config = {
-          Entrypoint = ["${pkgs.dumb-init}/bin/dumb-init" "--"];
-          Cmd = ["${default}/bin/${cleanName}"];
-          ExposedPorts = {"3000/tcp" = {};};
+          buildPhase = ''
+            yarn --offline --frozen-lockfile build
+          '';
+          installPhase = ''
+            runHook preInstall
+
+            mkdir -p $out/
+            mv deps/${package.name}/build/* $out/.
+
+            runHook postInstall
+          '';
+          distPhase = "true";
         };
-      };
+    in {
+      default = bundle {basePath = "/ui/console";};
+      cloud = bundle {basePath = "/console";};
     });
     devShells = eachSystem ({pkgs, ...}: {
       default = pkgs.mkShell {
