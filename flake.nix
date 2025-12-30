@@ -25,7 +25,10 @@
       inherit (nixpkgs) lib;
       package = lib.importJSON ./package.json;
       cleanName = lib.last (lib.split "/" package.name);
-      bundle = {basePath}:
+      bundle = {
+        basePath,
+        apiPath ? basePath,
+      }:
         pkgs.mkYarnPackage {
           inherit (package) version;
           name = cleanName;
@@ -34,6 +37,7 @@
           yarnLock = ./yarn.lock;
 
           BASE_PATH = basePath;
+          PUBLIC_API_PATH = apiPath;
 
           buildPhase = ''
             yarn --offline --frozen-lockfile build
@@ -50,7 +54,10 @@
         };
     in {
       default = bundle {basePath = "/ui/console";};
-      cloud = bundle {basePath = "/console";};
+      cloud = bundle {
+        basePath = "/console";
+        apiPath = "/server";
+      };
     });
     devShells = eachSystem ({pkgs, ...}: {
       default = pkgs.mkShell {

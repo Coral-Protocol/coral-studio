@@ -4,6 +4,8 @@ import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
 import createClient, { type Client } from 'openapi-fetch';
 
+import { PUBLIC_API_PATH } from '$env/static/public';
+
 export type Registry =
 	paths['/api/v1/registry']['get']['responses']['200']['content']['application/json'][number];
 
@@ -26,7 +28,7 @@ export class CoralServer {
 	public rawApi = $derived.by(() => {
 		const token = building ? '' : page.url.searchParams.get('token');
 		return createClient<paths>({
-			baseUrl: `${base ?? '/'}`,
+			baseUrl: `${(PUBLIC_API_PATH || base) ?? '/'}`,
 			headers: { Authorization: token ? `Bearer ${token}` : undefined }
 		});
 	});
