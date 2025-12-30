@@ -5,6 +5,7 @@ import type { components } from '../generated/api';
 import { base } from '$app/paths';
 import { SvelteSet } from 'svelte/reactivity';
 import type { CoralServer } from './CoralServer.svelte';
+import { PUBLIC_API_PATH } from '$env/static/public';
 
 export type SessionAgentState = components['schemas']['SessionAgentState'];
 export type SessionThread = components['schemas']['SessionThread'];
@@ -41,7 +42,7 @@ export class Session {
 		});
 
 		this.socket = new WebSocket(
-			`${location.protocol == "https:" ? "wss" : "ws"}://${window.location.host}${base}/ws/v1/events/session/${namespace}/${sessionId}`
+			`${location.protocol == 'https:' ? 'wss' : 'ws'}://${window.location.host}${PUBLIC_API_PATH}/ws/v1/events/session/${namespace}/${sessionId}`
 		);
 
 		server.api
@@ -51,7 +52,9 @@ export class Session {
 			.then((res) => {
 				if (res.error || !res.data) {
 					this.connected = false;
-					toast.error(`Error fetching session state${res.error ? ` - ${res.error.message}.` : '.'}`);
+					toast.error(
+						`Error fetching session state${res.error ? ` - ${res.error.message}.` : '.'}`
+					);
 					this.socket.close();
 					return;
 				}
