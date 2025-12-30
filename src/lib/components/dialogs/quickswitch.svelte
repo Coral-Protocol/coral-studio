@@ -1,12 +1,37 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import * as Command from '$lib/components/ui/command';
 	import { Input } from '$lib/components/ui/input';
+	import type { AppContext } from '$lib/context';
 	import { Session } from '$lib/session.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	let { sessCtx, agents, threads, open = $bindable(), debugMenu = $bindable() } = $props();
+	let {
+		ctx,
+		open = $bindable(),
+		debugMenu = $bindable()
+	}: { ctx: AppContext; open: boolean; debugMenu: boolean } = $props();
+
+	let agents = $derived(
+		ctx.session &&
+			Object.entries(ctx.session.agents).map(([title, agent]) => ({
+				title,
+				url: `${base}/agent/#${title}`,
+				state: agent.isConnected ? (agent.isWaiting ? 'listening' : 'busy') : 'disconnected'
+			}))
+	);
+
+	let threads = $derived(
+		ctx.session &&
+			Object.values(ctx.session.threads).map((thread) => ({
+				id: thread.id,
+				title: thread.name,
+				url: `${base}/thread/#${thread.id}`,
+				badge: thread.unread
+			}))
+	);
 
 	let value = $state('');
 </script>
@@ -34,13 +59,13 @@
 			>
 		</Command.Group>
 		<Command.Group heading="Pages">
-			<Command.LinkItem href="/tools/user-input">User input</Command.LinkItem>
-			<Command.LinkItem href="/registry">Agent registry</Command.LinkItem>
-			<Command.LinkItem href="/logs">Logs</Command.LinkItem>
-			<Command.LinkItem href="/statistics">Statistics</Command.LinkItem>
+			<Command.LinkItem href="{base}/tools/user-input">User input</Command.LinkItem>
+			<Command.LinkItem href="{base}/registry">Agent registry</Command.LinkItem>
+			<Command.LinkItem href="{base}/logs">Logs</Command.LinkItem>
+			<Command.LinkItem href="{base}/statistics">Statistics</Command.LinkItem>
 		</Command.Group>
 		<Command.Group heading="Threads">
-			{#each threads as thread}
+			{#each threads ?? [] as thread}
 				<Command.Item onSelect={() => (goto(thread.url), (open = false))}>
 					<IconChats />
 					<span class="truncate">{thread.title}</span>
@@ -48,7 +73,7 @@
 			{/each}
 		</Command.Group>
 		<Command.Group heading="Agents">
-			{#each agents as agent}
+			{#each agents ?? [] as agent}
 				<Command.Item onSelect={() => (goto(agent.url), (open = false))}>
 					<IconRobot />
 					<span class="truncate">{agent.title}</span>
@@ -57,34 +82,23 @@
 			{/each}
 		</Command.Group>
 		<Command.Group heading="Sessions">
-			{#if sessCtx.sessions && sessCtx.sessions.length > 0}
-				{#each sessCtx.sessions as session}
+			{#if ctx.server.sessions.length > 0}
+				<!--TODO: Ensure no undefined sessionIds also to prevent duplicated keys-->
+				{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
 					<Command.Item
 						onSelect={() => {
-							if (!sessCtx.connection) return;
-							sessCtx.session = new Session({ ...sessCtx.connection, session });
+							ctx.session = new Session({
+								sessionId: basicSession.sessionId,
+								namespace: ctx.server.namespace,
+								server: ctx.server
+							});
 							open = false;
 						}}
 					>
-						<span class="truncate">{session}</span>
+						<span class="truncate">{basicSession}</span>
 					</Command.Item>
 				{/each}
 			{/if}
-		</Command.Group>
-		<Command.Group heading="Servers">
-			<!-- {#if sessCtx.sessions && sessCtx.sessions.length > 0}
-				{#each sessCtx.sessions as session}
-					<Command.Item
-						onSelect={() => {
-							if (!sessCtx.connection) return;
-							sessCtx.session = new Session({ ...sessCtx.connection, session });
-							open = false;
-						}}
-					>
-						<span class="truncate">{session}</span>
-					</Command.Item>
-				{/each}
-			{/if} -->
 		</Command.Group>
 	</Command.List>
 </Command.Dialog>

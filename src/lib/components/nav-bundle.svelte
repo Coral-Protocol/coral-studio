@@ -9,6 +9,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import SidebarLink from './sidebar-link.svelte';
 	import { cn } from '$lib/utils';
+	import type { AgentStateEnum } from '$lib';
 
 	let {
 		items
@@ -23,12 +24,12 @@
 				title: string;
 				url: string;
 				badge?: number;
-				state?: keyof typeof stateColors;
+				state?: AgentStateEnum;
 			}[];
 		}[];
 	} = $props();
 
-	const stateColors = {
+	const stateColors: { [K in AgentStateEnum]: string } = {
 		disconnected: 'border-primary/30 border bg-transparent',
 		connecting: 'bg-primary/30 animate-pulse',
 		listening: 'bg-green-400',

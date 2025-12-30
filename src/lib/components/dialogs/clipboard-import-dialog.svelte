@@ -9,14 +9,20 @@
 	let {
 		onImport,
 		child,
-		asJson = ''
+		asJson
 	}: {
 		onImport?: (value: string) => void;
 		child?: Snippet<[{ props: Record<string, unknown> }]>;
-		asJson?: string;
+		asJson?: Promise<object>;
 	} = $props();
 
 	let value = $state('');
+
+	$effect(() => {
+		asJson?.then((v) => {
+			value = JSON.stringify(v, null, 2);
+		});
+	});
 	let open = $state(false);
 </script>
 
@@ -26,18 +32,13 @@
 		<Dialog.Header>
 			<Dialog.Title>Session JSON</Dialog.Title>
 		</Dialog.Header>
-		<Textarea
-			bind:value={asJson}
-			autocomplete="off"
-			class="max-h-[80svh] min-h-60"
-			spellcheck="false"
-		/>
+		<Textarea bind:value autocomplete="off" class="max-h-[80svh] min-h-60" spellcheck="false" />
 		<Dialog.Footer>
 			<Button
 				variant="outline"
 				class="w-fit"
 				onclick={() => {
-					navigator.clipboard.writeText(asJson);
+					navigator.clipboard.writeText(value);
 					toast.success('Session JSON copied to clipboard');
 				}}
 			>
@@ -46,7 +47,7 @@
 			<Button
 				class="w-fit"
 				onclick={() => {
-					onImport?.(asJson);
+					onImport?.(value);
 					open = false;
 					toast.success('Session updated from JSON');
 				}}>Save</Button

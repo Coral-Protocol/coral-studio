@@ -2,19 +2,12 @@
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Kbd from '$lib/components/ui/kbd/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as Card from '$lib/components/ui/card/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
 	import { toast } from 'svelte-sonner';
-	import {
-		Button,
-		buttonVariants,
-		type ButtonSize,
-		type ButtonVariant
-	} from '$lib/components/ui/button';
-	import { ScrollArea } from '$lib/components/ui/scroll-area/index.js';
+	import { Button } from '$lib/components/ui/button';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
+	import Welcome from '$lib/components/dialogs/welcome.svelte';
+	import Login from './Login.svelte';
 
 	import IconFileArchive from 'phosphor-icons-svelte/IconFileArchiveRegular.svelte';
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
@@ -23,84 +16,88 @@
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import IconListMag from 'phosphor-icons-svelte/IconListMagnifyingGlassRegular.svelte';
 	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
+	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
-	import IconWallet from 'phosphor-icons-svelte/IconWalletRegular.svelte';
-	import IconDashboard from 'phosphor-icons-svelte/IconChartPieSliceRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
-	import IconHome from 'phosphor-icons-svelte/IconHouseRegular.svelte';
-	import IconStorefront from 'phosphor-icons-svelte/IconStorefrontRegular.svelte';
-	import { tick } from 'svelte';
+
+	import { onMount, tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as Popover from '$lib/components/ui/popover/index.js';
 	import * as InputGroup from '$lib/components/ui/input-group/index.js';
 
 	import { cn } from '$lib/utils';
-	import { sessionCtx } from '$lib/threads';
 	import { socketCtx } from '$lib/socket.svelte';
 	import { toggleMode } from 'mode-watcher';
 
-	import ServerSwitcher from './server-switcher.svelte';
+	import ServerSwitcher from './namespace-switcher.svelte';
 	import NavBundle from './nav-bundle.svelte';
 	import SidebarLink from './sidebar-link.svelte';
 	import Tour from './tour/tour.svelte';
-	import { onMount } from 'svelte';
 
-	import createClient from 'openapi-fetch';
-	import type { paths, components } from '../../generated/api';
 	import { Session } from '$lib/session.svelte';
-	import { Plus, Send } from '@lucide/svelte';
 
 	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 	import Shortcuts from './dialogs/shortcuts.svelte';
-	import { PressedKeys } from 'runed';
+	import { appContext } from '$lib/context';
+	import { base } from '$app/paths';
+	import { watch } from 'runed';
 
 	let content = $state('');
 	let user_email = $state('');
 
-	let sessCtx = sessionCtx.get();
+	let ctx = appContext.get();
 	let tools = socketCtx.get();
-	let conn = $derived(sessCtx.session);
+	let conn = $derived(ctx.session);
 
 	let connecting = $state(false);
 	let error: string | null = $state(null);
 
 	let tourOpen = $state(false);
 
-	onMount(() => {
-		if (sessCtx.connection === null) tourOpen = true;
-	});
+	watch(
+		() => ctx.server.alive,
+		(alive) => {
+			if (alive === false) {
+				toast('Disconnected from server. Please login again.', {
+					duration: Infinity,
+					dismissable: false,
+					richColors: true,
+					id: 'server-disconnected',
+					action: {
+						label: 'Login',
+						onClick: (event) => (event.preventDefault(), (loginOpen = true))
+					}
+				});
+			} else if (alive === true) {
+				console.log('alive');
 
-	let createSessionOpen = $state(false);
+				toast.success('Reconnected to server.');
+				toast.dismiss('server-disconnected');
+				refreshAgents();
+			}
+		}
+	);
+
+	let loginOpen = $state(false);
 
 	const refreshAgents = async () => {
-		if (!sessCtx.connection) return;
-
 		try {
-			const client = createClient<paths>({
-				baseUrl: `${location.protocol}//${sessCtx.connection.host}`
-			});
-
 			connecting = true;
 			error = null;
-			sessCtx.registry = null;
-			const agents = (await client.GET('/api/v1/agents')).data!;
-			sessCtx.registry = agents;
-			sessCtx.sessions = (await client.GET('/api/v1/sessions')).data!;
 
+			await ctx.server.fetchAll();
+			ctx.server.alive = true;
 			connecting = false;
-			return agents;
 		} catch (e) {
 			connecting = false;
-			sessCtx.registry = null;
 			error = `${e}`;
 			throw e;
 		}
 	};
 
-	let serverSwitcher = $state(null) as unknown as HTMLButtonElement;
+	let namespaceSwitcher = $state(null) as unknown as HTMLButtonElement;
 	let sessionSwitcher = $state(null) as unknown as HTMLButtonElement;
 
 	let feedbackVisible = $state(false);
@@ -131,7 +128,7 @@
 				action: {
 					label: 'View',
 					onClick: () => {
-						goto('/tools/user-input');
+						goto(`${base}/tools/user-input`);
 					}
 				}
 			});
@@ -148,31 +145,11 @@
 			triggerRef.focus();
 		});
 	}
-	// todo: refactor below into one object
-	let agents = $derived(
-		conn
-			? Object.entries(conn.agents).map(([title, agent]) => ({
-					title,
-					url: `/agent/${title}`,
-					state: agent.state ?? 'disconnected'
-				}))
-			: []
-	);
-
-	let threads = $derived(
-		conn
-			? Object.values(conn.threads).map((thread) => ({
-					id: thread.id,
-					title: thread.name,
-					url: `/thread/${thread.id}`,
-					badge: thread.unread
-				}))
-			: []
-	);
 
 	let openQuickswitch = $state(false),
 		openShortcuts = $state(false),
-		debugToolsOpen = $state(false);
+		debugToolsOpen = $state(false),
+		welcomeOpen = $state(false);
 
 	const handleKeydown = (event: KeyboardEvent) => {
 		const target = event.target as HTMLElement | null;
@@ -211,15 +188,9 @@
 				return;
 			}
 			if (k === 'n') {
-				if (sessCtx.connection) {
-					if (window.location.pathname !== '/sessions/create') {
-						goto(`/sessions/create`);
-						toast.info('Navigated to session creation page');
-					}
-				} else {
-					toast.error(
-						"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
-					);
+				if (window.location.pathname !== `${base}/sessions/create`) {
+					goto(`${base}/sessions/create`);
+					toast.info('Navigated to session creation page');
 				}
 				return;
 			}
@@ -229,35 +200,54 @@
 			}
 		}
 	};
+
+	$inspect(ctx.server.sessions);
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
 
-<Quickswitch
-	{sessCtx}
-	{agents}
-	{threads}
-	bind:open={openQuickswitch}
-	bind:debugMenu={debugToolsOpen}
-/>
+<Login bind:open={loginOpen} />
+
+<Quickswitch {ctx} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
+<Welcome bind:open={welcomeOpen} />
 
-<button
-	class="bg-primary fixed top-3 right-3 z-50 flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
-	onclick={() => (openQuickswitch = true)}
->
-	<div class="text-muted-foreground flex items-center gap-2">
-		<IconSearch class="" />
-		<span class="text-sm">Search</span>
-	</div>
-	<Kbd.Group>
-		<Kbd.Root>CTRL</Kbd.Root>
-		<Kbd.Root>K</Kbd.Root>
-	</Kbd.Group>
-</button>
+<div class="fixed top-3 right-3 z-50 flex items-center gap-2">
+	<button
+		class="bg-primary flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
+		onclick={() => (openQuickswitch = true)}
+	>
+		<div class="text-muted-foreground flex items-center gap-2">
+			<IconSearch class="" />
+			<span class="text-sm">Search</span>
+		</div>
+		<Kbd.Group>
+			<Kbd.Root>CTRL</Kbd.Root>
+			<Kbd.Root>K</Kbd.Root>
+		</Kbd.Group>
+	</button>
+	<Tooltip.Provider delayDuration={0}>
+		<Tooltip.Root>
+			<Tooltip.Trigger>
+				{#snippet child({ props })}
+					<button
+						{...props}
+						class="bg-primary text-muted-foreground flex size-9 items-center justify-center rounded-md border"
+						onclick={() => (welcomeOpen = true)}
+					>
+						<IconQuestion class="size-4" />
+					</button>
+				{/snippet}
+			</Tooltip.Trigger>
+			<Tooltip.Content>
+				<p>Help & Documentation</p>
+			</Tooltip.Content>
+		</Tooltip.Root>
+	</Tooltip.Provider>
+</div>
 
-<Tour
+<!-- <Tour
 	open={tourOpen}
 	items={[
 		{
@@ -271,79 +261,50 @@
 			text: 'Then, once connected:\n\nCreate a session here.'
 		}
 	]}
-/>
+/> -->
 
 <Sidebar.Root>
 	<Sidebar.Header>
-		<ServerSwitcher
-			bind:ref={serverSwitcher}
-			serverAdded={() => refreshAgents()}
-			onSelect={(host) => {
-				sessCtx.connection = {
-					host,
-					appId: sessCtx.connection?.appId ?? 'app',
-					privacyKey: sessCtx.connection?.privacyKey ?? 'priv'
-				};
-				toast.promise(refreshAgents(), {
-					loading: `Connecting to server '${host}'...`,
-					success: `Connected to server '${host}'`,
-					error: (err) => `Failed to connect to server '${host}', Error: ${err || err}`
-				});
-			}}
-		/>
+		<ServerSwitcher bind:ref={namespaceSwitcher} />
 		<Sidebar.GroupLabel class="pr-0">
 			<span
 				class="text-muted-foreground w-full grow font-sans font-medium tracking-wide select-none"
 				>Server</span
 			>
-			{#if sessCtx.connection}
-				<Tooltip.Provider delayDuration={0}>
-					<Tooltip.Root>
-						<Tooltip.Trigger disabled={error === null}>
-							<span
-								class={cn(
-									'text-muted-foreground  font-mono text-xs font-normal',
-									error && 'text-destructive'
-								)}
-							>
-								{#if error}
-									disconnected
-								{:else if sessCtx.registry}
-									connected
-								{/if}
-							</span>
-						</Tooltip.Trigger>
-						<Tooltip.Content><p>{error}</p></Tooltip.Content>
-					</Tooltip.Root>
-				</Tooltip.Provider>
-				<Button
-					size="icon"
-					variant="ghost"
-					class="mx-1 size-7"
-					disabled={connecting}
-					onclick={() => refreshAgents()}
-				>
-					<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
-				</Button>
-			{/if}
+			<Tooltip.Provider delayDuration={0}>
+				<Tooltip.Root>
+					<Tooltip.Trigger disabled={error === null}>
+						<span
+							class={cn(
+								'text-muted-foreground  font-mono text-xs font-normal',
+								(error || !ctx.server.alive) && 'text-destructive'
+							)}
+						>
+							{#if error || !ctx.server.alive}
+								disconnected
+							{:else}
+								connected
+							{/if}
+						</span>
+					</Tooltip.Trigger>
+					<Tooltip.Content><p>{error}</p></Tooltip.Content>
+				</Tooltip.Root>
+			</Tooltip.Provider>
+			<Button
+				size="icon"
+				variant="ghost"
+				class="mx-1 size-7"
+				disabled={connecting}
+				onclick={() => refreshAgents()}
+			>
+				<IconArrowsClockwise class={cn('size-4', connecting && 'animate-spin')} />
+			</Button>
 		</Sidebar.GroupLabel>
 		<Sidebar.GroupContent>
 			<Sidebar.Menu>
-				<!-- <SidebarLink url="/" icon={IconHome} title="Home" /> -->
-
-				<SidebarLink
-					url="/server/registry"
-					icon={IconPackage}
-					title="Agent Registry"
-					disable={sessCtx.connection === null}
-				/>
-
-				<SidebarLink
-					url="/server/logs"
-					icon={IconNotepad}
-					title="Logs"
-					disable={sessCtx.connection === null}
-				/>
+				<!-- <SidebarLink url="{base}/" icon={IconHome} title="Home" /> -->
+				<SidebarLink url="{base}/server/registry" icon={IconPackage} title="Agent Registry" />
+				<SidebarLink url="{base}/server/logs" icon={IconNotepad} title="Logs" disabled />
 			</Sidebar.Menu>
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
@@ -359,13 +320,13 @@
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
 					<SidebarLink
-						url="/finance/wallet"
+						url="{base}/finance/wallet"
 						icon={IconWallet}
 						title="Wallet"
 						disable={sessCtx.connection === null}
 					/>
 					<SidebarLink
-						url="/finance/dashboard"
+						url="{base}/finance/dashboard"
 						icon={IconDashboard}
 						title="Dashboard"
 						disable={sessCtx.connection === null}
@@ -383,12 +344,7 @@
 						<section class="my-2 flex w-full gap-2">
 							<Popover.Trigger
 								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive relative  w-full flex-1 grow justify-between truncate border-1 "
-								aria-invalid={(sessCtx?.sessions?.length !== 0 &&
-									sessCtx.session === null &&
-									sessCtx.connection !== null) ||
-									(sessCtx?.sessions?.length !== 0 &&
-										!sessCtx?.session?.connected &&
-										sessCtx.connection !== null)}
+								aria-invalid={ctx.session !== null && !ctx.session.connected}
 							>
 								{#snippet child({ props })}
 									<Button
@@ -396,50 +352,60 @@
 										{...props}
 										role="combobox"
 										aria-expanded={sessionSearcherOpen}
-										disabled={(sessCtx.sessions && sessCtx.sessions.length === 0) ||
-											sessCtx.connection === null}
 										bind:ref={triggerRef}
 									>
-										<span class=" w-4/5 grow truncate overflow-hidden">
-											{sessCtx.session && sessCtx.session.connected
-												? sessCtx.session.session
-												: 'Select a Session'}
+										<span class="w-4/5 grow truncate overflow-hidden">
+											{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a Session'}
 										</span>
 										<CaretUpDown />
 									</Button>
 								{/snippet}
 							</Popover.Trigger>
-							<Button
+							<!-- <Button
 								onclick={() => {
-									if (sessCtx.connection) {
-										goto(`/sessions/create`);
-									} else {
-										toast.error(
-											"Not connected to a server, you'll need to add or connect to an existing server on the top left, first."
-										);
-									}
+									goto(`${base}/sessions/create`);
 								}}
 								bind:ref={sessionSwitcher}>New</Button
-							>
-							<Popover.Content align="center" class="">
+							> -->
+							<Popover.Content align="start" class="p-1">
 								<Command.Root>
 									<Command.Input placeholder="Search" />
 									<Command.List>
-										<Command.Empty>No sessions found</Command.Empty>
-										{#if sessCtx.sessions && sessCtx.sessions.length > 0}
+										{#if ctx.server.sessions.length === 0 && !ctx.session}
+											<Command.Empty>No sessions found</Command.Empty>
+										{:else}
 											<Command.Group>
-												{#each sessCtx.sessions as session}
+												{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
 													<Command.Item
+														class="text-wrap break-all"
 														onSelect={() => {
-															value = session;
+															value = basicSession.sessionId;
 															closeAndFocusTrigger();
-															if (!sessCtx.connection) return;
-															sessCtx.session = new Session({ ...sessCtx.connection, session });
+															ctx.session = new Session({
+																sessionId: basicSession.sessionId,
+																namespace: ctx.server.namespace,
+																server: ctx.server
+															});
 														}}
 													>
-														{session}
+														{basicSession.sessionId}
 													</Command.Item>
 												{/each}
+
+												{#if ctx.session && !ctx.server.sessions.find((s) => s.sessionId === ctx.session?.sessionId)}
+													<!-- Show current session even if it's not in ctx.server.sessions -->
+													<Command.Item
+														class="font-bold text-wrap break-all"
+														onSelect={() => {
+															if (ctx.session) {
+																value = ctx.session.sessionId;
+																closeAndFocusTrigger();
+															}
+														}}
+													>
+														{ctx.session.sessionId} (current)
+													</Command.Item>
+												{/if}
 											</Command.Group>
 										{/if}
 									</Command.List>
@@ -448,22 +414,16 @@
 						</section>
 					</Popover.Root>
 					<!-- <SidebarLink
-						url="/sessions/overview"
+						url="{base}/sessions/overview"
 						icon={IconListMag}
 						title="Session Overview"
 						disable={!sessCtx.session}
 					/> -->
 					<SidebarLink
-						url="/tools/user-input"
+						url="{base}/sessions/create"
 						icon={IconChats}
-						title="Input Requests"
-						disable={!sessCtx.session &&
-							Object.values(tools.userInput.requests).filter(
-								(req) => req.userQuestion === undefined
-							).length === 0}
-						badge={Object.values(tools.userInput.requests).filter(
-							(req) => req.userQuestion === undefined
-						).length}
+						title="Session builder"
+						disabled={ctx.server.alive === false}
 					/>
 					<NavBundle
 						items={[
@@ -475,7 +435,7 @@
 									? Object.values(conn.threads).map((thread) => ({
 											id: thread.id,
 											title: thread.name,
-											url: `/thread/${thread.id}`,
+											url: `${base}/thread/#${thread.id}`,
 											badge: thread.unread
 										}))
 									: []
@@ -486,8 +446,12 @@
 								items: conn
 									? Object.entries(conn.agents).map(([title, agent]) => ({
 											title,
-											url: `/agent/${title}`,
-											state: agent.state ?? 'disconnected'
+											url: `${base}/agent/#${title}`,
+											state: agent.isConnected
+												? agent.isWaiting
+													? 'listening'
+													: 'busy'
+												: 'disconnected'
 										}))
 									: []
 							}

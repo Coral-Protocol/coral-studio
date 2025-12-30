@@ -14,15 +14,15 @@
 		badge,
 		collapsible = false,
 		class: className,
-		disable,
+		disabled,
 		...props
 	}: ComponentProps<typeof Sidebar.MenuButton> & {
 		title: string;
 		url?: string;
 		icon?: Component;
-		badge?: number;
+		badge?: number | string;
 		collapsible?: boolean;
-		disable?: boolean | null;
+		disabled?: boolean | null;
 	} = $props();
 </script>
 
@@ -41,7 +41,7 @@
 	{/if}
 {/snippet}
 
-<Sidebar.MenuItem class="{disable ? 'pointer-events-none opacity-50' : ''} transition-opacity">
+<Sidebar.MenuItem class="{disabled ? 'pointer-events-none opacity-50' : ''} transition-opacity">
 	{#if url}
 		<Sidebar.MenuButton
 			{...props}
