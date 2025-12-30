@@ -4,7 +4,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
- import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
+	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
 	import Welcome from '$lib/components/dialogs/welcome.svelte';
 	import Login from './Login.svelte';
@@ -16,7 +16,7 @@
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
- import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
+	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
@@ -422,9 +422,8 @@
 					<SidebarLink
 						url="{base}/sessions/create"
 						icon={IconChats}
-						title="Create a session"
+						title="Session builder"
 						disabled={ctx.server.alive === false}
-						badge={ctx.server.sessions.length === 0 && ctx.server.alive !== false ? '!' : undefined}
 					/>
 					<NavBundle
 						items={[

@@ -394,7 +394,7 @@
 						serverSource: { type: 'servers', servers: [] }
 					},
 					runtime: (Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0] ??
-						'executable') as any
+						undefined) as any
 				},
 				providerType: 'local',
 				customToolAccess: new Set(),
@@ -748,6 +748,8 @@
 					<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
 				{/snippet}
 			</ClipboardImportDialog>
+
+			<Button>Export</Button>
 
 			<Form.Button disabled={sendingForm}
 				>{#if sendingForm}
