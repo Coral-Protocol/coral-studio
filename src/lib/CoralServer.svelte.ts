@@ -90,7 +90,7 @@ export class CoralServer {
 	}
 
 	public async fetchRegistries() {
-		const res = await this.api.GET('/api/v1/registry');
+		const res = await this.api.GET('/api/v1/registry', {credentials: 'include'});
 		if (res.error) throw new Error(`Error fetching registries`);
 		this.catalogs = Object.fromEntries(
 			res.data.map((r) => [
@@ -107,6 +107,7 @@ export class CoralServer {
 	public async fetchSessions(namespace?: string) {
 		if (namespace) {
 			const res = await this.api.GET(`/api/v1/sessions/{namespace}`, {
+				credentials: 'include',
 				params: { path: { namespace } }
 			});
 			if (res.response.status === 404) {
@@ -120,7 +121,7 @@ export class CoralServer {
 
 			this.allSessions[namespace] = res.data;
 		} else {
-			const res = await this.api.GET('/api/v1/sessions');
+			const res = await this.api.GET('/api/v1/sessions', {credentials: 'include'});
 			if (res.error) throw new Error(`Error fetching sessions`);
 
 			this.allSessions = Object.fromEntries(res.data.map((s) => [s.namespace, s.sessions]));
@@ -152,6 +153,7 @@ export class CoralServer {
 		switch (agent.registrySourceId.type) {
 			case 'local': {
 				const res = await this.api.GET('/api/v1/registry/local/{agentName}/{agentVersion}', {
+					credentials: 'include',
 					params: { path: { agentName: agent.name, agentVersion: agent.version } }
 				});
 				if (res.error) throw new Error(`Could not fetch agent details - ${res.error.message}`);
@@ -159,6 +161,7 @@ export class CoralServer {
 			}
 			case 'marketplace': {
 				const res = await this.api.GET('/api/v1/registry/marketplace/{agentName}/{agentVersion}', {
+					credentials: 'include',
 					params: { path: { agentName: agent.name, agentVersion: agent.version } }
 				});
 				if (res.error) throw new Error(`Could not fetch agent details - ${res.error.message}`);
@@ -168,6 +171,7 @@ export class CoralServer {
 				const res = await this.api.GET(
 					'/api/v1/registry/linked/{linkedServerName}/{agentName}/{agentVersion}',
 					{
+						credentials: 'include',
 						params: {
 							path: {
 								linkedServerName: agent.registrySourceId.linkedServerId,
@@ -189,6 +193,7 @@ export class CoralServer {
 		input: components['schemas']['CreateThreadInput']
 	): Promise<components['schemas']['CreateThreadOutput']> {
 		const res = await this.api.POST('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread', {
+			credentials: 'include',
 			params: {
 				path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
 			},
@@ -206,6 +211,7 @@ export class CoralServer {
 		input: components['schemas']['CloseThreadInput']
 	) {
 		const res = await this.api.DELETE('/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread', {
+			credentials: 'include',
 			params: {
 				path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
 			},
@@ -225,6 +231,7 @@ export class CoralServer {
 		const res = await this.api.POST(
 			'/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/message',
 			{
+				credentials: 'include',
 				params: {
 					path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
 				},
@@ -245,6 +252,7 @@ export class CoralServer {
 		const res = await this.api.POST(
 			'/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant',
 			{
+				credentials: 'include',
 				params: {
 					path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
 				},
@@ -263,6 +271,7 @@ export class CoralServer {
 		const res = await this.api.DELETE(
 			'/api/v1/puppet/{namespace}/{sessionId}/{agentName}/thread/participant',
 			{
+				credentials: 'include',
 				params: {
 					path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
 				},
@@ -275,6 +284,7 @@ export class CoralServer {
 
 	public async killAgent(sessionId: string, puppetAgentName: string) {
 		const res = await this.api.DELETE('/api/v1/puppet/{namespace}/{sessionId}/{agentName}', {
+			credentials: 'include',
 			params: {
 				path: { namespace: this.namespace, sessionId: sessionId, agentName: puppetAgentName }
 			}

@@ -131,6 +131,7 @@
 				const body = await asJson;
 				// console.log({ body });
 				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
+          credentials: 'include',
 					params: {
 						path: { namespace: ctx.server.namespace }
 					},
