@@ -35,7 +35,8 @@ export class CoralServer {
 		const token = building ? '' : page.url.searchParams.get('token');
 		return createClient<paths>({
 			baseUrl: `${(PUBLIC_API_PATH || base) ?? '/'}`,
-			headers: { Authorization: token ? `Bearer ${token}` : undefined }
+			headers: { Authorization: token ? `Bearer ${token}` : undefined },
+			credentials: 'include'
 		});
 	});
 
@@ -165,7 +166,7 @@ export class CoralServer {
 	}
 
 	public async fetchRegistries() {
-		const res = await this.api.GET('/api/v1/registry');
+		const res = await this.api.GET('/api/v1/registry', { credentials: 'include' });
 		if (res.error) throw new Error(`Error fetching registries`);
 		this.catalogs = Object.fromEntries(
 			res.data.map((r) => [
