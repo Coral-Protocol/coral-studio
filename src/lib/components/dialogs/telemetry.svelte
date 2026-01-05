@@ -11,7 +11,6 @@
 
 	import { type paths, type components } from '../../../generated/api';
 	import type { Session } from '$lib/session.svelte';
-	import createClient from 'openapi-fetch';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import Separator from '../ui/separator/separator.svelte';
@@ -20,6 +19,7 @@
 	import { ScrollArea } from '../ui/scroll-area';
 	import * as Card from '../ui/card';
 	import * as Accordion from '../ui/accordion';
+	import { appContext } from '$lib/context';
 
 	const filter = $state({
 		user: true,
@@ -29,6 +29,8 @@
 		generic_user: true,
 		developer: true
 	});
+
+	let ctx = appContext.get();
 
 	let showActivityBar = $state(true);
 	let showPanel = $state(false);
@@ -45,17 +47,15 @@
 		threadId: string;
 	} = $props();
 
-	const client = createClient<paths>({ baseUrl: `${location.protocol}//${session.host}` });
-
 	// promise unresolved whilst waiting for data and resolved as undefined if there is no data (no telemetry data for the message,
 	// which will happen if it is currently being sent or the agent does not support telemetry (this is the majority of agents currently))
 	let dataPromise = $derived.by(async () => {
 		return (
-			await client.GET('/api/v1/telemetry/{sessionId}/{threadId}/{messageId}', {
+			await ctx.server.api.GET('/api/v1/telemetry/{sessionId}/{threadId}/{messageId}', {
 				params: {
 					path: {
 						messageId,
-						sessionId: session.session,
+						sessionId: session.sessionId,
 						threadId
 					}
 				}
