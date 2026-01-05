@@ -46,7 +46,7 @@
             runHook preInstall
 
             mkdir -p $out/
-            mv deps/${package.name}/build/* $out/.
+            cp -r deps/${package.name}/build/* $out/.
 
             runHook postInstall
           '';
