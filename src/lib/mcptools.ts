@@ -6,7 +6,7 @@ export const tools = {
 			type: 'http',
 			url: '/api/mcp-tools/user-input-request'
 		},
-		toolSchema: {
+		schema: {
 			name: 'request-question',
 			description: 'Request a question from the user. Hangs until input is received.',
 			inputSchema: {
@@ -23,7 +23,7 @@ export const tools = {
 			type: 'http',
 			url: '/api/mcp-tools/user-input-respond'
 		},
-		toolSchema: {
+		schema: {
 			name: 'answer-question',
 			description:
 				'Answer the last question you requested from the user. You can only respond once, and will have to request more input later.',

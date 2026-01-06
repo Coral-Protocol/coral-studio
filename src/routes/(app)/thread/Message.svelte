@@ -30,12 +30,12 @@
 </script>
 
 {#if session}
-	<Telemetry
-		bind:open={telemetryDialogOpen}
-		{session}
-		messageId={message.id}
-		threadId={message.threadId}
-	/>
+	<!-- <Telemetry -->
+	<!-- 	bind:open={telemetryDialogOpen} -->
+	<!-- 	{session} -->
+	<!-- 	messageId={message.id} -->
+	<!-- 	threadId={message.threadId} -->
+	<!-- /> -->
 {/if}
 
 <Card.Root class={cn('gap-2 py-4', className)}>

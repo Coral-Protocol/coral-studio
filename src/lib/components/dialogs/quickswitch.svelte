@@ -33,6 +33,8 @@
 			}))
 	);
 
+	let sessions = $derived(Object.values(ctx.server.sessions));
+
 	let value = $state('');
 </script>
 
@@ -82,9 +84,9 @@
 			{/each}
 		</Command.Group>
 		<Command.Group heading="Sessions">
-			{#if ctx.server.sessions.length > 0}
+			{#if sessions.length > 0}
 				<!--TODO: Ensure no undefined sessionIds also to prevent duplicated keys-->
-				{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
+				{#each sessions as basicSession (basicSession.sessionId)}
 					<Command.Item
 						onSelect={() => {
 							ctx.session = new Session({

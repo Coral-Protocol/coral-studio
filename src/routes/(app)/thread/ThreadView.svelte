@@ -38,7 +38,7 @@
 	let message = $state('');
 
 	let messagesSet = $derived(
-		messages.map((msg) => ({ message: msg, mentions: new Set(msg.mentions) }))
+		messages.map((msg) => ({ message: msg, mentions: new Set(msg.mentionNames) }))
 	);
 
 	const agentFilters: SvelteSet<string> = new SvelteSet();
@@ -47,7 +47,8 @@
 		agentFilters.size > 0
 			? messagesSet
 					.filter(
-						(m) => agentFilters.has(m.message.senderId) || !m.mentions.isDisjointFrom(agentFilters)
+						(m) =>
+							agentFilters.has(m.message.senderName) || !m.mentions.isDisjointFrom(agentFilters)
 					)
 					.map((m) => m.message)
 			: messages

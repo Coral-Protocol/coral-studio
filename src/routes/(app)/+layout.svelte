@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { socketCtx, UserInput } from '$lib/socket.svelte';
-	import { AgentLogs, logContext } from '$lib/logs.svelte';
+	import { Logs } from '$lib/logs.svelte';
 	import { watch } from 'runed';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
@@ -15,16 +15,10 @@
 		connection: null,
 		session: null,
 		sessions: null,
-		registry: null
+		registry: null,
+		logs: null
 	});
 	appContext.set(ctx);
-
-	let logCtx: ReturnType<(typeof logContext)['get']> = $state({
-		session: null,
-		logs: {}
-	});
-
-	logContext.set(logCtx);
 
 	onMount(() => {
 		ctx.server.fetchAll();
@@ -32,20 +26,20 @@
 
 	//if we get problems we just need to logCtx.logs[agent]?.close() before assigning, according to our good developer friend, Alan.
 
-	watch([() => ctx.session, () => Object.keys(ctx.session?.agents ?? {})], () => {
-		if (!ctx.session) return;
-		if (logCtx.session !== null && logCtx.session !== ctx.session.sessionId) {
-			logCtx.logs = {};
-			console.log('invalidating session logs');
-		}
-		logCtx.session = ctx.session.sessionId;
-		for (const agent of Object.keys(ctx.session.agents)) {
-			if (!(agent in logCtx.logs)) {
-				logCtx.logs[agent] = new AgentLogs({ session: ctx.session.sessionId }, agent);
-				console.log(`opening agent logs for '${agent}'`);
-			}
-		}
-	});
+	// watch([() => ctx.session, () => Object.keys(ctx.session?.agents ?? {})], () => {
+	// 	if (!ctx.session) return;
+	// 	if (logCtx.session !== null && logCtx.session !== ctx.session.sessionId) {
+	// 		logCtx.logs = {};
+	// 		console.log('invalidating session logs');
+	// 	}
+	// 	logCtx.session = ctx.session.sessionId;
+	// 	for (const agent of Object.keys(ctx.session.agents)) {
+	// 		if (!(agent in logCtx.logs)) {
+	// 			logCtx.logs[agent] = new Logs({ session: ctx.session.sessionId }, agent);
+	// 			console.log(`opening agent logs for '${agent}'`);
+	// 		}
+	// 	}
+	// });
 
 	let socket = $state({
 		userInput: new UserInput()

@@ -1,12 +1,11 @@
 import { base } from '$app/paths';
-import { Context } from 'runed';
 
 export type Log = {
 	timestamp: number;
 	kind: any;
 	message: string;
 };
-export class AgentLogs {
+export class Logs {
 	// private socket: WebSocket;
 	public connected = $state(false);
 
@@ -47,8 +46,3 @@ export class AgentLogs {
 		// };
 	}
 }
-
-export const logContext = new Context<{
-	logs: { [agentId: string]: AgentLogs };
-	session: string | null;
-}>('agentLogs');

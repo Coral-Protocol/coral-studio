@@ -5,6 +5,8 @@ import type { components, paths } from '$generated/api';
 import createClient, { type Client } from 'openapi-fetch';
 
 import { PUBLIC_API_PATH } from '$env/static/public';
+import { createWebsocket } from './websocket.svelte';
+import { toast } from 'svelte-sonner';
 
 export type Registry =
 	paths['/api/v1/registry']['get']['responses']['200']['content']['application/json'][number];
@@ -22,6 +24,10 @@ export const agentIdOf = (agentId: RegistryAgentIdentifier) =>
 	`${registryIdOf(agentId.registrySourceId)}/${agentId.name}:${agentId.version}`;
 
 type APIClient = Client<paths, `${string}/${string}`>;
+
+type BetterSession = Omit<components['schemas']['BasicSession'], 'closing'> & {
+	state: 'open' | 'closing' | 'closed';
+};
 
 export class CoralServer {
 	/** Unwrapped API Client. DO NOT use this without good reason - if the wrapped `api` is missing a method then add it there. **/
@@ -66,7 +72,11 @@ export class CoralServer {
 	} = $state({});
 
 	// TODO (alan): store Session classes here (supa svelty)
-	allSessions: { [namespace: string]: Array<components['schemas']['BasicSession']> } = $state({});
+	allSessions: {
+		[namespace: string]: {
+			[sessionId: string]: BetterSession;
+		};
+	} = $state({});
 
 	// TODO (alan): better server state repr
 	public alive = $state(false);
@@ -74,6 +84,8 @@ export class CoralServer {
 	public namespaces = $derived(Object.keys(this.allSessions));
 
 	public sessions = $derived(this.allSessions[this.namespace] ?? []);
+
+	public lsmSock = createWebsocket(`ws/v1/events/lsm`);
 
 	constructor() {
 		$effect(() => {
@@ -83,10 +95,68 @@ export class CoralServer {
 		$effect(() => {
 			console.log('catalogs: ', $state.snapshot(this.catalogs));
 		});
+
+		const onmessage = (msg: MessageEvent) => {
+			let data;
+			try {
+				data = JSON.parse(msg.data) as components['schemas']['LocalSessionManagerEvent'];
+			} catch (e) {
+				toast.warning(`Bad LSM Event: '${msg.data}'`);
+				return;
+			}
+			switch (data.type) {
+				case 'namespace_created':
+					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
+					break;
+				case 'session_created':
+					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
+					this.allSessions[data.namespace]![data.sessionId] = {
+						sessionId: data.sessionId,
+						state: 'open'
+					};
+					break;
+				case 'session_closing':
+					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
+					this.allSessions[data.namespace]![data.sessionId] = {
+						sessionId: data.sessionId,
+						state: 'closing'
+					};
+					break;
+				case 'session_closed':
+					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
+					this.allSessions[data.namespace]![data.sessionId] = {
+						sessionId: data.sessionId,
+						state: 'closed'
+					};
+					break;
+				default:
+					break;
+			}
+			if (data.namespace !== this.namespace) {
+				console.warn(`skipping event on namespace we care not for (${data.namespace})`);
+				return;
+			}
+		};
+		const onopen = () => {
+			this.alive = true;
+		};
+		const onerror = () => {
+			this.alive = false;
+		};
+		const onclose = () => {
+			this.alive = false;
+		};
+		$effect(() => {
+			if (!this.lsmSock) return;
+			this.lsmSock.onopen = onopen;
+			this.lsmSock.onmessage = onmessage;
+			this.lsmSock.onerror = onerror;
+			this.lsmSock.onclose = onclose;
+		});
 	}
 
 	public addNamespace(namespace: string) {
-		this.allSessions[namespace] = [];
+		this.allSessions[namespace] = {};
 	}
 
 	public async fetchRegistries() {
@@ -105,6 +175,16 @@ export class CoralServer {
 	}
 
 	public async fetchSessions(namespace?: string) {
+		const mapSessions = (
+			sessions: components['schemas']['BasicSession'][]
+		): { [sessionId: string]: BetterSession } =>
+			Object.fromEntries(
+				sessions.map((s) => [
+					s.sessionId,
+					{ sessionId: s.sessionId, state: s.closing ? 'closed' : 'open' }
+				])
+			);
+
 		if (namespace) {
 			const res = await this.api.GET(`/api/v1/sessions/{namespace}`, {
 				params: { path: { namespace } }
@@ -113,17 +193,19 @@ export class CoralServer {
 				// wrapped GET normally handles this, but 404 usually does not mean good things,
 				// so we have to manually mark ourselves alive
 				this.alive = true;
-				this.allSessions[namespace] = [];
+				this.allSessions[namespace] = {};
 				return;
 			}
 			if (res.error) throw new Error(`Error fetching sessions - ${res.error.message}`);
 
-			this.allSessions[namespace] = res.data;
+			this.allSessions[namespace] = mapSessions(res.data);
 		} else {
 			const res = await this.api.GET('/api/v1/sessions');
 			if (res.error) throw new Error(`Error fetching sessions`);
 
-			this.allSessions = Object.fromEntries(res.data.map((s) => [s.namespace, s.sessions]));
+			this.allSessions = Object.fromEntries(
+				res.data.map((s) => [s.namespace, mapSessions(s.sessions)])
+			);
 		}
 	}
 

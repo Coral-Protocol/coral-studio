@@ -375,7 +375,7 @@
 											<Command.Empty>No sessions found</Command.Empty>
 										{:else}
 											<Command.Group>
-												{#each ctx.server.sessions as basicSession (basicSession.sessionId)}
+												{#each Object.values(ctx.server.sessions) as basicSession (basicSession.sessionId)}
 													<Command.Item
 														class="text-wrap break-all"
 														onSelect={() => {
@@ -392,7 +392,7 @@
 													</Command.Item>
 												{/each}
 
-												{#if ctx.session && !ctx.server.sessions.find((s) => s.sessionId === ctx.session?.sessionId)}
+												{#if ctx.session && !(ctx.session.sessionId in ctx.server.sessions)}
 													<!-- Show current session even if it's not in ctx.server.sessions -->
 													<Command.Item
 														class="font-bold text-wrap break-all"
