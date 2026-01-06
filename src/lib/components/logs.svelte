@@ -1,12 +1,12 @@
 <script lang="ts">
-	import type { AgentLogs } from '$lib/logs.svelte';
+	import type { Logs } from '$lib/logs.svelte';
 	import { cn } from '$lib/utils';
 	// import SvelteVirtualList from '@humanspeak/svelte-virtual-list';
 	import { watch } from 'runed';
 	import ScrollArea from './ui/scroll-area/scroll-area.svelte';
 	import Sonner from './ui/sonner/sonner.svelte';
 
-	let { logs, class: className }: { logs: AgentLogs['logs']; class?: string } = $props();
+	let { logs, class: className }: { logs: Logs['logs']; class?: string } = $props();
 	const ts_fmt = (d: Date) =>
 		`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
