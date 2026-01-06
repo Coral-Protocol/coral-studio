@@ -55,10 +55,10 @@ export class UserInput {
 	// 	});
 	// }
 
-	// respond(id: string, value: string) {
-	// 	this.requests[id] && (this.requests[id].userQuestion = value);
-	// 	this.sock.emit('user_response', { id, value });
-	// }
+	respond(id: string, value: string) {
+		// this.requests[id] && (this.requests[id].userQuestion = value);
+		// this.sock.emit('user_response', { id, value });
+	}
 }
 export const socketCtx = new Context<{
 	// socket: Socket;
