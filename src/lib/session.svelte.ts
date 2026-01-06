@@ -75,7 +75,7 @@ export class Session {
 			})
 			.catch((reason) => {
 				this.connected = false;
-				toast.error(`Error fetching session state${reason ? ` - ${reason}.` : '.'}`);
+				toast.error(`Error fetching session state${reason ? ` - ${reason}.` : '.'}`, { duration: Infinity });
 				this.socket.close();
 			});
 
