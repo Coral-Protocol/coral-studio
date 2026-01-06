@@ -56,7 +56,6 @@
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Spinner } from '$lib/components/ui/spinner';
-	import { derived } from 'svelte/store';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -149,12 +148,12 @@
 				}
 				if (res.data) {
 					if (!(ctx.server.namespace in ctx.server.allSessions))
-						ctx.server.allSessions[ctx.server.namespace] = [];
+						ctx.server.allSessions[ctx.server.namespace] = {};
 					// TODO @alan: replace with websocket notifications
-					ctx.server.allSessions[ctx.server.namespace]!.push({
+					ctx.server.allSessions[ctx.server.namespace]![res.data.sessionId] = {
 						sessionId: res.data.sessionId,
-						closing: false
-					});
+						state: 'open'
+					};
 					ctx.session = new Session({
 						sessionId: res.data.sessionId,
 						namespace: ctx.server.namespace,
