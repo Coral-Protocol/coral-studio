@@ -4,23 +4,16 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconPrompt from 'phosphor-icons-svelte/IconChatCircleDotsRegular.svelte';
-	import IconListRegular from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
 	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
-	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 
 	import * as Form from '$lib/components/ui/form';
-	import { Checkbox } from '$lib/components/ui/checkbox';
 
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
@@ -34,7 +27,6 @@
 	import Combobox from '$lib/components/combobox.svelte';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
-	import Codeblock from '$lib/components/Codeblock.svelte';
 
 	import { toast } from 'svelte-sonner';
 	import { Textarea } from '$lib/components/ui/textarea';
@@ -49,21 +41,11 @@
 	import { onMount, tick } from 'svelte';
 
 	import Graph from './Graph.svelte';
-	import IconCopyRegular from 'phosphor-icons-svelte/IconCopyRegular.svelte';
-	import { includes } from 'zod';
-	import { id } from 'zod/v4/locales';
 	import type { Provider, ProviderType } from './schemas';
 	import { appContext } from '$lib/context';
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Spinner } from '$lib/components/ui/spinner';
-
-	// import hljs from 'highlight.js/lib/core';
-	// import javascript from 'highlight.js/lib/languages/javascript';
-	// import json from 'highlight.js/lib/languages/json';
-
-	// hljs.registerLanguage('javascript', javascript);
-	// hljs.registerLanguage('json', json);
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -123,39 +105,6 @@
 		validators: zod4(formSchema),
 		validationMethod: 'onblur',
 		resetForm: false,
-
-		onSubmit(event) {
-			console.log('[onSubmit]', {
-				action: event.action,
-				formData: event.formData,
-				submitter: event.submitter
-			});
-		},
-
-		onResult(event) {
-			console.log('[onResult]', {
-				result: event.result
-			});
-		},
-
-		onUpdated(event) {
-			console.log('[onUpdated]', {
-				form: event.form
-			});
-		},
-
-		onError(event) {
-			console.log('[onError]', {
-				result: event.result
-			});
-		},
-
-		onChange(event) {
-			console.log('[onChange]', {
-				target: event.target ?? null,
-				paths: event.paths
-			});
-		},
 
 		async onUpdate({ form: f }) {
 			console.log('[onUpdate]', {
@@ -322,8 +271,6 @@
 							const defaultVal = reg.registryAgent.options[name]?.default;
 							if (!opt || opt.value === undefined) return false;
 							try {
-								// console.log(opt.value, defaultVal);
-
 								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
 							} catch {
 								console.log('failed to stringify');
@@ -917,7 +864,7 @@
 												<Dialog.Content>
 													<Dialog.Header>
 														<Dialog.Title>{agent.name}</Dialog.Title>
-														<Dialog.Description>
+														<Dialog.Description class="whitespace-pre-line">
 															{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
 																<Skeleton class="h-4 w-full" />
 															{:then details}
@@ -925,6 +872,12 @@
 															{/await}
 														</Dialog.Description>
 													</Dialog.Header>
+													<Dialog.Footer>
+														<Dialog.Close
+															class="truncate {buttonVariants({ variant: 'default' })}"
+															onclick={() => addAgent(agent)}>Add Agent</Dialog.Close
+														>
+													</Dialog.Footer>
 												</Dialog.Content>
 											</Dialog.Root>
 											<Button
@@ -945,12 +898,13 @@
 					minSize={25}
 					defaultSize={50}
 				>
-					<Tabs.Root value="json" class="grow gap-0 overflow-hidden">
+					<Tabs.Root value="js" class="grow gap-0 overflow-hidden">
 						<Tabs.List
 							class="bg-sidebar flex w-full justify-start rounded-none border-0 *:rounded-none"
 						>
-							<Tabs.Trigger value="json" class="grow-0">JSON</Tabs.Trigger>
 							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
+
+							<Tabs.Trigger value="json" class="grow-0">JSON</Tabs.Trigger>
 						</Tabs.List>
 						<Tabs.Content value="json" class="overflow-y-auto">
 							<CodeMirror
@@ -975,15 +929,20 @@
 						<!-- <Button
 							disabled={sendingForm || $formData.agents.length === 0}
 							onclick={() => importFromJson(jsonExample)}>Save JSON Changes</Button
-						>
+						>-->
 
 						<Button
-							disabled={sendingForm || $formData.agents.length === 0}
 							onclick={() => {
 								navigator.clipboard.writeText(jsonExample);
-								toast.success('Session JSON copied to clipboard');
+								toast.success('JSON snippet copied to clipboard');
 							}}>Copy JSON</Button
-						> -->
+						>
+						<Button
+							onclick={() => {
+								navigator.clipboard.writeText(fetchExample);
+								toast.success('Javascript snippet copied to clipboard');
+							}}>Copy JS</Button
+						>
 
 						<Form.Button
 							disabled={sendingForm || $formData.agents.length === 0}
