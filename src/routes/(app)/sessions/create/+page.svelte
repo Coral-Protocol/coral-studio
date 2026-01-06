@@ -349,9 +349,8 @@
 		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 
-	const addAgent = (agent: any) => {
+	const addAgent = async (agent: any) => {
 		const catalog = Object.values(ctx.server.catalogs).at(0);
-		const agentFromCatalog = catalog && Object.values(catalog.agents).at(0);
 
 		try {
 			if (!agent) {
@@ -362,13 +361,27 @@
 				throw new Error('Catalog failed to load');
 			}
 
-			if (!agent.versions?.[0]) {
-				throw new Error('Agent versions are missing');
-			}
-
 			if (!Array.isArray(agent.versions) || agent.versions.length === 0) {
 				throw new Error('Agent has no available versions');
 			}
+
+			// Resolve detailed catalog info for this agent + version
+			const detailed = await ctx.server.lookupAgent({
+				name: agent.name,
+				version: agent.versions[0],
+				registrySourceId: { ...catalog.identifier }
+			});
+
+			if (!detailed?.registryAgent?.runtimes) {
+				throw new Error('Agent runtimes are missing from catalog');
+			}
+
+			const runtimes = Object.keys(detailed.registryAgent.runtimes);
+			if (runtimes.length === 0) {
+				throw new Error('Agent has no supported runtimes');
+			}
+
+			const runtime = runtimes[0] as any;
 
 			const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
 			selectedAgent = null;
@@ -386,16 +399,15 @@
 						maxCost: { type: 'micro_coral', amount: 1000 },
 						serverSource: { type: 'servers', servers: [] }
 					},
-					runtime: (Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0] ??
-						undefined) as any
+					runtime
 				},
 				providerType: 'local',
 				customToolAccess: new Set(),
 				blocking: false,
 				options: {}
 			});
-			detailedAgent = null;
 
+			detailedAgent = null;
 			$formData.agents = $formData.agents;
 			selectedAgent = $formData.agents.length - 1;
 		} catch (err) {
