@@ -45,7 +45,7 @@
 						</span>
 
 						{#if extra && extra.required === true}
-							<span class="text-accent ml-1 flex-shrink-0 select-none">*</span>
+							<span class="text-destructive ml-1 flex-shrink-0 select-none">*</span>
 						{/if}
 					</span>
 				</Label>
@@ -60,11 +60,13 @@
 			{/if}
 			{#if extra}
 				{#each Object.entries(extra) as [key, item]}
-					{#if item === true}
+					{#if key === 'required' && item === true}
+						<p><span class="font-bold">{key}</span></p>
+					{:else if item === true}
 						<p><span class="font-bold">{key}</span></p>
 					{:else if typeof item === 'string'}
 						<p><span class="font-bold">{key}:</span> {item}</p>
-					{:else}
+					{:else if typeof item === 'object' && item !== null}
 						<p>
 							{#if item.showKey !== false}
 								<span class="font-bold">{key}:</span>
