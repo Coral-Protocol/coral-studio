@@ -5,7 +5,7 @@ import type { components } from '../generated/api';
 import { base } from '$app/paths';
 import { SvelteSet } from 'svelte/reactivity';
 import type { CoralServer } from './CoralServer.svelte';
-import { PUBLIC_API_PATH } from '$env/static/public';
+import { createWebsocket } from './websocket.svelte';
 
 export type SessionAgentState = components['schemas']['SessionAgentState'];
 export type SessionThread = components['schemas']['SessionThread'];
@@ -41,9 +41,9 @@ export class Session {
 			markInitialStateReady = resolve;
 		});
 
-		this.socket = new WebSocket(
-			`${location.protocol == 'https:' ? 'wss' : 'ws'}://${window.location.host}${PUBLIC_API_PATH}/ws/v1/events/session/${namespace}/${sessionId}`
-		);
+		const socket = createWebsocket(`ws/v1/events/session/${namespace}/${sessionId}`);
+		if (!socket) throw new Error('cannot construct for SSR');
+		this.socket = socket;
 
 		server.api
 			.GET('/api/v1/sessions/{namespace}/{sessionId}', {
