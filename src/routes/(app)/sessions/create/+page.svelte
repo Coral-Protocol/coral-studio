@@ -267,13 +267,17 @@
 				x402Budgets: [],
 				options: Object.fromEntries(
 					Object.entries(agent.options ?? {})
+						.filter(([name]) => name in reg.registryAgent.options)
 						.filter(([name, opt]: [string, any]) => {
-							const defaultVal = reg.registryAgent.options[name]?.default;
+							const schemaOpt = reg.registryAgent.options[name];
+							if (!schemaOpt) return false;
+
+							const defaultVal = schemaOpt.default;
 							if (!opt || opt.value === undefined) return false;
+
 							try {
 								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
 							} catch {
-								console.log('failed to stringify');
 								return true;
 							}
 						})
@@ -368,6 +372,7 @@
 
 			const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
 			selectedAgent = null;
+
 			$formData.agents.push({
 				id: {
 					name: agent.name,
@@ -404,10 +409,9 @@
 		index: number;
 	} | null = $state(null);
 
-	const removeAgent = () => {
-		if (selectedAgent === null) return;
+	const removeAgent = (index: number) => {
+		if (index < 0 || index >= $formData.agents.length) return;
 
-		const index = selectedAgent;
 		const agent = $formData.agents[index];
 
 		lastDeletedAgent = {
@@ -418,12 +422,19 @@
 		$formData.agents.splice(index, 1);
 		$formData.agents = $formData.agents;
 
-		selectedAgent = null;
+		// Maintain selection invariants
+		if (selectedAgent !== null) {
+			if (selectedAgent === index) {
+				selectedAgent = 0;
+			} else if (selectedAgent > index) {
+				selectedAgent--;
+			}
+		}
 
-		toast('Agent "' + lastDeletedAgent.agent.name + '" deleted', {
+		toast(`Agent "${lastDeletedAgent.agent.name}" deleted`, {
 			action: {
 				label: 'Undo',
-				onClick: () => restoreAgent()
+				onClick: restoreAgent
 			}
 		});
 	};
@@ -435,6 +446,8 @@
 
 		$formData.agents = $formData.agents;
 		toast.success('Agent "' + lastDeletedAgent.agent.name + '" restored');
+
+		selectedAgent = lastDeletedAgent.index;
 
 		lastDeletedAgent = null;
 	};
@@ -777,6 +790,7 @@
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
 												<Table.Head>Agent</Table.Head>
+												<Table.Head class="w-24">Actions</Table.Head>
 											</Table.Row>
 										</Table.Header>
 										<Table.Body>
@@ -793,7 +807,10 @@
 														<p class="truncate">{agent.id.version}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[120px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell
+														class="max-w-[120px] min-w-[120px]"
+														onclick={() => (selectedAgent = i)}
+													>
 														<p class="truncate">{agent.id.registrySourceId.type}</p>
 													</Table.Cell>
 
@@ -801,13 +818,11 @@
 														<p class="truncate">{agent.id.name}</p>
 													</Table.Cell>
 
-													<Table.Cell>
+													<Table.Cell class="flex gap-2">
 														<TwostepButton
 															disabled={selectedAgent === null}
-															variant="destructive"
-															size="sm"
-															class="grow truncate"
-															onclick={removeAgent}>Remove</TwostepButton
+															class="hover:bg-destructive/50 my-2 grow truncate"
+															onclick={() => removeAgent(i)}>Remove</TwostepButton
 														>
 													</Table.Cell>
 												</Table.Row>
@@ -1061,6 +1076,7 @@
 													}))}
 													searchPlaceholder="Search types..."
 													onValueChange={async (value) => {
+														if (value.name === id.name) return; // no change
 														$formData.agents[selectedAgent!]!.id = value;
 
 														await tick();
@@ -1086,6 +1102,9 @@
 																$formData.agents[selectedAgent!]!.provider.runtime =
 																	firstRuntimeKey as any;
 															}
+															$formData.agents[selectedAgent!]!.name =
+																detailed.registryAgent.info.identifier.name ||
+																$formData.agents[selectedAgent!]!.name;
 														}
 													}}
 												/>
