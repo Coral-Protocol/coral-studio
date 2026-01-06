@@ -134,7 +134,7 @@
 					let error: { message?: string; stackTrace?: string[] } = res.error;
 					console.error(error.stackTrace);
 
-					toast.error(`Failed to create session: ${error.message}`);
+					toast.error(`Failed to create session: ${error.message}`, { duration: Infinity });
 					return;
 				}
 				if (res.data) {
@@ -156,7 +156,7 @@
 				}
 			} catch (e) {
 				console.log(e);
-				toast.error(`Failed to create session: ${e}`);
+				toast.error(`Failed to create session: ${e}`, { duration: Infinity });
 				sendingForm = false;
 			}
 		}
@@ -367,7 +367,7 @@
 			}
 
 			const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
-
+			selectedAgent = null;
 			$formData.agents.push({
 				id: {
 					name: agent.name,
@@ -389,6 +389,7 @@
 				blocking: false,
 				options: {}
 			});
+			detailedAgent = null;
 
 			$formData.agents = $formData.agents;
 			selectedAgent = $formData.agents.length - 1;
@@ -466,6 +467,7 @@
 	import { javascript } from '@codemirror/lang-javascript';
 	import { json } from '@codemirror/lang-json';
 	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 
 	function toJsObjectLiteral(value: unknown, indent = 2): string {
 		return (
@@ -770,6 +772,7 @@
 									<Table.Root class="w-full">
 										<Table.Header>
 											<Table.Row>
+												<Table.Head><Checkbox /></Table.Head>
 												<Table.Head>Name</Table.Head>
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
@@ -778,23 +781,23 @@
 										</Table.Header>
 										<Table.Body>
 											{#each $formData.agents as agent, i}
-												<Table.Row
-													onclick={() => (selectedAgent = i)}
-													class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
-												>
+												<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
 													<Table.Cell class="max-w-[100px]">
+														<p class="truncate font-medium"><Checkbox /></p>
+													</Table.Cell>
+													<Table.Cell class="max-w-[100px]" onclick={() => (selectedAgent = i)}>
 														<p class="truncate font-medium">{agent.name}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[10px]">
+													<Table.Cell class="max-w-[10px]" onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.version}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[120px]">
+													<Table.Cell class="max-w-[120px]" onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.registrySourceId.type}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[240px]">
+													<Table.Cell class="max-w-[240px]" onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.name}</p>
 													</Table.Cell>
 
@@ -983,7 +986,7 @@
 					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-y-scroll ">
 						{#if selectedAgent !== null && curAgent && curCatalog}
 							{#if !detailedAgent}
-								<Skeleton />
+								<Spinner class="m-auto my-8" />
 							{:else}
 								<header class="flex flex-col gap-2 px-4">
 									<Form.ElementField
