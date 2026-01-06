@@ -41,7 +41,7 @@ jobs:
 
           BUNDLE_DIR=$(nix build --no-link --print-out-paths .#)
           mkdir output/
-          cp -r $BUNDLE_DIR/*/build/ output/
+          cp -r $BUNDLE_DIR/* output/
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
