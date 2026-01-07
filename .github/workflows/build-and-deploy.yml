@@ -20,6 +20,7 @@ jobs:
             substituters = https://cache.nixos.org/
             trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
             keep-env-derivations = true
+            keep-derivations = true
             keep-outputs = true
 
       - name: Restore and save Nix store and npm cache
