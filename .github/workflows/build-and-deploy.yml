@@ -49,8 +49,14 @@ jobs:
           name: coral-console_${{ github.ref_name }}-${{ github.sha }}
           path: |
             ./output/*
+      - name: Prepare for Release
+        if: github.ref_type == 'tag'
+        run: |
+          set -eu
+          cd ./output
+          zip -r ../bundle.zip *
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          files: ./output/*
+          files: ./bundle.zip
