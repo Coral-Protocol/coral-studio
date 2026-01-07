@@ -963,7 +963,7 @@
 						</Tabs.Content>
 					</Tabs.Root>
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
-						<Button onclick={() => importFromJson(jsonExample)}>Save JSON Changes</Button>
+						<Button onclick={() => importFromJson(jsonExample)}>Update from JSON</Button>
 
 						<Button
 							onclick={() => {
