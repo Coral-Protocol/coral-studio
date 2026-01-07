@@ -9,12 +9,13 @@
 	import { Button } from '$lib/components/ui/button';
 	import CaretRight from 'phosphor-icons-svelte/IconCaretRightRegular.svelte';
 	import ExternalLink from 'phosphor-icons-svelte/IconArrowsOutRegular.svelte';
-	import Logs from '$lib/components/logs.svelte';
+	import LogsComponent from '$lib/components/logs.svelte';
 	import RemoteControl from '$lib/components/remote-control.svelte';
 	import { appContext } from '$lib/context';
 	import { agentStateOf } from '$lib';
 	import { cn } from '$lib/utils';
 	import { base } from '$app/paths';
+	import { Logs } from '$lib/logs.svelte';
 
 	let ctx = appContext.get();
 	let conn = $derived(ctx.session);
@@ -28,6 +29,8 @@
 	let memberThreads = $derived(
 		Object.values(threads).filter((thread) => thread.participants.has(agentName))
 	);
+
+	let logs = $derived(agent && conn && new Logs({ session: conn.sessionId }, agent.name));
 
 	const ts_fmt = (d: Date) =>
 		`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
@@ -94,7 +97,7 @@
 				</Accordion.Root>
 			</Tabs.Content>
 			<Tabs.Content value="logs" class="h-full min-h-0 basis-0">
-				<Logs logs={ctx.logs?.logs ?? []} class="h-full max-h-full" />
+				<LogsComponent {logs} class="h-full max-h-full" />
 			</Tabs.Content>
 			{#if conn !== null}
 				<Tabs.Content value="rcon" class="h-full min-h-0 basis-0">

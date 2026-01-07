@@ -28,11 +28,11 @@
 
 	// watch([() => ctx.session, () => Object.keys(ctx.session?.agents ?? {})], () => {
 	// 	if (!ctx.session) return;
-	// 	if (logCtx.session !== null && logCtx.session !== ctx.session.sessionId) {
-	// 		logCtx.logs = {};
+	// 	if (ctx.logs !== null && ctx.logs.session !== ctx.session.sessionId) {
+	// 		ctx.logs = null;
 	// 		console.log('invalidating session logs');
 	// 	}
-	// 	logCtx.session = ctx.session.sessionId;
+	//        ctx.logs = new Logs({session: ctx.session.session}, );
 	// 	for (const agent of Object.keys(ctx.session.agents)) {
 	// 		if (!(agent in logCtx.logs)) {
 	// 			logCtx.logs[agent] = new Logs({ session: ctx.session.sessionId }, agent);
