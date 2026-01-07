@@ -5,6 +5,7 @@
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -204,40 +205,46 @@
 	let newServerPort: string = $state('');
 
 	const importFromJson = (json: string) => {
-		const data: CreateSessionRequest = JSON.parse(json);
-		$formData = {
-			groups: data.agentGraphRequest.groups ?? [],
-			sessionRuntimeSettings: {
-				ttl: data.sessionRuntimeSettings?.ttl ?? 50000
-			},
-			agents: data.agentGraphRequest.agents.map((agent) => ({
-				id: agent.id,
-				name: agent.name,
-				description: agent.description ?? '',
-				provider: {
-					runtime: agent.provider.runtime,
-					remote_request:
-						agent.provider.type === 'remote_request'
-							? {
-									maxCost: agent.provider.maxCost,
-									// ensure serverSource is the "servers" variant expected by the form model
-									serverSource:
-										agent.provider.serverSource &&
-										typeof (agent.provider.serverSource as any).type === 'string' &&
-										(agent.provider.serverSource as any).type === 'servers'
-											? (agent.provider.serverSource as any)
-											: { type: 'servers', servers: [] },
-									serverScoring: agent.provider.serverScoring
-								}
-							: defaultProvider.remote_request
+		try {
+			const data: CreateSessionRequest = JSON.parse(json);
+			$formData = {
+				groups: data.agentGraphRequest.groups ?? [],
+				sessionRuntimeSettings: {
+					ttl: data.sessionRuntimeSettings?.ttl ?? 50000
 				},
-				providerType: agent.provider.type,
-				blocking: agent.blocking ?? true,
-				options: agent.options as any,
-				customToolAccess: new Set(agent.customToolAccess)
-			}))
-		};
-		selectedAgent = $formData.agents.length > 0 ? 0 : null;
+				agents: data.agentGraphRequest.agents.map((agent) => ({
+					id: agent.id,
+					name: agent.name,
+					description: agent.description ?? '',
+					provider: {
+						runtime: agent.provider.runtime,
+						remote_request:
+							agent.provider.type === 'remote_request'
+								? {
+										maxCost: agent.provider.maxCost,
+										// ensure serverSource is the "servers" variant expected by the form model
+										serverSource:
+											agent.provider.serverSource &&
+											typeof (agent.provider.serverSource as any).type === 'string' &&
+											(agent.provider.serverSource as any).type === 'servers'
+												? (agent.provider.serverSource as any)
+												: { type: 'servers', servers: [] },
+										serverScoring: agent.provider.serverScoring
+									}
+								: defaultProvider.remote_request
+					},
+					providerType: agent.provider.type,
+					blocking: agent.blocking ?? true,
+					options: agent.options as any,
+					customToolAccess: new Set(agent.customToolAccess)
+				}))
+			};
+			selectedAgent = $formData.agents.length > 0 ? 0 : null;
+			toast.success('Session JSON updated successfully');
+		} catch (error) {
+			toast.error('Failed to update session from JSON: ' + error);
+			console.error(error);
+		}
 	};
 
 	let usedTools = $derived(
@@ -531,8 +538,8 @@
 					'});'
 				].join('\n');
 			} catch (e) {
-				jsonExample = '// Failed to generate JSON example';
-				fetchExample = '// Failed to generate JavaScript example';
+				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
+				fetchExample = '// Failed to generate Javscript, does your session contain invalid data?';
 				console.error(e);
 			}
 		})();
@@ -881,14 +888,14 @@
 							{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
 								<ol class="border-t">
 									{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
-										<li class="hover:bg-sidebar grid w-full grid-cols-4 gap-2 border-b px-4 py-2">
+										<li class="hover:bg-sidebar grid w-full grid-cols-5 gap-2 border-b px-4 py-2">
 											<Dialog.Root>
 												<Dialog.Trigger
 													type="button"
 													class="{buttonVariants({
 														variant: 'default',
 														size: 'sm'
-													})} col-span-3 w-full grow cursor-help justify-start truncate overflow-hidden text-xs"
+													})} col-span-4 w-full grow cursor-help justify-start truncate overflow-hidden text-xs"
 													>{agent.name}</Dialog.Trigger
 												>
 												<Dialog.Content>
@@ -913,7 +920,8 @@
 											<Button
 												class="col-span-1 w-full grow  truncate overflow-hidden text-xs "
 												size="sm"
-												onclick={() => addAgent(agent)}>Add</Button
+												onclick={() => addAgent(agent)}
+												><IconPlusRegular /><span class="sr-only">Add</span></Button
 											>
 										</li>
 									{/each}
@@ -941,7 +949,6 @@
 								bind:value={jsonExample}
 								lang={json()}
 								theme={dracula}
-								readonly
 								class="ͼo h-full"
 							/>
 						</Tabs.Content>
@@ -956,10 +963,10 @@
 						</Tabs.Content>
 					</Tabs.Root>
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
-						<!-- <Button
+						<Button
 							disabled={sendingForm || $formData.agents.length === 0}
 							onclick={() => importFromJson(jsonExample)}>Save JSON Changes</Button
-						>-->
+						>
 
 						<Button
 							onclick={() => {
