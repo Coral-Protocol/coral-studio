@@ -56,7 +56,7 @@
       default = bundle {basePath = "/ui/console";};
       cloud = bundle {
         basePath = "/console";
-        apiPath = "/server";
+        apiPath = "https://api.coralcloud.ai";
       };
     });
     devShells = eachSystem ({pkgs, ...}: {
