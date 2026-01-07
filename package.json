@@ -55,13 +55,18 @@
 		"vite": "^6.2.6"
 	},
 	"dependencies": {
+		"@codemirror/lang-javascript": "^6.2.4",
+		"@codemirror/lang-json": "^6.0.2",
 		"@supabase/supabase-js": "^2.57.4",
+		"@uiw/codemirror-theme-dracula": "^4.25.4",
 		"@unovis/svelte": "^1.6.1",
 		"@unovis/ts": "^1.6.1",
+		"codemirror": "^6.0.2",
 		"express": "^5.1.0",
 		"highlight.js": "^11.11.1",
 		"openapi-fetch": "^0.14.0",
 		"runed": "^0.28.0",
+		"svelte-codemirror-editor": "^2.1.0",
 		"zod": "4.1.13"
 	},
 	"packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"

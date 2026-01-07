@@ -140,11 +140,13 @@ export class CoralServer {
 		const onopen = () => {
 			this.alive = true;
 		};
-		const onerror = () => {
+		const onerror = (e: Event) => {
 			this.alive = false;
+			console.log('LSM sock error', e);
 		};
-		const onclose = () => {
+		const onclose = (e: CloseEvent) => {
 			this.alive = false;
+			console.log('LSM sock closed', e);
 		};
 		$effect(() => {
 			if (!this.lsmSock) return;

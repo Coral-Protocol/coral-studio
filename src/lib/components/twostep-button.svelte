@@ -33,13 +33,18 @@
 	</Dialog.Trigger>
 	<Dialog.Content class="sm:max-w-xs">
 		<Dialog.Header>
-			<Dialog.Title>Are you sure?</Dialog.Title>
-			<Dialog.Description class="text-sm">Hold shift to skip this check</Dialog.Description>
+			<Dialog.Title>Are you sure you want to remove this agent?</Dialog.Title>
+			<Dialog.Description>
+				<p class="mx-auto p-4 text-xs">
+					Tip: Shift-click remove to skip this confirmation.
+				</p></Dialog.Description
+			>
 		</Dialog.Header>
 
 		<section class="flex w-full justify-between gap-2">
 			<Button
 				class="grow"
+				variant="destructive"
 				onclick={() => {
 					onclick?.();
 					open = false;

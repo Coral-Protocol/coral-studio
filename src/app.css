@@ -5,69 +5,101 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	--radius: 0.625rem;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.1776 0 0);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.1776 0 0);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.1776 0 0);
-	--primary: oklch(0.98 0.001 286.375);
-	--primary-foreground: oklch(0.1776 0 0);
-	--secondary: oklch(55.19% 0.2629 286.9);
-	--secondary-foreground: oklch(0.1776 0 0);
-	--muted: oklch(0.967 0.001 286.375);
-	--muted-foreground: oklch(0.552 0.016 285.938);
-	--accent: oklch(62.98% 0.202 255.7);
-	--accent-foreground: oklch(0.21 0.006 285.885);
-	--destructive: oklch(0.577 0.245 27.325);
-	--border: oklch(0.92 0.004 286.32);
-	--input: oklch(0.92 0.004 286.32);
-	--ring: oklch(0.705 0.015 286.067);
-	--sidebar: oklch(0.985 0 0);
-	--sidebar-foreground: oklch(0.1776 0 0);
-	--sidebar-primary: oklch(0.21 0.006 285.885);
-	--sidebar-primary-foreground: oklch(0.1776 0 0);
-	--sidebar-accent: oklch(0.967 0.001 286.375);
-	--sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-	--sidebar-border: oklch(0.92 0.004 286.32);
-	--sidebar-ring: oklch(0.705 0.015 286.067);
-	--telemetry-assistant: oklch(0.4177 0.1012 155.85);
-	--telemetry-user: oklch(0.3071 0.1218 259.53);
-	--telemetry-tool: oklch(0.3 0.069 71.67);
+	--radius: 5px;
+
+	--background: oklch(0.98 0 0);
+	--foreground: oklch(0.18 0 0);
+
+	--card: oklch(0.98 0 0);
+	--card-foreground: oklch(0.18 0 0);
+
+	--popover: oklch(0.98 0 0);
+	--popover-foreground: oklch(0.18 0 0);
+
+	/* Neutral primary (buttons) */
+	--primary: oklch(0.32 0 0);
+	--primary-foreground: oklch(0.98 0 0);
+
+	--secondary: oklch(0.9 0 0);
+	--secondary-foreground: oklch(0.18 0 0);
+
+	--muted: oklch(0.94 0 0);
+	--muted-foreground: oklch(0.55 0 0);
+
+	/* Accents still available, just not loud */
+	--accent: oklch(0.75 0.23 145);
+	--accent-foreground: oklch(0.18 0 0);
+
+	--destructive: oklch(0.65 0.25 25);
+
+	--border: oklch(0.9 0 0);
+	--input: oklch(0.9 0 0);
+	--ring: rgb(77, 86, 96);
+
+	--sidebar: oklch(0.96 0 0);
+	--sidebar-foreground: oklch(0.18 0 0);
+	--sidebar-primary: oklch(0.32 0 0);
+	--sidebar-primary-foreground: oklch(0.98 0 0);
+	--sidebar-accent: oklch(0.94 0 0);
+	--sidebar-accent-foreground: oklch(0.18 0 0);
+	--sidebar-border: oklch(0.9 0 0);
+	--sidebar-ring: oklch(0.45 0 0);
+
+	--telemetry-assistant: oklch(0.75 0.23 145);
+	--telemetry-user: oklch(0.78 0.18 180);
+	--telemetry-tool: oklch(0.8 0.22 85);
 }
 
 .dark {
-	--background: oklch(0.1448 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.1689 0.0021 286.18);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.21 0.006 285.885);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(0.209 0 0);
-	--primary-foreground: oklch(1 0 0);
-	--secondary: oklch(55.19% 0.2629 286.9);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.274 0.006 286.033);
-	--muted-foreground: oklch(0.705 0.015 286.067);
-	--accent: oklch(62.98% 0.202 255.7);
-	--accent-foreground: oklch(0.985 0 0);
-	--destructive: oklch(0.704 0.191 22.216);
-	--border: oklch(1 0 0 / 10.5%);
-	--input: oklch(0.2308 0 0);
-	--ring: oklch(0.4218 0 285.938);
-	--sidebar: oklch(0.2046 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(0.488 0.243 264.376);
-	--sidebar-primary-foreground: oklch(0.985 0 0);
-	--sidebar-accent: oklch(0.274 0.006 286.033);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
+	/* ---------- Core Surfaces (NO saturation) ---------- */
+	--background: oklch(0.23 0 0);
+	--card: oklch(0.26 0 0);
+	--popover: oklch(0.26 0 0);
+	--secondary: oklch(0.32 0 0);
+	--muted: oklch(0.32 0 0);
+	--input: oklch(0.28 0 0);
+
+	/* ---------- Sidebar ---------- */
+	--sidebar: oklch(0.21 0 0);
+	--sidebar-accent: oklch(0.32 0 0);
+
+	/* ---------- Text ---------- */
+	--foreground: oklch(0.97 0 0);
+	--card-foreground: oklch(0.97 0 0);
+	--popover-foreground: oklch(0.97 0 0);
+	--secondary-foreground: oklch(0.97 0 0);
+	--sidebar-foreground: oklch(0.97 0 0);
+
+	--muted-foreground: oklch(0.72 0 0);
+
+	/* ---------- Primary (structural, neutral) ---------- */
+	--primary: oklch(0.26 0 0);
+	--primary-foreground: oklch(0.97 0 0);
+
+	/* ---------- Accent (ONLY saturated UI color) ---------- */
+	--accent: oklch(0.45 0.08 272);
+	--accent-foreground: oklch(0.97 0 0);
+
+	/* ---------- Destructive (semantic saturation allowed) ---------- */
+	--destructive: oklch(0.65 0.25 25);
+
+	/* ---------- Borders & Focus ---------- */
+	--border: oklch(1 0 0 / 12%);
+	--ring: oklch(0.6 0 0);
+
+	/* ---------- Sidebar Semantic ---------- */
+	--sidebar-primary: oklch(0.55 0 0);
+	--sidebar-primary-foreground: oklch(0.97 0 0);
+	--sidebar-accent-foreground: oklch(0.97 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.552 0.016 285.938);
-	--telemetry-assistant: oklch(0.8001 0.1824 151.8);
-	--telemetry-user: oklch(0.7137 0.1434 254.62);
-	--telemetry-tool: oklch(0.8369 0.1644 84.43);
+	--sidebar-ring: oklch(0.6 0 0);
+
+	/* ---------- Telemetry (semantic colors allowed) ---------- */
+	--telemetry-assistant: oklch(0.75 0.23 145);
+	--telemetry-user: oklch(0.78 0.18 180);
+	--telemetry-tool: oklch(0.80 0.22 85);
 }
+
 
 @theme inline {
 	--font-sans: 'Urbanist', ui-sans-serif, sans-serif;
@@ -141,5 +173,87 @@
 	h5,
 	h6 {
 		@apply font-sans tracking-wider;
+	}
+
+	/* Dracula Theme v1.2.5
+ *
+ * https://github.com/dracula/highlightjs
+ *
+ * Copyright 2016-present, All rights reserved
+ *
+ * Code licensed under the MIT license
+ *
+ * @author Denis Ciccale <dciccale@gmail.com>
+ * @author Zeno Rocha <hi@zenorocha.com>
+ */
+
+	.hljs {
+		display: block;
+		overflow-x: auto;
+		padding: 0.5em;
+		background: #282a36;
+	}
+
+	.hljs-built_in,
+	.hljs-selector-tag,
+	.hljs-section,
+	.hljs-link {
+		color: #8be9fd;
+	}
+
+	.hljs-keyword {
+		color: #ff79c6;
+	}
+
+	.hljs,
+	.hljs-subst {
+		color: #f8f8f2;
+	}
+
+	.hljs-title,
+	.hljs-attr,
+	.hljs-meta-keyword {
+		font-style: italic;
+		color: #50fa7b;
+	}
+
+	.hljs-string,
+	.hljs-meta,
+	.hljs-name,
+	.hljs-type,
+	.hljs-symbol,
+	.hljs-bullet,
+	.hljs-addition,
+	.hljs-variable,
+	.hljs-template-tag,
+	.hljs-template-variable {
+		color: #f1fa8c;
+	}
+
+	.hljs-comment,
+	.hljs-quote,
+	.hljs-deletion {
+		color: #6272a4;
+	}
+
+	.hljs-keyword,
+	.hljs-selector-tag,
+	.hljs-literal,
+	.hljs-title,
+	.hljs-section,
+	.hljs-doctag,
+	.hljs-type,
+	.hljs-name,
+	.hljs-strong {
+		font-weight: bold;
+	}
+
+	.hljs-literal,
+	.hljs-number {
+		color: #bd93f9;
+	}
+
+	.hljs-emphasis {
+		font-style: italic;
 	}
 }

@@ -4,23 +4,17 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconPrompt from 'phosphor-icons-svelte/IconChatCircleDotsRegular.svelte';
-	import IconListRegular from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconGraph from 'phosphor-icons-svelte/IconGraphRegular.svelte';
 	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import ClipboardImportDialog from '$lib/components/dialogs/clipboard-import-dialog.svelte';
 	import * as Select from '$lib/components/ui/select';
-	import * as ToggleGroup from '$lib/components/ui/toggle-group/index.js';
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
-	import { Label } from '$lib/components/ui/label/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 
 	import * as Form from '$lib/components/ui/form';
-	import { Checkbox } from '$lib/components/ui/checkbox';
 
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
@@ -48,9 +42,6 @@
 	import { onMount, tick } from 'svelte';
 
 	import Graph from './Graph.svelte';
-	import IconCopyRegular from 'phosphor-icons-svelte/IconCopyRegular.svelte';
-	import { includes } from 'zod';
-	import { id } from 'zod/v4/locales';
 	import type { Provider, ProviderType } from './schemas';
 	import { appContext } from '$lib/context';
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
@@ -115,11 +106,12 @@
 		validators: zod4(formSchema),
 		validationMethod: 'onblur',
 		resetForm: false,
-		onSubmit({ action, formData, formElement, controller, submitter, cancel }) {
-			console.log('aa');
-		},
 
 		async onUpdate({ form: f }) {
+			console.log('[onUpdate]', {
+				form: f
+			});
+
 			if (!f.valid) {
 				toast.error('Please fix all errors in the form.');
 				console.error({ errors: f.errors });
@@ -143,7 +135,7 @@
 					let error: { message?: string; stackTrace?: string[] } = res.error;
 					console.error(error.stackTrace);
 
-					toast.error(`Failed to create session: ${error.message}`);
+					toast.error(`Failed to create session: ${error.message}`, { duration: Infinity });
 					return;
 				}
 				if (res.data) {
@@ -165,7 +157,7 @@
 				}
 			} catch (e) {
 				console.log(e);
-				toast.error(`Failed to create session: ${e}`);
+				toast.error(`Failed to create session: ${e}`, { duration: Infinity });
 				sendingForm = false;
 			}
 		}
@@ -213,40 +205,46 @@
 	let newServerPort: string = $state('');
 
 	const importFromJson = (json: string) => {
-		const data: CreateSessionRequest = JSON.parse(json);
-		$formData = {
-			groups: data.agentGraphRequest.groups ?? [],
-			sessionRuntimeSettings: {
-				ttl: data.sessionRuntimeSettings?.ttl ?? 50000
-			},
-			agents: data.agentGraphRequest.agents.map((agent) => ({
-				id: agent.id,
-				name: agent.name,
-				description: agent.description ?? '',
-				provider: {
-					runtime: agent.provider.runtime,
-					remote_request:
-						agent.provider.type === 'remote_request'
-							? {
-									maxCost: agent.provider.maxCost,
-									// ensure serverSource is the "servers" variant expected by the form model
-									serverSource:
-										agent.provider.serverSource &&
-										typeof (agent.provider.serverSource as any).type === 'string' &&
-										(agent.provider.serverSource as any).type === 'servers'
-											? (agent.provider.serverSource as any)
-											: { type: 'servers', servers: [] },
-									serverScoring: agent.provider.serverScoring
-								}
-							: defaultProvider.remote_request
+		try {
+			const data: CreateSessionRequest = JSON.parse(json);
+			$formData = {
+				groups: data.agentGraphRequest.groups ?? [],
+				sessionRuntimeSettings: {
+					ttl: data.sessionRuntimeSettings?.ttl ?? 50000
 				},
-				providerType: agent.provider.type,
-				blocking: agent.blocking ?? true,
-				options: agent.options as any,
-				customToolAccess: new Set(agent.customToolAccess)
-			}))
-		};
-		selectedAgent = $formData.agents.length > 0 ? 0 : null;
+				agents: data.agentGraphRequest.agents.map((agent) => ({
+					id: agent.id,
+					name: agent.name,
+					description: agent.description ?? '',
+					provider: {
+						runtime: agent.provider.runtime,
+						remote_request:
+							agent.provider.type === 'remote_request'
+								? {
+										maxCost: agent.provider.maxCost,
+										// ensure serverSource is the "servers" variant expected by the form model
+										serverSource:
+											agent.provider.serverSource &&
+											typeof (agent.provider.serverSource as any).type === 'string' &&
+											(agent.provider.serverSource as any).type === 'servers'
+												? (agent.provider.serverSource as any)
+												: { type: 'servers', servers: [] },
+										serverScoring: agent.provider.serverScoring
+									}
+								: defaultProvider.remote_request
+					},
+					providerType: agent.provider.type,
+					blocking: agent.blocking ?? true,
+					options: agent.options as any,
+					customToolAccess: new Set(agent.customToolAccess)
+				}))
+			};
+			selectedAgent = $formData.agents.length > 0 ? 0 : null;
+			toast.success('Session JSON updated successfully');
+		} catch (error) {
+			toast.error('Failed to update session from JSON: ' + error);
+			console.error(error);
+		}
 	};
 
 	let usedTools = $derived(
@@ -276,15 +274,17 @@
 				x402Budgets: [],
 				options: Object.fromEntries(
 					Object.entries(agent.options ?? {})
+						.filter(([name]) => name in reg.registryAgent.options)
 						.filter(([name, opt]: [string, any]) => {
-							const defaultVal = reg.registryAgent.options[name]?.default;
-							if (!opt || opt.value === undefined) return false;
-							try {
-								// console.log(opt.value, defaultVal);
+							const schemaOpt = reg.registryAgent.options[name];
+							if (!schemaOpt) return false;
 
+							const defaultVal = schemaOpt.default;
+							if (!opt || opt.value === undefined) return false;
+
+							try {
 								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
 							} catch {
-								console.log('failed to stringify');
 								return true;
 							}
 						})
@@ -356,9 +356,8 @@
 		return () => window.removeEventListener('resize', updateIsMobile);
 	});
 
-	const addAgent = () => {
+	const addAgent = async (agent: any) => {
 		const catalog = Object.values(ctx.server.catalogs).at(0);
-		const agent = catalog && Object.values(catalog.agents).at(0);
 
 		try {
 			if (!agent) {
@@ -369,15 +368,30 @@
 				throw new Error('Catalog failed to load');
 			}
 
-			if (!agent.versions?.[0]) {
-				throw new Error('Agent versions are missing');
-			}
-
 			if (!Array.isArray(agent.versions) || agent.versions.length === 0) {
 				throw new Error('Agent has no available versions');
 			}
 
+			// Resolve detailed catalog info for this agent + version
+			const detailed = await ctx.server.lookupAgent({
+				name: agent.name,
+				version: agent.versions[0],
+				registrySourceId: { ...catalog.identifier }
+			});
+
+			if (!detailed?.registryAgent?.runtimes) {
+				throw new Error('Agent runtimes are missing from catalog');
+			}
+
+			const runtimes = Object.keys(detailed.registryAgent.runtimes);
+			if (runtimes.length === 0) {
+				throw new Error('Agent has no supported runtimes');
+			}
+
+			const runtime = runtimes[0] as any;
+
 			const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
+			selectedAgent = null;
 
 			$formData.agents.push({
 				id: {
@@ -392,8 +406,7 @@
 						maxCost: { type: 'micro_coral', amount: 1000 },
 						serverSource: { type: 'servers', servers: [] }
 					},
-					runtime: (Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0] ??
-						undefined) as any
+					runtime
 				},
 				providerType: 'local',
 				customToolAccess: new Set(),
@@ -401,6 +414,7 @@
 				options: {}
 			});
 
+			detailedAgent = null;
 			$formData.agents = $formData.agents;
 			selectedAgent = $formData.agents.length - 1;
 		} catch (err) {
@@ -414,10 +428,9 @@
 		index: number;
 	} | null = $state(null);
 
-	const removeAgent = () => {
-		if (selectedAgent === null) return;
+	const removeAgent = (index: number) => {
+		if (index < 0 || index >= $formData.agents.length) return;
 
-		const index = selectedAgent;
 		const agent = $formData.agents[index];
 
 		lastDeletedAgent = {
@@ -428,12 +441,19 @@
 		$formData.agents.splice(index, 1);
 		$formData.agents = $formData.agents;
 
-		selectedAgent = null;
+		// Maintain selection invariants
+		if (selectedAgent !== null) {
+			if (selectedAgent === index) {
+				selectedAgent = 0;
+			} else if (selectedAgent > index) {
+				selectedAgent--;
+			}
+		}
 
-		toast('Agent "' + lastDeletedAgent.agent.name + '" deleted', {
+		toast(`Agent "${lastDeletedAgent.agent.name}" deleted`, {
 			action: {
 				label: 'Undo',
-				onClick: () => restoreAgent()
+				onClick: restoreAgent
 			}
 		});
 	};
@@ -445,6 +465,8 @@
 
 		$formData.agents = $formData.agents;
 		toast.success('Agent "' + lastDeletedAgent.agent.name + '" restored');
+
+		selectedAgent = lastDeletedAgent.index;
 
 		lastDeletedAgent = null;
 	};
@@ -461,7 +483,71 @@
 		}, {})
 	);
 
-	let mainTabs: HTMLElement | null = $state(null);
+	let agentsListTabs: string = $state('table');
+
+	$effect(() => {
+		if ($formData.agents.length > 0) {
+			if (currentTab === 'groups') {
+				agentsListTabs = 'graph';
+			} else {
+				agentsListTabs = 'table';
+			}
+		}
+	});
+
+	import CodeMirror from 'svelte-codemirror-editor';
+	import { javascript } from '@codemirror/lang-javascript';
+	import { json } from '@codemirror/lang-json';
+	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+
+	function toJsObjectLiteral(value: unknown, indent = 2): string {
+		return (
+			JSON.stringify(value, null, indent)
+				// unquote valid JS identifiers
+				.replace(/"([a-zA-Z_$][\w$]*)":/g, '$1:')
+				// single quotes for strings (optional, stylistic)
+				.replace(/"/g, "'")
+		);
+	}
+
+	let jsonExample = $state<string>('');
+	let fetchExample = $state<string>('');
+	$effect(() => {
+		let cancelled = false;
+
+		(async () => {
+			try {
+				const body = await asJson;
+				if (cancelled) return;
+
+				jsonExample = JSON.stringify(body, null, 2);
+
+				const jsBody = toJsObjectLiteral(body, 4);
+
+				fetchExample = [
+					"fetch('http://localhost:5555/api/v1/sessions/{namespace}', {",
+					"  method: 'POST',",
+					'  headers: {',
+					"    'Content-Type': 'application/json',",
+					"    Authorization: 'Bearer YOUR_SECRET_TOKEN'",
+					'  },',
+					'  body: JSON.stringify(',
+					jsBody.replace(/^/gm, '    '),
+					'  )',
+					'});'
+				].join('\n');
+			} catch (e) {
+				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
+				fetchExample = '// Failed to generate Javscript, does your session contain invalid data?';
+				console.error(e);
+			}
+		})();
+
+		return () => {
+			cancelled = true;
+		};
+	});
 </script>
 
 {#snippet optionRow(name: any, opt: any)}
@@ -476,7 +562,7 @@
 					<TooltipLabel
 						class="max-w-1/4 min-w-1/4 {opt.required ? 'hover:pr-[0.5em]' : ''}"
 						title={name}
-						tooltip={opt?.display?.description ?? 'No description found'}
+						tooltip={opt?.display?.description ?? 'No description provided.'}
 						extra={{
 							required: opt.required,
 							type: opt.type
@@ -700,91 +786,238 @@
 	class="flex h-full flex-col overflow-hidden"
 	enctype="multipart/form-data"
 >
-	<section class="flex w-full items-center justify-between gap-4 border-b p-4">
-		<section class="flex justify-between gap-2">
-			<Select.Root type="single">
-				<Select.Trigger
-					class="!text-foreground w-[180px] truncate"
-					disabled={$formData.agents.length === 0}
-					>{selectedAgent != null
-						? ($formData.agents[selectedAgent]?.name ?? 'Select an agent')
-						: 'Select an agent'}</Select.Trigger
-				>
-				<Select.Content>
-					{#each $formData.agents as agent, i}
-						<Select.Item value={agent.name} onclick={() => (selectedAgent = i)}
-							>{agent.name}</Select.Item
-						>
-					{/each}
-				</Select.Content>
-			</Select.Root>
-			<Button onclick={addAgent}>
-				<span>Add <span class="hidden lg:inline">agent</span></span>
-			</Button>
-			<TwostepButton
-				disabled={selectedAgent === null}
-				variant="destructive"
-				class="grow truncate"
-				onclick={removeAgent}>Remove <span class="hidden xl:inline">agent</span></TwostepButton
-			>
-		</section>
-		<section class="flex w-fit gap-4">
-			<span class="text-muted-foreground flex flex-col justify-between">
-				<TooltipLabel tooltip="Based off Session time to live settings" class=" max-w-fit">
-					Maximum session duration: {formatMsToHHMMSS($formData.sessionRuntimeSettings.ttl ?? 0) ??
-						'HH:MM:SS'}
-				</TooltipLabel>
-
-				<TooltipLabel
-					tooltip="Maximum cost of the session, calculated by number of agents, per minute."
-					class="max-w-fit"
-				>
-					Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
-				</TooltipLabel>
-			</span>
-			<ClipboardImportDialog onImport={importFromJson} {asJson}>
-				{#snippet child({ props })}
-					<Button {...props} variant="outline" class="w-fit">Edit JSON</Button>
-				{/snippet}
-			</ClipboardImportDialog>
-
-			<Button>Export</Button>
-
-			<Form.Button disabled={sendingForm}
-				>{#if sendingForm}
-					<Spinner />
-				{/if}Create Session</Form.Button
-			>
-		</section>
-	</section>
 	<Resizable.PaneGroup
 		direction={isMobile ? 'vertical' : 'horizontal'}
-		class="min-h-0 flex-1 overflow-hidden"
+		class="min-h-0 flex-1 flex-row-reverse overflow-hidden"
 	>
-		<Resizable.Pane defaultSize={25} minSize={21} class="bg-card flex min-h-0 flex-col gap-4">
-			{#if selectedAgent !== null && curAgent && curCatalog}
+		<Resizable.Pane defaultSize={75} minSize={25}>
+			<Resizable.PaneGroup direction="vertical">
+				<Resizable.Pane minSize={25} defaultSize={50}>
+					<Resizable.PaneGroup direction="horizontal" class="min-h-0 flex-1 overflow-hidden">
+						<Resizable.Pane
+							class="relative flex min-h-0 flex-col overflow-hidden"
+							minSize={25}
+							defaultSize={50}
+						>
+							<Tabs.Root bind:value={agentsListTabs} class="min-h-0 flex-1 overflow-hidden">
+								<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
+									<Table.Root class="w-full">
+										<Table.Header>
+											<Table.Row>
+												<Table.Head><Checkbox /></Table.Head>
+												<Table.Head>Name</Table.Head>
+												<Table.Head>Version</Table.Head>
+												<Table.Head>Registry source</Table.Head>
+												<Table.Head>Agent</Table.Head>
+												<Table.Head class="w-24">Actions</Table.Head>
+											</Table.Row>
+										</Table.Header>
+										<Table.Body>
+											{#each $formData.agents as agent, i}
+												<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
+													<Table.Cell class="max-w-[100px]">
+														<p class="truncate font-medium"><Checkbox /></p>
+													</Table.Cell>
+													<Table.Cell class="max-w-[100px]" onclick={() => (selectedAgent = i)}>
+														<p class="truncate font-medium">{agent.name}</p>
+													</Table.Cell>
+
+													<Table.Cell class="max-w-[10px]" onclick={() => (selectedAgent = i)}>
+														<p class="truncate">{agent.id.version}</p>
+													</Table.Cell>
+
+													<Table.Cell
+														class="max-w-[120px] min-w-[120px]"
+														onclick={() => (selectedAgent = i)}
+													>
+														<p class="truncate">{agent.id.registrySourceId.type}</p>
+													</Table.Cell>
+
+													<Table.Cell class="max-w-[240px]" onclick={() => (selectedAgent = i)}>
+														<p class="truncate">{agent.id.name}</p>
+													</Table.Cell>
+
+													<Table.Cell class="flex gap-2">
+														<TwostepButton
+															disabled={selectedAgent === null}
+															class="hover:bg-destructive/50 my-2 grow truncate"
+															onclick={() => removeAgent(i)}>Remove</TwostepButton
+														>
+													</Table.Cell>
+												</Table.Row>
+											{/each}
+										</Table.Body>
+									</Table.Root>
+								</Tabs.Content>
+								<Tabs.Content value="graph" class="flex min-h-0 flex-1 overflow-hidden ">
+									{#if $formData.agents.length !== 0}
+										<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
+									{:else}
+										<Card.Root class="m-auto w-1/4">
+											<Card.Header>
+												<Card.Title>Session creator</Card.Title>
+											</Card.Header>
+											<Card.Content class="flex flex-col gap-2 text-sm ">
+												<span>Sessions let agents coordinate.</span>
+
+												<span>Agents appear as nodes in a graph.</span>
+
+												<span>Connections represent agent groups.</span>
+											</Card.Content>
+											<Card.Footer>
+												<Button
+													class="grow {selectedAgent !== null &&
+													$formData.agents.length > selectedAgent
+														? ''
+														: 'bg-accent/90'} w-fit truncate "
+													onclick={addAgent}
+												>
+													<span>Add an agent</span>
+												</Button>
+											</Card.Footer>
+										</Card.Root>
+									{/if}
+								</Tabs.Content>
+							</Tabs.Root>
+						</Resizable.Pane>
+						<Resizable.Handle />
+
+						<Resizable.Pane class="bg-card flex min-h-0 flex-col" minSize={5} defaultSize={15}>
+							<h2 class="mx-auto py-4">Available Agents</h2>
+
+							{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+								<ol class="border-t">
+									{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+										<li class="hover:bg-sidebar grid w-full grid-cols-5 gap-2 border-b px-4 py-2">
+											<Dialog.Root>
+												<Dialog.Trigger
+													type="button"
+													class="{buttonVariants({
+														variant: 'default',
+														size: 'sm'
+													})} col-span-4 w-full grow cursor-help justify-start truncate overflow-hidden text-xs"
+													>{agent.name}</Dialog.Trigger
+												>
+												<Dialog.Content>
+													<Dialog.Header>
+														<Dialog.Title>{agent.name}</Dialog.Title>
+														<Dialog.Description class="whitespace-pre-line">
+															{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																<Skeleton class="h-4 w-full" />
+															{:then details}
+																{details.registryAgent.info.description}
+															{/await}
+														</Dialog.Description>
+													</Dialog.Header>
+													<Dialog.Footer>
+														<Dialog.Close
+															class="truncate {buttonVariants({ variant: 'default' })}"
+															onclick={() => addAgent(agent)}>Add Agent</Dialog.Close
+														>
+													</Dialog.Footer>
+												</Dialog.Content>
+											</Dialog.Root>
+											<Button
+												class="col-span-1 w-full grow  truncate overflow-hidden text-xs "
+												size="sm"
+												onclick={() => addAgent(agent)}
+												><IconPlusRegular /><span class="sr-only">Add</span></Button
+											>
+										</li>
+									{/each}
+								</ol>
+							{/each}
+						</Resizable.Pane>
+					</Resizable.PaneGroup>
+				</Resizable.Pane>
+				<Resizable.Handle />
+				<Resizable.Pane
+					class=" flex h-full min-h-0 flex-col !overflow-y-scroll"
+					minSize={25}
+					defaultSize={50}
+				>
+					<Tabs.Root value="js" class="grow gap-0 overflow-hidden">
+						<Tabs.List
+							class="bg-sidebar flex w-full justify-start rounded-none border-0 *:rounded-none"
+						>
+							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
+
+							<Tabs.Trigger value="json" class="grow-0">JSON</Tabs.Trigger>
+						</Tabs.List>
+						<Tabs.Content value="json" class="overflow-y-auto">
+							<CodeMirror
+								bind:value={jsonExample}
+								lang={json()}
+								theme={dracula}
+								class="ͼo h-full"
+							/>
+						</Tabs.Content>
+						<Tabs.Content value="js" class="overflow-y-auto">
+							<CodeMirror
+								bind:value={fetchExample}
+								lang={javascript()}
+								theme={dracula}
+								readonly
+								class="ͼo h-full"
+							/>
+						</Tabs.Content>
+					</Tabs.Root>
+					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
+						<Button onclick={() => importFromJson(jsonExample)}>Update from JSON</Button>
+
+						<Button
+							onclick={() => {
+								navigator.clipboard.writeText(jsonExample);
+								toast.success('JSON snippet copied to clipboard');
+							}}>Copy JSON</Button
+						>
+						<Button
+							onclick={() => {
+								navigator.clipboard.writeText(fetchExample);
+								toast.success('Javascript snippet copied to clipboard');
+							}}>Copy JS</Button
+						>
+
+						<Form.Button
+							disabled={sendingForm || $formData.agents.length === 0}
+							class={sendingForm ? '' : 'bg-accent/80'}
+						>
+							{#if sendingForm}
+								<Spinner />
+							{/if}Run</Form.Button
+						>
+					</footer>
+				</Resizable.Pane>
+			</Resizable.PaneGroup>
+		</Resizable.Pane>
+		<Resizable.Handle />
+		<Resizable.Pane defaultSize={50} minSize={25} class="bg-card flex min-h-0 flex-col gap-4">
+			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
+				<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
+					<Tabs.Trigger value="agent" class="flex items-center truncate">
+						<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
+						<span class=" m-auto hidden xl:inline">Agent editor</span>
+					</Tabs.Trigger>
+
+					<Tabs.Trigger value="session" class="flex items-center truncate">
+						<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
+						<span
+							class=" m-auto hidden xl:inline {$errors?.sessionRuntimeSettings?.ttl
+								? 'text-destructive'
+								: ''}">Session details</span
+						>
+					</Tabs.Trigger>
+					<Tabs.Trigger value="groups" class="flex items-center truncate">
+						<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
+						Agent Groups
+					</Tabs.Trigger>
+				</Tabs.List>
 				{@const availableOptions = {}}
-				<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
-					<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
-						<Tabs.Trigger value="agent" class="items-centertruncate flex">
-							<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span class=" m-auto hidden xl:inline">Agent</span>
-						</Tabs.Trigger>
-
-						<Tabs.Trigger value="session" class="flex items-center truncate">
-							<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-							<span
-								class=" m-auto hidden xl:inline {$errors?.sessionRuntimeSettings?.ttl
-									? 'text-destructive'
-									: ''}">Session</span
-							>
-						</Tabs.Trigger>
-					</Tabs.List>
-
-					{#key selectedAgent}
-						<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-y-scroll ">
+				{#key selectedAgent}
+					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-y-scroll ">
+						{#if selectedAgent !== null && curAgent && curCatalog}
 							{#if !detailedAgent}
-								<Skeleton />
+								<Spinner class="m-auto my-8" />
 							{:else}
 								<header class="flex flex-col gap-2 px-4">
 									<Form.ElementField
@@ -859,6 +1092,7 @@
 													}))}
 													searchPlaceholder="Search types..."
 													onValueChange={async (value) => {
+														if (value.name === id.name) return; // no change
 														$formData.agents[selectedAgent!]!.id = value;
 
 														await tick();
@@ -884,6 +1118,9 @@
 																$formData.agents[selectedAgent!]!.provider.runtime =
 																	firstRuntimeKey as any;
 															}
+															$formData.agents[selectedAgent!]!.name =
+																detailed.registryAgent.info.identifier.name ||
+																$formData.agents[selectedAgent!]!.name;
 														}
 													}}
 												/>
@@ -991,121 +1228,142 @@
 									{/each}
 								</ol>
 							{/if}
-						</Tabs.Content>
-					{/key}
-					<Tabs.Content value="session" class="flex flex-col gap-4 px-4">
-						<h1>Session settings</h1>
-
-						<Form.ElementField
-							{form}
-							name="sessionRuntimeSettings.ttl"
-							class="flex items-center gap-2 "
-						>
-							<Form.Control>
-								{#snippet children({ props })}
-									<TooltipLabel
-										title="Time to live (TTL)"
-										tooltip="Measured in milliseconds, the time to live is the maximum duration a session can last"
-										extra={{
-											required: true,
-											type: 'number'
-										}}
-										class="max-w-1/4 min-w-1/4"
-									>
-										Time to live
-									</TooltipLabel>
-									<Input
-										{...props}
-										bind:value={$formData.sessionRuntimeSettings.ttl}
-										placeholder="time in milliseconds"
-										maxlength={15778476000}
-										type="number"
-										class="grow"
-									/>
-								{/snippet}
-							</Form.Control>
-						</Form.ElementField>
-						{#if $errors?.sessionRuntimeSettings?.ttl && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}' && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}'}
-							<span class="text-xs">
-								{$errors?.sessionRuntimeSettings?.ttl}
-							</span>
+						{:else}
+							<div class="text-muted-foreground m-auto h-full w-full content-center text-center">
+								Add an agent to begin.
+							</div>
 						{/if}
-						<Separator />
-						<h1>Agent Groups</h1>
-						<header class="flex gap-2">
-							<p class="text-sm">Agents require a shared group to communicate with each other.</p>
-							{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
-								<Tooltip.Provider>
-									<Tooltip.Root delayDuration={100}>
-										<Tooltip.Trigger
-											><Button
-												size="icon"
-												class="w-fit gap-1 px-3"
-												disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
-												onclick={() => {
-													$formData.groups = [...$formData.groups, []];
-												}}>Create a new group</Button
-											></Tooltip.Trigger
-										>
-										<Tooltip.Content>
-											Empty group already exists, please add agents to it before creating another.
-										</Tooltip.Content>
-									</Tooltip.Root>
-								</Tooltip.Provider>
-							{:else}
-								<Button
-									size="icon"
-									class="w-fit gap-1 px-3"
-									onclick={() => {
-										$formData.groups = [...$formData.groups, []];
-									}}>Create a new group</Button
-								>
-							{/if}
-						</header>
-						<ul class="mt-2 flex flex-col gap-4">
-							{#each $formData.groups as link, i}
-								<Accordion.Root type="single">
-									<Accordion.Item value="item-1">
-										<Accordion.Trigger variant="compact">
-											<span
-												>Group {i + 1}
-												<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
-												></span
-											>
-										</Accordion.Trigger>
-										<Accordion.Content>
-											<Select.Root
-												type="multiple"
-												value={link}
-												onValueChange={(value) => {
-													$formData.groups[i] = value;
-													$formData.groups = $formData.groups;
-												}}
-											>
-												<Select.Trigger>
-													<span>Invite agents</span>
-												</Select.Trigger>
-												<Select.Content>
-													{#if $formData.agents.length == 0}
-														<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
-													{/if}
-													{#each new Set($formData.agents.map((agent) => agent.name)) as id}
-														<Select.Item value={id}>{id}</Select.Item>
-													{/each}
-												</Select.Content>
-											</Select.Root>
-											<ol class="list-decimal pl-4">
-												{#each link as agentName, j}
-													<li>{agentName}</li>
-												{/each}
-											</ol>
-										</Accordion.Content>
-									</Accordion.Item>
-								</Accordion.Root>
-							{/each}
-						</ul>
 					</Tabs.Content>
-					<!-- <Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
+				{/key}
+				<Tabs.Content value="session" class="flex flex-col gap-4 px-4">
+					<h1>Session settings</h1>
+
+					<Form.ElementField
+						{form}
+						name="sessionRuntimeSettings.ttl"
+						class="flex items-center gap-2 "
+					>
+						<Form.Control>
+							{#snippet children({ props })}
+								<TooltipLabel
+									title="Time to live (TTL)"
+									tooltip="Measured in milliseconds, the time to live is the maximum duration a session can last"
+									extra={{
+										required: true,
+										type: 'number'
+									}}
+									class="max-w-1/4 min-w-1/4"
+								>
+									Time to live
+								</TooltipLabel>
+								<Input
+									{...props}
+									bind:value={$formData.sessionRuntimeSettings.ttl}
+									placeholder="time in milliseconds"
+									maxlength={15778476000}
+									type="number"
+									class="grow"
+								/>
+							{/snippet}
+						</Form.Control>
+					</Form.ElementField>
+					<span class="text-muted-foreground flex flex-col justify-between">
+						<TooltipLabel tooltip="Based off Session time to live settings" class=" max-w-fit">
+							Maximum session duration: {formatMsToHHMMSS(
+								$formData.sessionRuntimeSettings.ttl ?? 0
+							) ?? 'HH:MM:SS'}
+						</TooltipLabel>
+
+						<TooltipLabel
+							tooltip="Maximum cost of the session, calculated by number of agents, per minute."
+							class="max-w-fit"
+						>
+							Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
+						</TooltipLabel>
+					</span>
+					{#if $errors?.sessionRuntimeSettings?.ttl && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}' && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}'}
+						<span class="text-xs">
+							{$errors?.sessionRuntimeSettings?.ttl}
+						</span>
+					{/if}
+					<Separator />
+				</Tabs.Content>
+				<Tabs.Content value="groups" class="flex flex-col gap-4 px-4">
+					<h1>Agent Groups</h1>
+					<header class="flex gap-2">
+						<p class="text-sm">Agents require a shared group to communicate with each other.</p>
+						{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
+							<Tooltip.Provider>
+								<Tooltip.Root delayDuration={100}>
+									<Tooltip.Trigger
+										><Button
+											size="icon"
+											class="w-fit gap-1 px-3"
+											disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
+											onclick={() => {
+												$formData.groups = [...$formData.groups, []];
+											}}>Create a new group</Button
+										></Tooltip.Trigger
+									>
+									<Tooltip.Content>
+										Empty group already exists, please add agents to it before creating another.
+									</Tooltip.Content>
+								</Tooltip.Root>
+							</Tooltip.Provider>
+						{:else}
+							<Button
+								size="icon"
+								class="w-fit gap-1 px-3"
+								onclick={() => {
+									$formData.groups = [...$formData.groups, []];
+								}}>Create a new group</Button
+							>
+						{/if}
+					</header>
+					<ul class="mt-2 flex flex-col gap-4">
+						{#each $formData.groups as link, i}
+							<Accordion.Root type="single">
+								<Accordion.Item value="item-1">
+									<Accordion.Trigger variant="compact">
+										<span
+											>Group {i + 1}
+											<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
+											></span
+										>
+									</Accordion.Trigger>
+									<Accordion.Content>
+										<Select.Root
+											type="multiple"
+											value={link}
+											onValueChange={(value) => {
+												$formData.groups[i] = value;
+												$formData.groups = $formData.groups;
+											}}
+										>
+											<Select.Trigger>
+												<span>Add agents</span>
+											</Select.Trigger>
+											<Select.Content>
+												{#if $formData.agents.length == 0}
+													<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
+												{/if}
+												{#each new Set($formData.agents.map((agent) => agent.name)) as id}
+													<Select.Item value={id}>{id}</Select.Item>
+												{/each}
+											</Select.Content>
+										</Select.Root>
+										<ol class="list-decimal pl-4">
+											{#each link as agentName, j}
+												<li>{agentName}</li>
+											{/each}
+										</ol>
+									</Accordion.Content>
+								</Accordion.Item>
+							</Accordion.Root>
+						{/each}
+					</ul>
+				</Tabs.Content>
+				<!-- <Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
 						{#if !detailedAgent}
 							<Skeleton />
 						{:else}
@@ -1269,147 +1527,7 @@
 							{/if}
 						{/if}
 					</Tabs.Content> -->
-				</Tabs.Root>
-			{:else}
-				<div class="text-muted-foreground m-auto h-full w-full content-center text-center">
-					Add an agent to begin.
-				</div>
-			{/if}
-		</Resizable.Pane>
-		<Resizable.Handle withHandle />
-		<Resizable.Pane
-			defaultSize={75}
-			minSize={50}
-			class="relative flex min-h-0 flex-col overflow-hidden"
-		>
-			<Tabs.Root value="table" class="min-h-0 flex-1 overflow-hidden">
-				<Tabs.List class=" mx-auto mt-4 flex w-fit ">
-					<Tabs.Trigger value="table"><IconListRegular /> Table</Tabs.Trigger>
-					<Tabs.Trigger value="graph"><IconGraph /> Graph</Tabs.Trigger>
-				</Tabs.List>
-				<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
-					{#if $formData.agents.length !== 0}
-						<Table.Root class="w-full">
-							<Table.Header>
-								<Table.Row>
-									<Table.Head>Name</Table.Head>
-									<Table.Head>Source Type</Table.Head>
-									<Table.Head>Runtime</Table.Head>
-									<Table.Head>Registry Type</Table.Head>
-									<Table.Head>Agent Version</Table.Head>
-								</Table.Row>
-							</Table.Header>
-							<Table.Body>
-								{#each $formData.agents as agent, i}
-									<Table.Row
-										onclick={() => (selectedAgent = i)}
-										class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}"
-									>
-										<Table.Cell class="max-w-[100px]">
-											<p class="truncate font-medium">{agent.name}</p>
-										</Table.Cell>
-
-										<Table.Cell class="max-w-[120px]">
-											<p class="truncate">{agent.id.registrySourceId.type}</p>
-										</Table.Cell>
-
-										<Table.Cell class="max-w-[120px]">
-											<p class="truncate">{agent.provider.runtime}</p>
-										</Table.Cell>
-
-										<Table.Cell class="max-w-[240px]">
-											<p class="truncate">{agent.id.name}</p>
-										</Table.Cell>
-
-										<Table.Cell class="max-w-[120px]">
-											<p class="truncate">{agent.id.version}</p>
-										</Table.Cell>
-									</Table.Row>
-								{/each}
-							</Table.Body>
-						</Table.Root>
-					{:else}
-						<Card.Root class="m-auto w-md max-w-lg">
-							<Card.Header>
-								<Card.Title>Session creator</Card.Title>
-							</Card.Header>
-							<Card.Content class="flex flex-col gap-2 text-sm ">
-								<span>Sessions let agents coordinate.</span>
-
-								<span>Agents appear as nodes in a graph.</span>
-
-								<span>Connections represent agent groups.</span>
-							</Card.Content>
-							<Card.Footer>
-								<Button
-									class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
-										? ''
-										: 'bg-accent/90'} w-fit truncate "
-									onclick={addAgent}
-								>
-									<span>Add an agent</span>
-								</Button>
-							</Card.Footer>
-						</Card.Root>
-					{/if}
-				</Tabs.Content>
-				<Tabs.Content value="graph" class="flex min-h-0 flex-1 overflow-hidden ">
-					{#if $formData.agents.length !== 0}
-						<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
-					{:else}
-						<Card.Root class="m-auto w-1/4">
-							<Card.Header>
-								<Card.Title>Session creator</Card.Title>
-							</Card.Header>
-							<Card.Content class="flex flex-col gap-2 text-sm ">
-								<span>Sessions let agents coordinate.</span>
-
-								<span>Agents appear as nodes in a graph.</span>
-
-								<span>Connections represent agent groups.</span>
-							</Card.Content>
-							<Card.Footer>
-								<Button
-									class="grow {selectedAgent !== null && $formData.agents.length > selectedAgent
-										? ''
-										: 'bg-accent/90'} w-fit truncate "
-									onclick={addAgent}
-								>
-									<span>Add an agent</span>
-								</Button>
-							</Card.Footer>
-						</Card.Root>
-					{/if}
-				</Tabs.Content>
 			</Tabs.Root>
 		</Resizable.Pane>
-
-		<!-- <Resizable.Pane
-			defaultSize={25}
-			minSize={21}
-			class="m-4 flex min-h-0 flex-col gap-4 !overflow-scroll"
-		>
-			
-
-			<Accordion.Root type="single">
-				<Accordion.Item value="item-1">
-					<Accordion.Trigger>Errors</Accordion.Trigger>
-					<Accordion.Content>
-						{#if $allErrors.length}
-							<ul>
-								{#each $allErrors as error}
-									<li>
-										<b>{error.path}:</b>
-										{error.messages.join('. ')}
-									</li>
-								{/each}
-							</ul>
-						{:else}
-							No errors!
-						{/if}
-					</Accordion.Content>
-				</Accordion.Item>
-			</Accordion.Root>
-		</Resizable.Pane> -->
 	</Resizable.PaneGroup>
 </form>

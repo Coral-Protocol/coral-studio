@@ -26,13 +26,15 @@ export class Logs {
 		this.socket.onopen = () => {
 			this.state = 'connected';
 		};
-		this.socket.onerror = () => {
+		this.socket.onerror = (e) => {
 			this.state = 'closed';
 			this.socket.close();
+			console.log('log socket error: ', e);
 		};
 		this.socket.onclose = (e) => {
 			this.logs = [];
 			this.state = 'closed';
+			console.log('log socket closed', e);
 		};
 		this.socket.onmessage = (ev) => {
 			let data;

@@ -25,5 +25,8 @@ export default defineConfig({
 			'/sse': { target: 'http://localhost:5555', changeOrigin: true },
 			'/ws': { target: 'http://localhost:5555', rewriteWsOrigin: true, ws: true }
 		}
+	},
+	optimizeDeps: {
+		exclude: ['svelte-codemirror-editor', 'codemirror', '@codemirror/language-javascript' /* ... */]
 	}
 });
