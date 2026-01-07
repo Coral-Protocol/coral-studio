@@ -85,7 +85,7 @@ export class CoralServer {
 
 	public sessions = $derived(this.allSessions[this.namespace] ?? []);
 
-	public lsmSock = createWebsocket(`ws/v1/events/lsm`);
+	public lsmSock = createWebsocket(`/ws/v1/events/lsm`);
 
 	constructor() {
 		$effect(() => {
@@ -100,7 +100,7 @@ export class CoralServer {
 			let data;
 			try {
 				data = JSON.parse(msg.data) as components['schemas']['LocalSessionManagerEvent'];
-			} catch (e) {
+			} catch {
 				toast.warning(`Bad LSM Event: '${msg.data}'`);
 				return;
 			}

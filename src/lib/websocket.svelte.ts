@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { PUBLIC_API_PATH } from '$env/static/public';
 
-export const createWebsocket = (path: `ws/${string}`) => {
+export const createWebsocket = (path: `/ws/${string}`) => {
 	if (!browser) return null;
 	let url = PUBLIC_API_PATH;
 	if (url[0] === '/') {
