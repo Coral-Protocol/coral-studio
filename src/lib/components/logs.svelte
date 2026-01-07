@@ -8,7 +8,7 @@
 	import { Spinner } from './ui/spinner';
 	import * as Card from './ui/card';
 
-	let { logs, class: className }: { logs?: Logs; class?: string } = $props();
+	let { logs, class: className }: { logs?: Logs | null; class?: string } = $props();
 	const ts_fmt = (d: Date) =>
 		`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
