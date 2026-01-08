@@ -85,7 +85,9 @@ export class CoralServer {
 
 	public sessions = $derived(this.allSessions[this.namespace] ?? []);
 
-	public lsmSock = createWebsocket(`/ws/v1/events/lsm`);
+	public lsmSock = $derived(
+		createWebsocket(`/ws/v1/events/lsm?namespaceFilter=${encodeURIComponent(this.namespace)}`)
+	);
 
 	constructor() {
 		$effect(() => {
@@ -150,6 +152,7 @@ export class CoralServer {
 		};
 		$effect(() => {
 			if (!this.lsmSock) return;
+			console.debug('rehooking new ws');
 			this.lsmSock.onopen = onopen;
 			this.lsmSock.onmessage = onmessage;
 			this.lsmSock.onerror = onerror;
