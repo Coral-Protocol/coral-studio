@@ -9,7 +9,7 @@
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Item from '$lib/components/ui/item';
+	import * as Menubar from '$lib/components/ui/menubar/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 
@@ -528,6 +528,13 @@
 		}
 	});
 
+	import CodeMirror from 'svelte-codemirror-editor';
+	import { javascript } from '@codemirror/lang-javascript';
+	import { json } from '@codemirror/lang-json';
+	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { preventDefault } from 'svelte/legacy';
+
 	function toJsObjectLiteral(value: unknown, indent = 2): string {
 		return (
 			JSON.stringify(value, null, indent)
@@ -828,6 +835,111 @@
 							minSize={25}
 							defaultSize={50}
 						>
+							<Menubar.Root class="bg-sidebar border-0 border-b">
+								<Menubar.Menu>
+									<Menubar.Trigger>Session</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.Item>
+											New Tab <Menubar.Shortcut>⌘T</Menubar.Shortcut>
+										</Menubar.Item>
+										<Menubar.Item>
+											New Window <Menubar.Shortcut>⌘N</Menubar.Shortcut>
+										</Menubar.Item>
+										<Menubar.Item>New Incognito Window</Menubar.Item>
+										<Menubar.Separator />
+										<Menubar.Sub>
+											<Menubar.SubTrigger>Share</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Menubar.Item>Email link</Menubar.Item>
+												<Menubar.Item>Messages</Menubar.Item>
+												<Menubar.Item>Notes</Menubar.Item>
+											</Menubar.SubContent>
+										</Menubar.Sub>
+										<Menubar.Separator />
+										<Menubar.Item>
+											Print... <Menubar.Shortcut>⌘P</Menubar.Shortcut>
+										</Menubar.Item>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Menubar.Menu>
+									<Menubar.Trigger>Edit</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.Item>
+											Undo <Menubar.Shortcut>⌘Z</Menubar.Shortcut>
+										</Menubar.Item>
+										<Menubar.Item>
+											Redo <Menubar.Shortcut>⇧⌘Z</Menubar.Shortcut>
+										</Menubar.Item>
+										<Menubar.Separator />
+										<Menubar.Sub>
+											<Menubar.SubTrigger>Find</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Menubar.Item>Search the web</Menubar.Item>
+												<Menubar.Separator />
+												<Menubar.Item>Find...</Menubar.Item>
+												<Menubar.Item>Find Next</Menubar.Item>
+												<Menubar.Item>Find Previous</Menubar.Item>
+											</Menubar.SubContent>
+										</Menubar.Sub>
+										<Menubar.Separator />
+										<Menubar.Item>Cut</Menubar.Item>
+										<Menubar.Item>Copy</Menubar.Item>
+										<Menubar.Item>Paste</Menubar.Item>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Menubar.Menu>
+									<Menubar.Trigger>View</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.CheckboxItem>Always Show Bookmarks Bar</Menubar.CheckboxItem>
+										<Menubar.CheckboxItem>Always Show Full URLs</Menubar.CheckboxItem>
+										<Menubar.Separator />
+										<Menubar.Item inset>
+											Reload <Menubar.Shortcut>⌘R</Menubar.Shortcut>
+										</Menubar.Item>
+										<Menubar.Item inset>
+											Force Reload <Menubar.Shortcut>⇧⌘R</Menubar.Shortcut>
+										</Menubar.Item>
+										<Menubar.Separator />
+										<Menubar.Item inset>Toggle Fullscreen</Menubar.Item>
+										<Menubar.Separator />
+										<Menubar.Item inset>Hide Sidebar</Menubar.Item>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Menubar.Menu>
+									<Menubar.Trigger>Agents</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.RadioGroup>
+											<Menubar.RadioItem value="andy">Andy</Menubar.RadioItem>
+											<Menubar.RadioItem value="benoit">Benoit</Menubar.RadioItem>
+											<Menubar.RadioItem value="Luis">Luis</Menubar.RadioItem>
+										</Menubar.RadioGroup>
+										<Menubar.Separator />
+										<Menubar.Item inset>Edit...</Menubar.Item>
+										<Menubar.Separator />
+										<Menubar.Item inset>Add Agent...</Menubar.Item>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Combobox
+									class="ml-auto border-0 "
+									side="bottom"
+									align="start"
+									selectPlaceholder="Add agent"
+									selected={undefined}
+									options={Object.values(ctx.server.catalogs).map((catalog) => ({
+										heading: catalog.identifier.type,
+										items: Object.values(catalog.agents).map((a) => ({
+											label: `${a.name}`,
+											key: `${registryIdOf(catalog.identifier)}/${a.name}`,
+											value: {
+												registrySourceId: catalog.identifier,
+												name: a.name,
+												version: a.versions.at(-1)! // won't be in registry if 0 versions
+											}
+										}))
+									}))}
+									searchPlaceholder="Search..."
+								/>
+							</Menubar.Root>
 							<Tabs.Root bind:value={agentsListTabs} class="min-h-0 flex-1 overflow-hidden">
 								<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
 									<Table.Root class="w-full">
@@ -909,9 +1021,9 @@
 								</Tabs.Content>
 							</Tabs.Root>
 						</Resizable.Pane>
-						<Resizable.Handle />
+						<!-- <Resizable.Handle /> -->
 
-						<Resizable.Pane class="bg-card flex min-h-0 flex-col" minSize={5} defaultSize={15}>
+						<!-- <Resizable.Pane class="bg-card flex min-h-0 flex-col" minSize={5} defaultSize={15}>
 							<h2 class="mx-auto py-4">Available Agents</h2>
 
 							{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
@@ -956,10 +1068,10 @@
 									{/each}
 								</ol>
 							{/each}
-						</Resizable.Pane>
+						</Resizable.Pane> -->
 					</Resizable.PaneGroup>
 				</Resizable.Pane>
-				<Resizable.Handle />
+				<Resizable.Handle withHandle />
 				<Resizable.Pane
 					class=" flex h-full min-h-0 flex-col !overflow-y-scroll"
 					minSize={25}
@@ -1027,10 +1139,10 @@
 				</Resizable.Pane>
 			</Resizable.PaneGroup>
 		</Resizable.Pane>
-		<Resizable.Handle />
+		<Resizable.Handle withHandle />
 		<Resizable.Pane defaultSize={50} minSize={25} class="bg-card flex min-h-0 flex-col gap-4">
 			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
-				<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
+				<Tabs.List class="bg-sidebar flex w-full rounded-none border-0 *:rounded-none">
 					<Tabs.Trigger value="agent" class="flex items-center truncate">
 						<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
 						<span class=" m-auto hidden xl:inline">Agent editor</span>
