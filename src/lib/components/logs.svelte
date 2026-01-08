@@ -7,10 +7,27 @@
 	import Sonner from './ui/sonner/sonner.svelte';
 	import { Spinner } from './ui/spinner';
 	import * as Card from './ui/card';
+	import type { Component } from 'svelte';
+
+	import IconWarning from 'phosphor-icons-svelte/IconWarningRegular.svelte';
+	import IconWarningCircle from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
+	import IconInfo from 'phosphor-icons-svelte/IconInfoRegular.svelte';
 
 	let { logs, class: className }: { logs?: Logs | null; class?: string } = $props();
 	const ts_fmt = (d: Date) =>
 		`${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+
+	const icons: { [K in Logs['logs'][number]['type']]: Component<{ class?: string }> } = {
+		error: IconWarning,
+		info: IconInfo,
+		warning: IconWarningCircle
+	};
+
+	const typeColors: { [K in Logs['logs'][number]['type']]: string | null } = {
+		error: 'text-destructive',
+		info: null,
+		warning: 'text-orange-400'
+	};
 
 	// let ref: SvelteVirtualList;
 	// watch(
@@ -21,7 +38,7 @@
 	// );
 </script>
 
-<ScrollArea class={className}>
+<ScrollArea class={cn('rounded-md border', className)}>
 	<!-- <SvelteVirtualList -->
 	<!-- 	items={logs} -->
 	<!-- 	containerClass={className} -->
@@ -53,17 +70,19 @@
 		</div>
 	{:else}
 		<ul class="min-h-0 text-sm whitespace-pre-wrap">
-			{#each logs.logs as log}
+			{#each logs.logs as log, i (i)}
 				{@const timestamp = null}
+				{@const LogIcon = icons[log.type]}
 				<!-- {@const timestamp = log.timestamp ? new Date(log.timestamp) : null} -->
 				<li
 					class={cn(
-						'flex flex-row gap-x-2',
-						'hover:bg-primary/10 rounded-sm px-1 ',
-						log.type === 'error' ? 'text-destructive' : '',
-						log.type === 'warning' ? 'text-orange-400' : ''
+						'flex flex-row items-center gap-x-1 px-2 py-1 pr-3',
+						'hover:bg-primary/10 rounded-sm ',
+						typeColors[log.type],
+						i % 2 == 0 && 'bg-sidebar'
 					)}
 				>
+					<LogIcon class={cn('opacity-50', typeColors[log.type])} />
 					<span class="opacity-40">{timestamp ? ts_fmt(timestamp) : ''}</span><span>{log.text}</span
 					>
 				</li>
