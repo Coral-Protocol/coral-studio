@@ -53,7 +53,10 @@
           distPhase = "true";
         };
     in {
-      default = bundle {basePath = "/ui/console";};
+      default = bundle {
+        basePath = "/ui/console";
+        apiPath = "/";
+      };
       cloud = bundle {
         basePath = "/console";
         apiPath = "https://api.coralcloud.ai";
