@@ -17,6 +17,8 @@
 					'bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-transparent dark:border-border dark:hover:bg-ring/20 border',
 				secondary: 'bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80',
 				ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent',
+				ghostDestructive:
+					'text-destructive hover:bg-destructive hover:text-accent-foreground dark:hover:bg-destructive',
 				link: 'text-primary-foreground underline-offset-4 hover:underline'
 			},
 			size: {
