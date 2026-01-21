@@ -2,10 +2,6 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
-	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
-	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -13,12 +9,19 @@
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Item from '$lib/components/ui/item';
 
 	import * as Form from '$lib/components/ui/form';
 
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table/index.js';
+
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
+	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { idAsKey, type PublicRegistryAgent } from '$lib/threads';
@@ -47,6 +50,17 @@
 	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { Spinner } from '$lib/components/ui/spinner';
+
+	import CodeMirror from 'svelte-codemirror-editor';
+	import { javascript } from '@codemirror/lang-javascript';
+	import { json } from '@codemirror/lang-json';
+	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
+	import ToolInput from './ToolInput.svelte';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import { Toggle } from '$lib/components/ui/toggle';
+	import { randomAdjective, randomAnimal } from '$lib/words';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -207,7 +221,33 @@
 	const importFromJson = (json: string) => {
 		try {
 			const data: CreateSessionRequest = JSON.parse(json);
+			const toolMap = Object.fromEntries(
+				Object.keys(data.agentGraphRequest.customTools ?? {}).map((k) => [
+					k,
+					crypto.randomUUID() as string
+				])
+			);
+			const tools = Object.fromEntries(
+				Object.entries(data.agentGraphRequest.customTools ?? {}).map(([k, v]) => {
+					const id = toolMap[k]!; // Safety: toolMap is built from custom tool keys
+					return [
+						id,
+						{
+							id,
+							name: k,
+							schema: {
+								inputSchema: v.schema.inputSchema,
+								outputSchema: v.schema.outputSchema,
+								name: v.schema.name,
+								description: v.schema.description
+							},
+							transport: v.transport
+						} satisfies schemas.CustomTool
+					];
+				})
+			);
 			$formData = {
+				tools,
 				groups: data.agentGraphRequest.groups ?? [],
 				sessionRuntimeSettings: {
 					ttl: data.sessionRuntimeSettings?.ttl ?? 50000
@@ -236,7 +276,9 @@
 					providerType: agent.provider.type,
 					blocking: agent.blocking ?? true,
 					options: agent.options as any,
-					customToolAccess: new Set(agent.customToolAccess)
+					customToolAccess: new Set(
+						(agent.customToolAccess ?? []).map((t) => toolMap[t]).filter(Boolean) as string[] // typescript is stupid this is safe because .filter(Boolean)
+					)
 				}))
 			};
 			selectedAgent = $formData.agents.length > 0 ? 0 : null;
@@ -246,10 +288,6 @@
 			console.error(error);
 		}
 	};
-
-	let usedTools = $derived(
-		new Set($formData.agents.flatMap((agent) => Array.from(agent.customToolAccess)))
-	) as Set<keyof typeof tools>;
 
 	let asJson: Promise<CreateSessionRequest> = $derived.by(async () => {
 		const detailed = await Promise.all($formData.agents.map((a) => getDetailed(a.id)));
@@ -269,7 +307,9 @@
 
 				blocking: agent.blocking,
 				systemPrompt: agent.systemPrompt,
-				customToolAccess: Array.from(agent.customToolAccess),
+				customToolAccess: Array.from(agent.customToolAccess)
+					.map((id) => $formData.tools[id]?.name)
+					.filter(Boolean) as string[], // safe assertion because .filter(Boolean) removes null/undefined
 				plugins: [],
 				x402Budgets: [],
 				options: Object.fromEntries(
@@ -294,19 +334,15 @@
 		});
 
 		const customTools = Object.fromEntries(
-			Array.from(usedTools).map((tool) => {
-				const toolBody = tools[tool];
-
-				return [
-					tool,
-					{
-						...toolBody,
-						transport: {
-							...toolBody.transport,
-							url: `${window.location.origin}${toolBody.transport.url}`
-						}
-					}
-				];
+			Object.values($formData.tools).map((tool) => {
+				const value = {
+					transport: structuredClone(tool.transport),
+					schema: structuredClone(tool.schema)
+				};
+				if (!value.schema.name) {
+					value.schema.name = tool.name;
+				}
+				return [tool.name, value];
 			})
 		) as any;
 
@@ -321,6 +357,8 @@
 			}
 		} satisfies CreateSessionRequest;
 	});
+
+	let selectedTool: string | null = $state(null);
 
 	let selectedAgent: number | null = $state(null);
 	let curAgent = $derived(selectedAgent !== null ? $formData.agents[selectedAgent] : undefined);
@@ -484,13 +522,6 @@
 			}
 		}
 	});
-
-	import CodeMirror from 'svelte-codemirror-editor';
-	import { javascript } from '@codemirror/lang-javascript';
-	import { json } from '@codemirror/lang-json';
-	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 
 	function toJsObjectLiteral(value: unknown, indent = 2): string {
 		return (
@@ -656,11 +687,10 @@
 					{:else if opt.type === 'bool'}
 						<ButtonGroup.Root class="m-0 justify-start">
 							<Button
-								class=" {$formData.agents[selectedAgent!]!.options[name]?.value === true ||
-								($formData.agents[selectedAgent!]!.options[name]?.value === undefined &&
-									opt.default === true)
-									? 'bg-accent text-accent-foreground'
-									: ''}"
+								class={cn(
+									($formData.agents[selectedAgent!]!.options[name]?.value ?? opt.default) ===
+										true && 'bg-accent text-accent-foreground'
+								)}
 								onclick={() => {
 									const optObj = $formData.agents[selectedAgent!]!.options[name];
 									if (optObj) {
@@ -1005,7 +1035,7 @@
 				</Tabs.List>
 				{@const availableOptions = {}}
 				{#key selectedAgent}
-					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-y-scroll ">
+					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-2 overflow-y-scroll ">
 						{#if selectedAgent !== null && curAgent && curCatalog}
 							{#if !detailedAgent}
 								<Spinner class="m-auto my-8" />
@@ -1188,6 +1218,45 @@
 											{/snippet}
 										</Form.Control>
 									</Form.ElementField>
+									<Form.ElementField
+										{form}
+										name="agents[{selectedAgent}].provider.runtime"
+										class="flex items-center gap-2"
+									>
+										<Form.Control>
+											{#snippet children({ props })}
+												{@const tools = $formData.agents[selectedAgent!]!.customToolAccess}
+												<TooltipLabel
+													tooltip={'What custom tools this agent has access to.'}
+													class="m-0 max-w-1/4">Custom Tools</TooltipLabel
+												>
+												<Select.Root
+													{...props}
+													type="multiple"
+													value={Array.from(tools.keys())}
+													onValueChange={(value) => {
+														if (selectedAgent === null || !$formData.agents[selectedAgent]) return;
+														$formData.agents[selectedAgent!]!.customToolAccess = new Set(value);
+														$formData.agents = $formData.agents;
+													}}
+												>
+													<Select.Trigger class="m-0">
+														<span>{tools.size} tools</span>
+													</Select.Trigger>
+													<Select.Content>
+														{#if Object.keys($formData.tools).length == 0}
+															<span class="text-muted-foreground h-9 px-2 text-sm italic"
+																>No tools</span
+															>
+														{/if}
+														{#each Object.values($formData.tools) as tool}
+															<Select.Item value={tool.id}>{tool.name}</Select.Item>
+														{/each}
+													</Select.Content>
+												</Select.Root>
+											{/snippet}
+										</Form.Control>
+									</Form.ElementField>
 								</header>
 								<ol class="border-t">
 									{#each Object.entries(groupedOptions) as [group, entries]}
@@ -1278,6 +1347,52 @@
 						</span>
 					{/if}
 					<Separator />
+					<h1>Custom Tools</h1>
+					<Item.Root variant="outline" class="p-2">
+						<Item.Content>
+							<ScrollArea>
+								{#if Object.keys($formData.tools).length == 0}
+									<p
+										class="text-muted-foreground flex h-9 w-full place-items-center justify-center"
+									>
+										No tools.
+									</p>
+								{/if}
+								{#each Object.values($formData.tools) as tool (tool.id)}
+									<Toggle
+										class="flex w-full justify-start pr-0"
+										bind:pressed={() => selectedTool === tool.id, () => (selectedTool = tool.id)}
+									>
+										<p class="grow text-left">{tool.name}</p>
+										<TwostepButton
+											class="size-9"
+											variant="ghostDestructive"
+											onclick={() => {
+												delete $formData.tools[tool.id];
+												$formData.tools = $formData.tools;
+												selectedAgent =
+													selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
+											}}><IconTrash /></TwostepButton
+										>
+									</Toggle>
+								{/each}
+							</ScrollArea>
+						</Item.Content>
+					</Item.Root>
+					<Button
+						onclick={() => {
+							const id = crypto.randomUUID() as string;
+							$formData.tools[id] = {
+								id,
+								name: `${randomAdjective()}-${randomAnimal()}`,
+								transport: { type: 'http', url: '' },
+								schema: { inputSchema: {}, outputSchema: undefined, name: undefined }
+							};
+						}}>+</Button
+					>
+					{#if selectedTool !== null}
+						<ToolInput superform={form} id={selectedTool} />
+					{/if}
 				</Tabs.Content>
 				<Tabs.Content value="groups" class="flex flex-col gap-4 px-4">
 					<h1>Agent Groups</h1>
