@@ -344,17 +344,7 @@
 		});
 	};
 
-	let isMobile = $state(false);
-
-	const updateIsMobile = () => {
-		isMobile = window.innerWidth < 768; // Tailwind "md" breakpoint
-	};
-
-	onMount(() => {
-		updateIsMobile();
-		window.addEventListener('resize', updateIsMobile);
-		return () => window.removeEventListener('resize', updateIsMobile);
-	});
+	const isMobile = new IsMobile();
 
 	const addAgent = async (agent: any) => {
 		const catalog = Object.values(ctx.server.catalogs).at(0);
@@ -500,6 +490,7 @@
 	import { json } from '@codemirror/lang-json';
 	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 
 	function toJsObjectLiteral(value: unknown, indent = 2): string {
 		return (
@@ -787,7 +778,7 @@
 	enctype="multipart/form-data"
 >
 	<Resizable.PaneGroup
-		direction={isMobile ? 'vertical' : 'horizontal'}
+		direction={isMobile.current ? 'vertical' : 'horizontal'}
 		class="min-h-0 flex-1 flex-row-reverse overflow-hidden"
 	>
 		<Resizable.Pane defaultSize={75} minSize={25}>
