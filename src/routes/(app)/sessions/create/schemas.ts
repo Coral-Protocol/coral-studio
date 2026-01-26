@@ -184,10 +184,31 @@ export const AgentRegistryIdentifierSchema = z.object({
 });
 export type AgentRegistryIdentifier = z.infer<typeof AgentRegistryIdentifierSchema>;
 
+export const ToolTransport = z.discriminatedUnion('type', [
+	z.object({ type: z.literal('http'), url: z.string().nonempty() })
+]);
+
+export const ToolSchema = z.object({
+	inputSchema: z.record(z.string(), z.any()),
+	outputSchema: z.record(z.string(), z.any()).optional(),
+	name: z.string().optional(),
+	description: z.string().optional()
+});
+
+export const CustomToolSchema = z.object({
+	id: z.string().nonempty(),
+	name: z.string(),
+	transport: ToolTransport,
+	schema: ToolSchema
+});
+
+export type CustomTool = z.output<typeof CustomToolSchema>;
+
 const formSchema = z.object({
 	sessionRuntimeSettings: z.object({
 		ttl: z.number().min(10000).max(15778476000)
 	}),
+	tools: z.record(z.string().nonempty(), CustomToolSchema),
 	agents: z.array(
 		z.object({
 			id: z.object({
