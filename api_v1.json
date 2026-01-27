@@ -515,6 +515,17 @@
             "type" : "string",
             "title" : "String"
           }
+        }, {
+          "name" : "agentName",
+          "in" : "path",
+          "description" : "The agent's name",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
         } ],
         "requestBody" : {
           "description" : "Thread creation input",
@@ -540,16 +551,7 @@
             }
           },
           "404" : {
-            "headers" : { },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/RouteException"
-                }
-              }
-            }
-          },
-          "400" : {
+            "description" : "Agent not found",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -592,6 +594,17 @@
             "type" : "string",
             "title" : "String"
           }
+        }, {
+          "name" : "agentName",
+          "in" : "path",
+          "description" : "The agent's name",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
         } ],
         "requestBody" : {
           "description" : "Thread close input",
@@ -610,6 +623,7 @@
             "headers" : { }
           },
           "404" : {
+            "description" : "Agent or thread not found",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -620,6 +634,7 @@
             }
           },
           "400" : {
+            "description" : "Thread cannot be closed",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -664,6 +679,17 @@
             "type" : "string",
             "title" : "String"
           }
+        }, {
+          "name" : "agentName",
+          "in" : "path",
+          "description" : "The agent's name",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
         } ],
         "requestBody" : {
           "description" : "Message input",
@@ -689,6 +715,7 @@
             }
           },
           "404" : {
+            "description" : "Agent or thread not found",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -699,6 +726,7 @@
             }
           },
           "400" : {
+            "description" : "Bad message",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -743,6 +771,17 @@
             "type" : "string",
             "title" : "String"
           }
+        }, {
+          "name" : "agentName",
+          "in" : "path",
+          "description" : "The agent's name",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
         } ],
         "requestBody" : {
           "description" : "Thread and participant information details",
@@ -761,6 +800,7 @@
             "headers" : { }
           },
           "404" : {
+            "description" : "Agent or thread not found",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -771,6 +811,7 @@
             }
           },
           "400" : {
+            "description" : "Participant cannot be added",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -813,6 +854,17 @@
             "type" : "string",
             "title" : "String"
           }
+        }, {
+          "name" : "agentName",
+          "in" : "path",
+          "description" : "The agent's name",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
         } ],
         "requestBody" : {
           "description" : "Thread and participant information details",
@@ -831,6 +883,7 @@
             "headers" : { }
           },
           "404" : {
+            "description" : "Agent or thread not found",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -841,6 +894,7 @@
             }
           },
           "400" : {
+            "description" : "Participant cannot be removed",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -885,6 +939,17 @@
             "type" : "string",
             "title" : "String"
           }
+        }, {
+          "name" : "agentName",
+          "in" : "path",
+          "description" : "The agent's name",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
         } ],
         "responses" : {
           "200" : {
@@ -892,6 +957,7 @@
             "headers" : { }
           },
           "404" : {
+            "description" : "Agent not found",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -902,6 +968,7 @@
             }
           },
           "400" : {
+            "description" : "Agent not running",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -1166,12 +1233,16 @@
               "enum" : [ "namespace_closed" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "namespace" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "namespace", "type" ],
+          "required" : [ "namespace", "timestamp", "type" ],
           "title" : "namespace_closed"
         }, {
           "type" : "object",
@@ -1181,12 +1252,16 @@
               "enum" : [ "namespace_created" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "namespace" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "namespace", "type" ],
+          "required" : [ "namespace", "timestamp", "type" ],
           "title" : "namespace_created"
         }, {
           "type" : "object",
@@ -1196,6 +1271,10 @@
               "enum" : [ "session_closed" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "sessionId" : {
               "type" : "string",
               "title" : "String"
@@ -1205,7 +1284,7 @@
               "title" : "String"
             }
           },
-          "required" : [ "namespace", "sessionId", "type" ],
+          "required" : [ "namespace", "sessionId", "timestamp", "type" ],
           "title" : "session_closed"
         }, {
           "type" : "object",
@@ -1215,6 +1294,10 @@
               "enum" : [ "session_closing" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "sessionId" : {
               "type" : "string",
               "title" : "String"
@@ -1224,7 +1307,7 @@
               "title" : "String"
             }
           },
-          "required" : [ "namespace", "sessionId", "type" ],
+          "required" : [ "namespace", "sessionId", "timestamp", "type" ],
           "title" : "session_closing"
         }, {
           "type" : "object",
@@ -1234,6 +1317,10 @@
               "enum" : [ "session_created" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "sessionId" : {
               "type" : "string",
               "title" : "String"
@@ -1243,7 +1330,7 @@
               "title" : "String"
             }
           },
-          "required" : [ "namespace", "sessionId", "type" ],
+          "required" : [ "namespace", "sessionId", "timestamp", "type" ],
           "title" : "session_created"
         } ],
         "discriminator" : {
@@ -1260,12 +1347,16 @@
               "enum" : [ "agent_connected" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "name" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "name", "type" ],
+          "required" : [ "name", "timestamp", "type" ],
           "title" : "agent_connected"
         }, {
           "type" : "object",
@@ -1274,6 +1365,10 @@
               "type" : "string",
               "enum" : [ "agent_wait_start" ],
               "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
             },
             "name" : {
               "type" : "string",
@@ -1337,7 +1432,7 @@
               "uniqueItems" : true
             }
           },
-          "required" : [ "filters", "name", "type" ],
+          "required" : [ "filters", "name", "timestamp", "type" ],
           "title" : "agent_wait_start"
         }, {
           "type" : "object",
@@ -1347,6 +1442,10 @@
               "enum" : [ "agent_wait_stop" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "name" : {
               "type" : "string",
               "title" : "String"
@@ -1355,7 +1454,7 @@
               "$ref" : "#/components/schemas/SessionThreadMessage"
             }
           },
-          "required" : [ "message", "name", "type" ],
+          "required" : [ "message", "name", "timestamp", "type" ],
           "title" : "agent_wait_stop"
         }, {
           "type" : "object",
@@ -1365,12 +1464,16 @@
               "enum" : [ "docker_container_created" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "containerId" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "containerId", "type" ],
+          "required" : [ "containerId", "timestamp", "type" ],
           "title" : "docker_container_created"
         }, {
           "type" : "object",
@@ -1380,12 +1483,16 @@
               "enum" : [ "docker_container_removed" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "containerId" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "containerId", "type" ],
+          "required" : [ "containerId", "timestamp", "type" ],
           "title" : "docker_container_removed"
         }, {
           "type" : "object",
@@ -1395,12 +1502,16 @@
               "enum" : [ "runtime_started" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "name" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "name", "type" ],
+          "required" : [ "name", "timestamp", "type" ],
           "title" : "runtime_started"
         }, {
           "type" : "object",
@@ -1410,12 +1521,16 @@
               "enum" : [ "runtime_stopped" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "name" : {
               "type" : "string",
               "title" : "String"
             }
           },
-          "required" : [ "name", "type" ],
+          "required" : [ "name", "timestamp", "type" ],
           "title" : "runtime_stopped"
         }, {
           "type" : "object",
@@ -1424,6 +1539,10 @@
               "type" : "string",
               "enum" : [ "thread_closed" ],
               "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
             },
             "threadId" : {
               "type" : "string",
@@ -1434,7 +1553,7 @@
               "title" : "String"
             }
           },
-          "required" : [ "summary", "threadId", "type" ],
+          "required" : [ "summary", "threadId", "timestamp", "type" ],
           "title" : "thread_closed"
         }, {
           "type" : "object",
@@ -1444,11 +1563,15 @@
               "enum" : [ "thread_created" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "thread" : {
               "$ref" : "#/components/schemas/SessionThread"
             }
           },
-          "required" : [ "thread", "type" ],
+          "required" : [ "thread", "timestamp", "type" ],
           "title" : "thread_created"
         }, {
           "type" : "object",
@@ -1458,11 +1581,15 @@
               "enum" : [ "thread_message_sent" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "message" : {
               "$ref" : "#/components/schemas/SessionThreadMessage"
             }
           },
-          "required" : [ "message", "type" ],
+          "required" : [ "message", "timestamp", "type" ],
           "title" : "thread_message_sent"
         }, {
           "type" : "object",
@@ -1472,6 +1599,10 @@
               "enum" : [ "thread_participant_added" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "threadId" : {
               "type" : "string",
               "title" : "String"
@@ -1481,7 +1612,7 @@
               "title" : "String"
             }
           },
-          "required" : [ "name", "threadId", "type" ],
+          "required" : [ "name", "threadId", "timestamp", "type" ],
           "title" : "thread_participant_added"
         }, {
           "type" : "object",
@@ -1491,6 +1622,10 @@
               "enum" : [ "thread_participant_removed" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "threadId" : {
               "type" : "string",
               "title" : "String"
@@ -1500,7 +1635,7 @@
               "title" : "String"
             }
           },
-          "required" : [ "name", "threadId", "type" ],
+          "required" : [ "name", "threadId", "timestamp", "type" ],
           "title" : "thread_participant_removed"
         } ],
         "discriminator" : {
@@ -1527,11 +1662,6 @@
             "type" : "string",
             "title" : "String"
           },
-          "timestamp" : {
-            "type" : "integer",
-            "format" : "int64",
-            "title" : "Long"
-          },
           "mentionNames" : {
             "type" : "array",
             "items" : {
@@ -1540,6 +1670,10 @@
             },
             "title" : "LinkedHashSet<String>",
             "uniqueItems" : true
+          },
+          "timestamp" : {
+            "type" : "string",
+            "title" : "UTC timestamp ISO-8601"
           }
         },
         "required" : [ "id", "mentionNames", "senderName", "text", "threadId", "timestamp" ],
@@ -1588,9 +1722,13 @@
                 "summary" : {
                   "type" : "string",
                   "title" : "String"
+                },
+                "timestamp" : {
+                  "type" : "string",
+                  "title" : "UTC timestamp ISO-8601"
                 }
               },
-              "required" : [ "state", "summary" ],
+              "required" : [ "state", "summary", "timestamp" ],
               "title" : "closed"
             }, {
               "type" : "object",
@@ -1608,9 +1746,13 @@
               "propertyName" : "state"
             },
             "title" : "SessionThreadState"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "title" : "UTC timestamp ISO-8601"
           }
         },
-        "required" : [ "creatorName", "id", "messages", "name", "participants", "state" ],
+        "required" : [ "creatorName", "id", "messages", "name", "participants", "state", "timestamp" ],
         "title" : "SessionThread"
       },
       "LoggingEvent" : {
@@ -1619,8 +1761,145 @@
           "properties" : {
             "type" : {
               "type" : "string",
+              "enum" : [ "debug" ],
+              "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
+            "text" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "tags" : {
+              "type" : "array",
+              "items" : {
+                "anyOf" : [ {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "agent" ],
+                      "title" : "String"
+                    },
+                    "name" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "mdcMap", "name", "type" ],
+                  "title" : "agent"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "stdout" ],
+                      "title" : "String"
+                    },
+                    "io" : {
+                      "$ref" : "#/components/schemas/LoggingTagIo"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "io", "mdcMap", "type" ],
+                  "title" : "stdout"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "namespace" ],
+                      "title" : "String"
+                    },
+                    "namespace" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "mdcMap", "namespace", "type" ],
+                  "title" : "namespace"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "sensitive" ],
+                      "title" : "String"
+                    }
+                  },
+                  "required" : [ "type" ],
+                  "title" : "sensitive"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "session" ],
+                      "title" : "String"
+                    },
+                    "sessionId" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "mdcMap", "sessionId", "type" ],
+                  "title" : "session"
+                } ],
+                "discriminator" : {
+                  "propertyName" : "type"
+                },
+                "title" : "LoggingTag"
+              },
+              "title" : "LinkedHashSet<LoggingTag>",
+              "uniqueItems" : true
+            }
+          },
+          "required" : [ "tags", "text", "timestamp", "type" ],
+          "title" : "debug"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
               "enum" : [ "error" ],
               "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
             },
             "text" : {
               "type" : "string",
@@ -1749,7 +2028,7 @@
               "title" : "ArrayList<String>"
             }
           },
-          "required" : [ "exceptionStackTrace", "tags", "text", "type" ],
+          "required" : [ "exceptionStackTrace", "tags", "text", "timestamp", "type" ],
           "title" : "error"
         }, {
           "type" : "object",
@@ -1759,6 +2038,10 @@
               "enum" : [ "info" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "text" : {
               "type" : "string",
               "title" : "String"
@@ -1878,8 +2161,141 @@
               "uniqueItems" : true
             }
           },
-          "required" : [ "tags", "text", "type" ],
+          "required" : [ "tags", "text", "timestamp", "type" ],
           "title" : "info"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "trace" ],
+              "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
+            "text" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "tags" : {
+              "type" : "array",
+              "items" : {
+                "anyOf" : [ {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "agent" ],
+                      "title" : "String"
+                    },
+                    "name" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "mdcMap", "name", "type" ],
+                  "title" : "agent"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "stdout" ],
+                      "title" : "String"
+                    },
+                    "io" : {
+                      "$ref" : "#/components/schemas/LoggingTagIo"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "io", "mdcMap", "type" ],
+                  "title" : "stdout"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "namespace" ],
+                      "title" : "String"
+                    },
+                    "namespace" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "mdcMap", "namespace", "type" ],
+                  "title" : "namespace"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "sensitive" ],
+                      "title" : "String"
+                    }
+                  },
+                  "required" : [ "type" ],
+                  "title" : "sensitive"
+                }, {
+                  "type" : "object",
+                  "properties" : {
+                    "type" : {
+                      "type" : "string",
+                      "enum" : [ "session" ],
+                      "title" : "String"
+                    },
+                    "sessionId" : {
+                      "type" : "string",
+                      "title" : "String"
+                    },
+                    "mdcMap" : {
+                      "type" : "object",
+                      "additionalProperties" : {
+                        "type" : "string",
+                        "title" : "String"
+                      },
+                      "title" : "LinkedHashMap<String,String>"
+                    }
+                  },
+                  "required" : [ "mdcMap", "sessionId", "type" ],
+                  "title" : "session"
+                } ],
+                "discriminator" : {
+                  "propertyName" : "type"
+                },
+                "title" : "LoggingTag"
+              },
+              "title" : "LinkedHashSet<LoggingTag>",
+              "uniqueItems" : true
+            }
+          },
+          "required" : [ "tags", "text", "timestamp", "type" ],
+          "title" : "trace"
         }, {
           "type" : "object",
           "properties" : {
@@ -1888,6 +2304,10 @@
               "enum" : [ "warning" ],
               "title" : "String"
             },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
             "text" : {
               "type" : "string",
               "title" : "String"
@@ -2007,7 +2427,7 @@
               "uniqueItems" : true
             }
           },
-          "required" : [ "tags", "text", "type" ],
+          "required" : [ "tags", "text", "timestamp", "type" ],
           "title" : "warning"
         } ],
         "discriminator" : {
@@ -2019,115 +2439,6 @@
         "type" : "string",
         "enum" : [ "out", "error" ],
         "title" : "LoggingTagIo"
-      },
-      "LoggingTag" : {
-        "anyOf" : [ {
-          "type" : "object",
-          "properties" : {
-            "type" : {
-              "type" : "string",
-              "enum" : [ "agent" ],
-              "title" : "String"
-            },
-            "name" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "mdcMap" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashMap<String,String>"
-            }
-          },
-          "required" : [ "mdcMap", "name", "type" ],
-          "title" : "agent"
-        }, {
-          "type" : "object",
-          "properties" : {
-            "type" : {
-              "type" : "string",
-              "enum" : [ "stdout" ],
-              "title" : "String"
-            },
-            "io" : {
-              "$ref" : "#/components/schemas/LoggingTagIo"
-            },
-            "mdcMap" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashMap<String,String>"
-            }
-          },
-          "required" : [ "io", "mdcMap", "type" ],
-          "title" : "stdout"
-        }, {
-          "type" : "object",
-          "properties" : {
-            "type" : {
-              "type" : "string",
-              "enum" : [ "namespace" ],
-              "title" : "String"
-            },
-            "namespace" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "mdcMap" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashMap<String,String>"
-            }
-          },
-          "required" : [ "mdcMap", "namespace", "type" ],
-          "title" : "namespace"
-        }, {
-          "type" : "object",
-          "properties" : {
-            "type" : {
-              "type" : "string",
-              "enum" : [ "sensitive" ],
-              "title" : "String"
-            }
-          },
-          "required" : [ "type" ],
-          "title" : "sensitive"
-        }, {
-          "type" : "object",
-          "properties" : {
-            "type" : {
-              "type" : "string",
-              "enum" : [ "session" ],
-              "title" : "String"
-            },
-            "sessionId" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "mdcMap" : {
-              "type" : "object",
-              "additionalProperties" : {
-                "type" : "string",
-                "title" : "String"
-              },
-              "title" : "LinkedHashMap<String,String>"
-            }
-          },
-          "required" : [ "mdcMap", "sessionId", "type" ],
-          "title" : "session"
-        } ],
-        "discriminator" : {
-          "propertyName" : "type"
-        },
-        "title" : "LoggingTag"
       },
       "AgentGraphRequest" : {
         "type" : "object",
@@ -3707,10 +4018,9 @@
             "title" : "String"
           },
           "timestamp" : {
-            "type" : "integer",
-            "format" : "int64",
+            "type" : "string",
             "description" : "The timestamp of when this state was generated",
-            "title" : "Long"
+            "title" : "UTC timestamp ISO-8601"
           },
           "namespace" : {
             "type" : "string",
@@ -3790,9 +4100,12 @@
             "title" : "AgentRegistrySourceIdentifier"
           },
           "timestamp" : {
-            "type" : "integer",
-            "format" : "int64",
-            "title" : "Long"
+            "type" : "string",
+            "title" : "UTC timestamp ISO-8601"
+          },
+          "name" : {
+            "type" : "string",
+            "title" : "String"
           },
           "agents" : {
             "type" : "array",
@@ -3802,7 +4115,7 @@
             "title" : "ArrayList<RegistryAgentCatalog>"
           }
         },
-        "required" : [ "agents", "identifier", "timestamp" ],
+        "required" : [ "agents", "identifier", "name", "timestamp" ],
         "title" : "AgentRegistrySource"
       },
       "RegistryAgentCatalog" : {
@@ -5941,8 +6254,7 @@
               "type" : "string",
               "title" : "String"
             },
-            "title" : "LinkedHashSet<String>",
-            "uniqueItems" : true
+            "title" : "ArrayList<String>"
           }
         },
         "required" : [ "participantNames", "threadName" ],
@@ -5995,8 +6307,7 @@
               "type" : "string",
               "title" : "String"
             },
-            "title" : "LinkedHashSet<String>",
-            "uniqueItems" : true
+            "title" : "ArrayList<String>"
           }
         },
         "required" : [ "content", "mentions", "threadId" ],

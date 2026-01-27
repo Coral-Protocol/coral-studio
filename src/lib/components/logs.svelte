@@ -7,12 +7,15 @@
 	import Sonner from './ui/sonner/sonner.svelte';
 	import { Spinner } from './ui/spinner';
 	import * as Card from './ui/card';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import type { Component } from 'svelte';
 
 	import IconWarning from 'phosphor-icons-svelte/IconWarningRegular.svelte';
 	import IconWarningCircle from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
 	import IconInfo from 'phosphor-icons-svelte/IconInfoRegular.svelte';
 	import IconArrowDown from 'phosphor-icons-svelte/IconArrowDownRegular.svelte';
+	import IconBug from 'phosphor-icons-svelte/IconBugRegular.svelte';
+	import IconPath from 'phosphor-icons-svelte/IconPathRegular.svelte';
 	import { Button } from './ui/button';
 	import { slide } from 'svelte/transition';
 
@@ -23,13 +26,17 @@
 	const icons: { [K in Logs['logs'][number]['type']]: Component<{ class?: string }> } = {
 		error: IconWarning,
 		info: IconInfo,
-		warning: IconWarningCircle
+		warning: IconWarningCircle,
+		debug: IconBug,
+		trace: IconPath
 	};
 
 	const typeColors: { [K in Logs['logs'][number]['type']]: string | null } = {
 		error: 'text-destructive',
 		info: null,
-		warning: 'text-orange-400'
+		warning: 'text-orange-400',
+		debug: 'text-blue-400',
+		trace: 'text-muted-foreground'
 	};
 
 	let manualScroll = $state(false);
@@ -101,21 +108,48 @@
 		{:else}
 			<ul class="min-h-0 pb-2 text-sm whitespace-pre-wrap">
 				{#each logs.logs as log, i (i)}
-					{@const timestamp = null}
 					{@const LogIcon = icons[log.type]}
-					<!-- {@const timestamp = log.timestamp ? new Date(log.timestamp) : null} -->
 					<li
 						class={cn(
-							'flex flex-row items-center gap-x-1 px-2 py-1 pr-3',
+							'grid grid-cols-[max-content_max-content_auto] items-center gap-x-1 px-2 py-1 pr-3',
 							'hover:bg-primary/10 rounded-sm ',
 							typeColors[log.type],
 							i % 2 == 1 && 'bg-background'
 						)}
 					>
-						<LogIcon class={cn('opacity-50', typeColors[log.type])} />
-						<span class="opacity-40">{timestamp ? ts_fmt(timestamp) : ''}</span><span
-							>{log.text}</span
-						>
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger class="pr-1 opacity-40">
+									<LogIcon class={cn('opacity-50', typeColors[log.type])} />
+								</Tooltip.Trigger>
+								<Tooltip.Content
+									><span class="capitalize select-all">{log.type}</span></Tooltip.Content
+								>
+							</Tooltip.Root>
+						</Tooltip.Provider>
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger class="pr-1 opacity-40">
+									{ts_fmt(log.timestamp)}
+								</Tooltip.Trigger>
+								<Tooltip.Content
+									><span class="select-all"
+										>{log.timestamp.toLocaleDateString()}
+										{log.timestamp.getHours()}:{log.timestamp
+											.getMinutes()
+											.toString()
+											.padStart(2, '0')}:{log.timestamp
+											.getSeconds()
+											.toString()
+											.padStart(2, '0')}.{log.timestamp
+											.getMilliseconds()
+											.toString()
+											.padStart(3, '0')}</span
+									></Tooltip.Content
+								>
+							</Tooltip.Root>
+						</Tooltip.Provider>
+						<span>{log.text}</span>
 					</li>
 				{/each}
 			</ul>
