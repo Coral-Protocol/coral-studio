@@ -171,6 +171,7 @@ export class CoralServer {
 			res.data.map((r) => [
 				registryIdOf(r.identifier),
 				{
+					name: r.name,
 					identifier: r.identifier,
 					timestamp: r.timestamp,
 					agents: Object.fromEntries(r.agents.map((a) => [a.name, a]))

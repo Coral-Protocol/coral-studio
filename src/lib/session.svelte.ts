@@ -75,7 +75,9 @@ export class Session {
 			})
 			.catch((reason) => {
 				this.connected = false;
-				toast.error(`Error fetching session state${reason ? ` - ${reason}.` : '.'}`, { duration: Infinity });
+				toast.error(`Error fetching session state${reason ? ` - ${reason}.` : '.'}`, {
+					duration: Infinity
+				});
 				this.socket.close();
 			});
 
@@ -154,7 +156,11 @@ export class Session {
 					break;
 				case 'thread_closed':
 					if (!this.threads[data.threadId]) return;
-					this.threads[data.threadId]!.state = { state: 'closed', summary: data.summary };
+					this.threads[data.threadId]!.state = {
+						state: 'closed',
+						summary: data.summary,
+						timestamp: data.timestamp
+					};
 					break;
 				case 'thread_participant_added':
 					if (!this.threads[data.threadId]) return;
