@@ -1,7 +1,9 @@
 import type { components } from '$generated/api';
 import { createWebsocket } from './websocket.svelte';
 
-export type Log = components['schemas']['LoggingEvent'];
+export type Log = Omit<components['schemas']['LoggingEvent'], 'timestamp'> & {
+	timestamp: Date;
+};
 
 export class Logs {
 	private socket: WebSocket;
@@ -20,7 +22,9 @@ export class Logs {
 		agentId: string
 	) {
 		this.session = session;
-		const sock = createWebsocket(`/ws/v1/logs?sessionFilter=${this.session}&agentFilter=${agentId}`);
+		const sock = createWebsocket(
+			`/ws/v1/logs?sessionFilter=${this.session}&agentFilter=${agentId}`
+		);
 		if (!sock) throw new Error('cannot create Logs in SSR');
 		this.socket = sock;
 		this.socket.onopen = () => {
@@ -45,7 +49,7 @@ export class Logs {
 				return;
 			}
 
-			data && this.logs.push(data);
+			data && this.logs.push({ ...data, timestamp: new Date(data.timestamp) });
 		};
 	}
 }
