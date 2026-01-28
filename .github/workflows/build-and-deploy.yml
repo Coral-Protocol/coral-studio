@@ -44,10 +44,28 @@ jobs:
           BUNDLE_DIR=$(nix build --no-link --print-out-paths .#)
           mkdir output/
           cp -r $BUNDLE_DIR/* output/
+      - name: Compute output name
+        id: vars
+        shell: bash
+        run: |
+          set -eu
+          # Determine the branch name depending on event type
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH="${{ github.head_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          # Normalize branch name
+          BRANCH_SAFE=$(echo "$BRANCH" \
+            | tr '[:upper:]' '[:lower:]' \
+            | tr '/' '-' \
+            | tr -cs 'a-z0-9._-' '-' \
+            | sed 's/^-*//;s/-*$//')
+          echo "branch=$BRANCH_SAFE" >> "$GITHUB_OUTPUT"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coral-console_${{ github.ref_name }}-${{ github.sha }}
+          name: coral-console_${{ steps.vars.outputs.branch }}
           path: |
             ./output/*
       - name: Prepare for Release
