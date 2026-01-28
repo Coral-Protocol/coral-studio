@@ -22,6 +22,7 @@
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
 	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
+	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { idAsKey, type PublicRegistryAgent } from '$lib/threads';
@@ -61,6 +62,8 @@
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 	import { Toggle } from '$lib/components/ui/toggle';
 	import { randomAdjective, randomAnimal } from '$lib/words';
+	import { fade } from 'svelte/transition';
+	import CopyButton from '$lib/components/copy-button.svelte';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -283,6 +286,7 @@
 			};
 			selectedAgent = $formData.agents.length > 0 ? 0 : null;
 			toast.success('Session JSON updated successfully');
+			jsonDirty = false;
 		} catch (error) {
 			toast.error('Failed to update session from JSON: ' + error);
 			console.error(error);
@@ -534,6 +538,7 @@
 	}
 
 	let jsonExample = $state<string>('');
+	let jsonDirty = $state(false);
 	let fetchExample = $state<string>('');
 	$effect(() => {
 		let cancelled = false;
@@ -963,17 +968,41 @@
 						>
 							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
 
-							<Tabs.Trigger value="json" class="grow-0">JSON</Tabs.Trigger>
+							<Tabs.Trigger value="json" class="grow-0">JSON{jsonDirty ? '*' : ''}</Tabs.Trigger>
 						</Tabs.List>
-						<Tabs.Content value="json" class="overflow-y-auto">
+						<Tabs.Content value="json" class="relative overflow-y-auto">
+							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+								<CopyButton value={jsonExample} />
+								{#if jsonDirty}
+									<span transition:fade={{ duration: 100 }}>
+										<Tooltip.Provider>
+											<Tooltip.Root>
+												<Tooltip.Trigger
+													class={cn(buttonVariants({ size: 'icon' }), '')}
+													onclick={() => importFromJson(jsonExample)}
+												>
+													<IconArrowsClockwise /></Tooltip.Trigger
+												>
+												<Tooltip.Content>Update session graph from JSON</Tooltip.Content>
+											</Tooltip.Root>
+										</Tooltip.Provider>
+									</span>
+								{/if}
+							</section>
 							<CodeMirror
 								bind:value={jsonExample}
+								onchange={() => {
+									jsonDirty = true;
+								}}
 								lang={json()}
 								theme={dracula}
 								class="ͼo h-full"
 							/>
 						</Tabs.Content>
-						<Tabs.Content value="js" class="overflow-y-auto">
+						<Tabs.Content value="js" class="relative overflow-y-auto">
+							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+								<CopyButton value={fetchExample} />
+							</section>
 							<CodeMirror
 								bind:value={fetchExample}
 								lang={javascript()}
@@ -984,21 +1013,6 @@
 						</Tabs.Content>
 					</Tabs.Root>
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
-						<Button onclick={() => importFromJson(jsonExample)}>Update from JSON</Button>
-
-						<Button
-							onclick={() => {
-								navigator.clipboard.writeText(jsonExample);
-								toast.success('JSON snippet copied to clipboard');
-							}}>Copy JSON</Button
-						>
-						<Button
-							onclick={() => {
-								navigator.clipboard.writeText(fetchExample);
-								toast.success('Javascript snippet copied to clipboard');
-							}}>Copy JS</Button
-						>
-
 						<Form.Button
 							disabled={sendingForm || $formData.agents.length === 0}
 							class={sendingForm ? '' : 'bg-accent/80'}
