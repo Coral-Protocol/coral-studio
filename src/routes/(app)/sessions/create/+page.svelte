@@ -2,6 +2,11 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
+	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -10,6 +15,8 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 
@@ -224,33 +231,7 @@
 	const importFromJson = (json: string) => {
 		try {
 			const data: CreateSessionRequest = JSON.parse(json);
-			const toolMap = Object.fromEntries(
-				Object.keys(data.agentGraphRequest.customTools ?? {}).map((k) => [
-					k,
-					crypto.randomUUID() as string
-				])
-			);
-			const tools = Object.fromEntries(
-				Object.entries(data.agentGraphRequest.customTools ?? {}).map(([k, v]) => {
-					const id = toolMap[k]!; // Safety: toolMap is built from custom tool keys
-					return [
-						id,
-						{
-							id,
-							name: k,
-							schema: {
-								inputSchema: v.schema.inputSchema,
-								outputSchema: v.schema.outputSchema,
-								name: v.schema.name,
-								description: v.schema.description
-							},
-							transport: v.transport
-						} satisfies schemas.CustomTool
-					];
-				})
-			);
 			$formData = {
-				tools,
 				groups: data.agentGraphRequest.groups ?? [],
 				sessionRuntimeSettings: {
 					ttl: data.sessionRuntimeSettings?.ttl ?? 50000
@@ -279,9 +260,7 @@
 					providerType: agent.provider.type,
 					blocking: agent.blocking ?? true,
 					options: agent.options as any,
-					customToolAccess: new Set(
-						(agent.customToolAccess ?? []).map((t) => toolMap[t]).filter(Boolean) as string[] // typescript is stupid this is safe because .filter(Boolean)
-					)
+					customToolAccess: new Set(agent.customToolAccess)
 				}))
 			};
 			selectedAgent = $formData.agents.length > 0 ? 0 : null;
@@ -292,6 +271,10 @@
 			console.error(error);
 		}
 	};
+
+	let usedTools = $derived(
+		new Set($formData.agents.flatMap((agent) => Array.from(agent.customToolAccess)))
+	) as Set<keyof typeof tools>;
 
 	let asJson: Promise<CreateSessionRequest> = $derived.by(async () => {
 		const detailed = await Promise.all($formData.agents.map((a) => getDetailed(a.id)));
@@ -311,9 +294,7 @@
 
 				blocking: agent.blocking,
 				systemPrompt: agent.systemPrompt,
-				customToolAccess: Array.from(agent.customToolAccess)
-					.map((id) => $formData.tools[id]?.name)
-					.filter(Boolean) as string[], // safe assertion because .filter(Boolean) removes null/undefined
+				customToolAccess: Array.from(agent.customToolAccess),
 				plugins: [],
 				x402Budgets: [],
 				options: Object.fromEntries(
@@ -338,15 +319,19 @@
 		});
 
 		const customTools = Object.fromEntries(
-			Object.values($formData.tools).map((tool) => {
-				const value = {
-					transport: structuredClone(tool.transport),
-					schema: structuredClone(tool.schema)
-				};
-				if (!value.schema.name) {
-					value.schema.name = tool.name;
-				}
-				return [tool.name, value];
+			Array.from(usedTools).map((tool) => {
+				const toolBody = tools[tool];
+
+				return [
+					tool,
+					{
+						...toolBody,
+						transport: {
+							...toolBody.transport,
+							url: `${window.location.origin}${toolBody.transport.url}`
+						}
+					}
+				];
 			})
 		) as any;
 
@@ -361,8 +346,6 @@
 			}
 		} satisfies CreateSessionRequest;
 	});
-
-	let selectedTool: string | null = $state(null);
 
 	let selectedAgent: number | null = $state(null);
 	let curAgent = $derived(selectedAgent !== null ? $formData.agents[selectedAgent] : undefined);
@@ -533,6 +516,7 @@
 	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { preventDefault } from 'svelte/legacy';
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 
 	function toJsObjectLiteral(value: unknown, indent = 2): string {
 		return (
@@ -699,10 +683,11 @@
 					{:else if opt.type === 'bool'}
 						<ButtonGroup.Root class="m-0 justify-start">
 							<Button
-								class={cn(
-									($formData.agents[selectedAgent!]!.options[name]?.value ?? opt.default) ===
-										true && 'bg-accent text-accent-foreground'
-								)}
+								class=" {$formData.agents[selectedAgent!]!.options[name]?.value === true ||
+								($formData.agents[selectedAgent!]!.options[name]?.value === undefined &&
+									opt.default === true)
+									? 'bg-accent text-accent-foreground'
+									: ''}"
 								onclick={() => {
 									const optObj = $formData.agents[selectedAgent!]!.options[name];
 									if (optObj) {
@@ -902,40 +887,81 @@
 										<Menubar.Item inset>Hide Sidebar</Menubar.Item>
 									</Menubar.Content>
 								</Menubar.Menu>
+
 								<Menubar.Menu>
-									<Menubar.Trigger>Agents</Menubar.Trigger>
-									<Menubar.Content>
-										<Menubar.RadioGroup>
-											<Menubar.RadioItem value="andy">Andy</Menubar.RadioItem>
-											<Menubar.RadioItem value="benoit">Benoit</Menubar.RadioItem>
-											<Menubar.RadioItem value="Luis">Luis</Menubar.RadioItem>
-										</Menubar.RadioGroup>
-										<Menubar.Separator />
-										<Menubar.Item inset>Edit...</Menubar.Item>
-										<Menubar.Separator />
-										<Menubar.Item inset>Add Agent...</Menubar.Item>
+									<Menubar.Trigger class="">Add agents</Menubar.Trigger>
+									 <Menubar.Content>
+										<Command.Root>
+											<Command.Input placeholder="Search agents..." />
+											<Command.List>
+												{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+													<Command.Group heading={`${catalog.identifier.type}`}>
+														{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+															<HoverCard.Root>
+																<HoverCard.Trigger class="m-0"
+																	><Command.Item
+																		class=" w-full cursor-pointer  border-b px-4 py-2"
+																		onSelect={() => addAgent(agent)}
+																	>
+																		<span class="grow">{agent.name}</span>
+																		<IconHeartRegular />
+																	</Command.Item></HoverCard.Trigger
+																>
+																<HoverCard.Content
+																	side="right"
+																	class="max-w-1/2 min-w-full whitespace-pre-wrap"
+																>
+																	{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																		<span class="text-muted">loading...</span>
+																	{:then details}
+																		{details.registryAgent.info.description}
+																	{/await}
+																</HoverCard.Content>
+															</HoverCard.Root>
+														{/each}
+													</Command.Group>
+												{/each}
+											</Command.List>
+										</Command.Root>
+										<Menubar.Sub>
+											<Menubar.SubTrigger>Marketplace</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Command.Root>
+													<Command.Input placeholder="Search agents..." />
+													<Command.List>
+														{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+															<Command.Group heading={`${catalog.identifier.type}`}>
+																{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+																	<HoverCard.Root>
+																		<HoverCard.Trigger class="m-0"
+																			><Command.Item
+																				class=" w-full cursor-pointer  border-b px-4 py-2"
+																				onSelect={() => addAgent(agent)}
+																			>
+																				<span class="grow">{agent.name}</span>
+																				<IconHeartRegular />
+																			</Command.Item></HoverCard.Trigger
+																		>
+																		<HoverCard.Content
+																			side="right"
+																			class="w-1/2 whitespace-pre-wrap"
+																		>
+																			{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																				<Skeleton class="h-4 w-full" />
+																			{:then details}
+																				{details.registryAgent.info.description}
+																			{/await}
+																		</HoverCard.Content>
+																	</HoverCard.Root>
+																{/each}
+															</Command.Group>
+														{/each}
+													</Command.List>
+												</Command.Root>
+											</Menubar.SubContent>
+										</Menubar.Sub>
 									</Menubar.Content>
 								</Menubar.Menu>
-								<Combobox
-									class="ml-auto border-0 "
-									side="bottom"
-									align="start"
-									selectPlaceholder="Add agent"
-									selected={undefined}
-									options={Object.values(ctx.server.catalogs).map((catalog) => ({
-										heading: catalog.identifier.type,
-										items: Object.values(catalog.agents).map((a) => ({
-											label: `${a.name}`,
-											key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-											value: {
-												registrySourceId: catalog.identifier,
-												name: a.name,
-												version: a.versions.at(-1)! // won't be in registry if 0 versions
-											}
-										}))
-									}))}
-									searchPlaceholder="Search..."
-								/>
 							</Menubar.Root>
 							<Tabs.Root bind:value={agentsListTabs} class="min-h-0 flex-1 overflow-hidden">
 								<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
@@ -1018,54 +1044,6 @@
 								</Tabs.Content>
 							</Tabs.Root>
 						</Resizable.Pane>
-						<!-- <Resizable.Handle /> -->
-
-						<!-- <Resizable.Pane class="bg-card flex min-h-0 flex-col" minSize={5} defaultSize={15}>
-							<h2 class="mx-auto py-4">Available Agents</h2>
-
-							{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
-								<ol class="border-t">
-									{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
-										<li class="hover:bg-sidebar grid w-full grid-cols-5 gap-2 border-b px-4 py-2">
-											<Dialog.Root>
-												<Dialog.Trigger
-													type="button"
-													class="{buttonVariants({
-														variant: 'default',
-														size: 'sm'
-													})} col-span-4 w-full grow cursor-help justify-start truncate overflow-hidden text-xs"
-													>{agent.name}</Dialog.Trigger
-												>
-												<Dialog.Content>
-													<Dialog.Header>
-														<Dialog.Title>{agent.name}</Dialog.Title>
-														<Dialog.Description class="whitespace-pre-line">
-															{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																<Skeleton class="h-4 w-full" />
-															{:then details}
-																{details.registryAgent.info.description}
-															{/await}
-														</Dialog.Description>
-													</Dialog.Header>
-													<Dialog.Footer>
-														<Dialog.Close
-															class="truncate {buttonVariants({ variant: 'default' })}"
-															onclick={() => addAgent(agent)}>Add Agent</Dialog.Close
-														>
-													</Dialog.Footer>
-												</Dialog.Content>
-											</Dialog.Root>
-											<Button
-												class="col-span-1 w-full grow  truncate overflow-hidden text-xs "
-												size="sm"
-												onclick={() => addAgent(agent)}
-												><IconPlusRegular /><span class="sr-only">Add</span></Button
-											>
-										</li>
-									{/each}
-								</ol>
-							{/each}
-						</Resizable.Pane> -->
 					</Resizable.PaneGroup>
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
@@ -1161,7 +1139,7 @@
 				</Tabs.List>
 				{@const availableOptions = {}}
 				{#key selectedAgent}
-					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-2 overflow-y-scroll ">
+					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-4 overflow-y-scroll ">
 						{#if selectedAgent !== null && curAgent && curCatalog}
 							{#if !detailedAgent}
 								<Spinner class="m-auto my-8" />
@@ -1344,45 +1322,6 @@
 											{/snippet}
 										</Form.Control>
 									</Form.ElementField>
-									<Form.ElementField
-										{form}
-										name="agents[{selectedAgent}].provider.runtime"
-										class="flex items-center gap-2"
-									>
-										<Form.Control>
-											{#snippet children({ props })}
-												{@const tools = $formData.agents[selectedAgent!]!.customToolAccess}
-												<TooltipLabel
-													tooltip={'What custom tools this agent has access to.'}
-													class="m-0 max-w-1/4">Custom Tools</TooltipLabel
-												>
-												<Select.Root
-													{...props}
-													type="multiple"
-													value={Array.from(tools.keys())}
-													onValueChange={(value) => {
-														if (selectedAgent === null || !$formData.agents[selectedAgent]) return;
-														$formData.agents[selectedAgent!]!.customToolAccess = new Set(value);
-														$formData.agents = $formData.agents;
-													}}
-												>
-													<Select.Trigger class="m-0">
-														<span>{tools.size} tools</span>
-													</Select.Trigger>
-													<Select.Content>
-														{#if Object.keys($formData.tools).length == 0}
-															<span class="text-muted-foreground h-9 px-2 text-sm italic"
-																>No tools</span
-															>
-														{/if}
-														{#each Object.values($formData.tools) as tool}
-															<Select.Item value={tool.id}>{tool.name}</Select.Item>
-														{/each}
-													</Select.Content>
-												</Select.Root>
-											{/snippet}
-										</Form.Control>
-									</Form.ElementField>
 								</header>
 								<ol class="border-t">
 									{#each Object.entries(groupedOptions) as [group, entries]}
@@ -1473,52 +1412,6 @@
 						</span>
 					{/if}
 					<Separator />
-					<h1>Custom Tools</h1>
-					<Item.Root variant="outline" class="p-2">
-						<Item.Content>
-							<ScrollArea>
-								{#if Object.keys($formData.tools).length == 0}
-									<p
-										class="text-muted-foreground flex h-9 w-full place-items-center justify-center"
-									>
-										No tools.
-									</p>
-								{/if}
-								{#each Object.values($formData.tools) as tool (tool.id)}
-									<Toggle
-										class="flex w-full justify-start pr-0"
-										bind:pressed={() => selectedTool === tool.id, () => (selectedTool = tool.id)}
-									>
-										<p class="grow text-left">{tool.name}</p>
-										<TwostepButton
-											class="size-9"
-											variant="ghostDestructive"
-											onclick={() => {
-												delete $formData.tools[tool.id];
-												$formData.tools = $formData.tools;
-												selectedAgent =
-													selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-											}}><IconTrash /></TwostepButton
-										>
-									</Toggle>
-								{/each}
-							</ScrollArea>
-						</Item.Content>
-					</Item.Root>
-					<Button
-						onclick={() => {
-							const id = crypto.randomUUID() as string;
-							$formData.tools[id] = {
-								id,
-								name: `${randomAdjective()}-${randomAnimal()}`,
-								transport: { type: 'http', url: '' },
-								schema: { inputSchema: {}, outputSchema: undefined, name: undefined }
-							};
-						}}>+</Button
-					>
-					{#if selectedTool !== null}
-						<ToolInput superform={form} id={selectedTool} />
-					{/if}
 				</Tabs.Content>
 				<Tabs.Content value="groups" class="flex flex-col gap-4 px-4">
 					<h1>Agent Groups</h1>

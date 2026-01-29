@@ -20,6 +20,7 @@
 	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
+	import IconPlusCircle from 'phosphor-icons-svelte/IconPlusCircleRegular.svelte';
 
 	import { onMount, tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
@@ -376,6 +377,7 @@
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
 					<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
+					<Sidebar.GroupAction><IconPlusCircle /></Sidebar.GroupAction>
 					<Popover.Root bind:open={sessionSearcherOpen}>
 						<section class="my-2 flex w-full gap-2">
 							<Popover.Trigger
