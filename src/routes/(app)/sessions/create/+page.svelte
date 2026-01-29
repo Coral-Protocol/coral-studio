@@ -138,10 +138,7 @@
 				sendingForm = true;
 				const body = await asJson;
 				// console.log({ body });
-				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
-					params: {
-						path: { namespace: ctx.server.namespace }
-					},
+				const res = await ctx.server.api.POST('/api/v1/sessions/session', {
 					body
 				});
 				sendingForm = false;
@@ -169,8 +166,8 @@
 						server: ctx.server
 					});
 				} else {
-					throw new Error('no data received');
 					sendingForm = false;
+					throw new Error('no data received');
 				}
 			} catch (e) {
 				console.log(e);
