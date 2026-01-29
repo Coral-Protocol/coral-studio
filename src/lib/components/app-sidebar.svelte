@@ -42,7 +42,8 @@
 	import Shortcuts from './dialogs/shortcuts.svelte';
 	import { appContext } from '$lib/context';
 	import { base } from '$app/paths';
-	import { watch } from 'runed';
+	import { useDebounce, watch } from 'runed';
+	import config from '$lib/config';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -56,24 +57,55 @@
 
 	let tourOpen = $state(false);
 
-	watch(
-		() => ctx.server.alive,
-		(alive) => {
-			if (alive === false) {
-				toast('Disconnected from server. Please login again.', {
+	const onNoAuth = useDebounce(() => {
+		switch (config.PUBLIC_LOGIN_BEHAVIOUR) {
+			case 'token':
+				toast('You have been logged out. Please log in again.', {
 					duration: Infinity,
 					dismissable: false,
 					richColors: true,
 					id: 'server-disconnected',
 					action: {
 						label: 'Login',
-						onClick: (event) => (event.preventDefault(), (loginOpen = true))
+						onClick: (e) => {
+							e.preventDefault();
+							loginOpen = true;
+						}
 					}
 				});
-			} else if (alive === true) {
-				console.log('alive');
+				break;
+			case 'reload':
+				toast('You have been logged out. Please log in again.', {
+					duration: Infinity,
+					dismissable: false,
+					richColors: true,
+					description: 'You will lose your changes!',
+					id: 'server-disconnected',
+					action: {
+						label: 'Login',
+						onClick: (e) => {
+							e.preventDefault();
+							window.location.reload();
+						}
+					}
+				});
+				break;
+			default:
+				unreachable(config.PUBLIC_LOGIN_BEHAVIOUR);
+				break;
+		}
+	}, 200);
 
-				toast.success('Reconnected to server.');
+	$effect(() => {
+		ctx.server.onNoAuth = onNoAuth;
+	});
+
+	watch(
+		() => ctx.server.alive,
+		(alive) => {
+			if (alive) {
+				console.log('alive');
+				toast.success('Connected to server.');
 				toast.dismiss('server-disconnected');
 				refreshAgents();
 			}
@@ -202,6 +234,10 @@
 	};
 
 	$inspect(ctx.server.sessions);
+
+	function unreachable(PUBLIC_LOGIN_BEHAVIOUR: never) {
+		throw new Error('Function not implemented.');
+	}
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
