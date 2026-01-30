@@ -251,7 +251,7 @@
 
 <div class="fixed top-3 right-3 z-50 flex items-center gap-2">
 	<button
-		class="bg-primary flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
+		class="flex max-w-64 cursor-text items-center justify-between gap-6 rounded-md border p-2"
 		onclick={() => (openQuickswitch = true)}
 	>
 		<div class="text-muted-foreground flex items-center gap-2">
@@ -269,7 +269,7 @@
 				{#snippet child({ props })}
 					<button
 						{...props}
-						class="bg-primary text-muted-foreground flex size-9 items-center justify-center rounded-md border"
+						class=" text-muted-foreground flex size-9 items-center justify-center rounded-md border"
 						onclick={() => (welcomeOpen = true)}
 					>
 						<IconQuestion class="size-4" />
