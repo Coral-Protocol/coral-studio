@@ -6,8 +6,13 @@
 	const {
 		onclick,
 		children,
+		title = 'Are you sure?',
 		...props
-	}: Omit<ButtonProps, 'onclick'> & { children?: Snippet; onclick?: () => void } = $props();
+	}: Omit<ButtonProps, 'onclick'> & {
+		children?: Snippet;
+		title?: string;
+		onclick?: () => void;
+	} = $props();
 
 	let open = $state(false);
 </script>
@@ -33,7 +38,7 @@
 	</Dialog.Trigger>
 	<Dialog.Content class="sm:max-w-xs">
 		<Dialog.Header>
-			<Dialog.Title>Are you sure you want to remove this agent?</Dialog.Title>
+			<Dialog.Title>{title}</Dialog.Title>
 			<Dialog.Description>
 				<p class="mx-auto p-4 text-xs">
 					Tip: Shift-click remove to skip this confirmation.
