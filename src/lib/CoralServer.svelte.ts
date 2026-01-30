@@ -88,7 +88,7 @@ export class CoralServer {
 	public namespace = $state((browser && localStorage.getItem('namespace')) || 'default');
 	public namespaces = $derived(Object.keys(this.allSessions));
 
-	public sessions = $derived(this.allSessions[this.namespace] ?? []);
+	public sessions = $derived(this.allSessions[this.namespace] ?? {});
 
 	public lsmSock = $derived(
 		createWebsocket(`/ws/v1/events/lsm?namespaceFilter=${encodeURIComponent(this.namespace)}`)
