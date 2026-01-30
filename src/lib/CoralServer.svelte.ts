@@ -4,7 +4,7 @@ import { page } from '$app/state';
 import type { components, paths } from '$generated/api';
 import createClient, { type Client } from 'openapi-fetch';
 
-import { PUBLIC_API_PATH } from '$env/static/public';
+import { config } from '$lib/config';
 import { createWebsocket } from './websocket.svelte';
 import { toast } from 'svelte-sonner';
 
@@ -34,10 +34,14 @@ export class CoralServer {
 	public rawApi = $derived.by(() => {
 		const token = building ? '' : page.url.searchParams.get('token');
 		return createClient<paths>({
-			baseUrl: `${(PUBLIC_API_PATH || base) ?? '/'}`,
+			baseUrl: `${(config.PUBLIC_API_PATH || base) ?? '/'}`,
 			headers: { Authorization: token ? `Bearer ${token}` : undefined }
 		});
 	});
+
+	public onNoAuth = () => {
+		console.warn('onNoAuth has not been set!');
+	};
 
 	/** Wrapper around our openapi-fetch API client **/
 
@@ -48,6 +52,7 @@ export class CoralServer {
 			switch (res.response.status) {
 				case 401: {
 					this.alive = false;
+					this.onNoAuth();
 					throw new Error('Invalid auth token!');
 				}
 
