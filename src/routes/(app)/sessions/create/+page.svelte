@@ -64,6 +64,7 @@
 	import { randomAdjective, randomAnimal } from '$lib/words';
 	import { fade } from 'svelte/transition';
 	import CopyButton from '$lib/components/copy-button.svelte';
+	import { PersistedState } from 'runed';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -537,6 +538,8 @@
 		);
 	}
 
+	const editorTab = new PersistedState('sessionEditorTab', 'js');
+
 	let jsonExample = $state<string>('');
 	let jsonDirty = $state(false);
 	let fetchExample = $state<string>('');
@@ -962,7 +965,7 @@
 					minSize={25}
 					defaultSize={50}
 				>
-					<Tabs.Root value="js" class="grow gap-0 overflow-hidden">
+					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
 						<Tabs.List
 							class="bg-sidebar flex w-full justify-start rounded-none border-0 *:rounded-none"
 						>
