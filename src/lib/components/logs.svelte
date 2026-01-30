@@ -1,14 +1,17 @@
 <script lang="ts">
 	import type { Logs } from '$lib/logs.svelte';
 	import { cn } from '$lib/utils';
-	// import SvelteVirtualList from '@humanspeak/svelte-virtual-list';
+
 	import { useDebounce, watch } from 'runed';
 	import ScrollArea from './ui/scroll-area/scroll-area.svelte';
 	import Sonner from './ui/sonner/sonner.svelte';
 	import { Spinner } from './ui/spinner';
 	import * as Card from './ui/card';
 	import * as Tooltip from '$lib/components/ui/tooltip';
+	import VList from './VList.svelte';
 	import type { Component } from 'svelte';
+
+	import { type VirtualizerHandle } from 'virtua/svelte';
 
 	import IconWarning from 'phosphor-icons-svelte/IconWarningRegular.svelte';
 	import IconWarningCircle from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
@@ -18,6 +21,7 @@
 	import IconPath from 'phosphor-icons-svelte/IconPathRegular.svelte';
 	import { Button } from './ui/button';
 	import { slide } from 'svelte/transition';
+	import type { Snapshot } from '@sveltejs/kit';
 
 	let { logs, class: className }: { logs?: Logs | null; class?: string } = $props();
 	const ts_fmt = (d: Date) =>
@@ -40,11 +44,16 @@
 	};
 
 	let manualScroll = $state(false);
-	let scrollArea = $state(null) as HTMLElement | null | undefined;
+	let ref: VirtualizerHandle | null = $state(null);
 
 	const scrollToBottom = () => {
-		if (!scrollArea) return;
-		scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+		if (!ref) return;
+		const scrollTop = ref.getScrollOffset();
+		const scrollHeight = ref.getScrollSize();
+		const clientHeight = ref.getViewportSize();
+		const distFromBottom = scrollHeight - (scrollTop + clientHeight);
+		// For better performance, don't smooth scroll if the distance is too far
+		ref.scrollToIndex((logs?.logs.length ?? 1) - 1, { smooth: distFromBottom <= 10000 });
 	};
 
 	// auto scroll
@@ -55,104 +64,102 @@
 
 	// automatically enable auto scroll when we are < 5 pixels from scroll bottom,
 	// and disable when far enough from bottom
-	$effect(() => {
-		if (!scrollArea) return;
-		scrollArea.onscroll = useDebounce(() => {
-			if (!scrollArea) return;
-			const distFromBottom =
-				scrollArea.scrollHeight - (scrollArea.scrollTop + scrollArea.clientHeight);
-			// console.log({ distFromBottom });
-			if (distFromBottom < 5) {
-				manualScroll = false;
-			} else if (distFromBottom > 20 || distFromBottom / scrollArea.scrollHeight > 0.1) {
-				manualScroll = true;
-			}
-		}, 50);
-	});
+	const onscroll = useDebounce((scrollTop: number) => {
+		if (!ref) return;
+		// const scrollTop = ref.getScrollOffset();
+		const scrollHeight = ref.getScrollSize();
+		const clientHeight = ref.getViewportSize();
+		const distFromBottom = scrollHeight - (scrollTop + clientHeight);
+		// console.log({ distFromBottom });
+		if (distFromBottom < 5) {
+			manualScroll = false;
+		} else if (distFromBottom > 100 || distFromBottom / scrollHeight > 0.1) {
+			manualScroll = true;
+		}
+	}, 15);
 </script>
 
 <div class={cn('relative overflow-clip rounded-md border', className)}>
-	{#if logs && logs.state === 'connected' && manualScroll}
-		<div class="absolute right-4 bottom-0 z-10" transition:slide={{ axis: 'y' }}>
-			<Button
-				size="icon"
-				class="mb-4 size-8"
-				onclick={() => {
-					scrollToBottom();
-					manualScroll = false;
-				}}
-			>
-				<span class="sr-only">Scroll to bottom</span><IconArrowDown /></Button
-			>
+	{#if logs && logs.state === 'connected'}
+		{#if manualScroll}
+			<div class="absolute right-4 bottom-0 z-10" transition:slide={{ axis: 'y' }}>
+				<Button
+					size="icon"
+					class="mb-4 size-8"
+					onclick={() => {
+						scrollToBottom();
+						manualScroll = false;
+					}}
+				>
+					<span class="sr-only">Scroll to bottom</span><IconArrowDown /></Button
+				>
+			</div>
+		{/if}
+		<VList class="bg-sidebar size-full text-sm" bind:this={ref} {onscroll} data={logs?.logs ?? []}>
+			{#snippet children(log, i)}
+				{@const LogIcon = icons[log.type]}
+				<li
+					class={cn(
+						'grid grid-cols-[max-content_max-content_auto] items-center gap-x-1 px-2 py-1 pr-3',
+						'hover:bg-primary/10 rounded-sm ',
+						typeColors[log.type],
+						i % 2 == 1 && 'bg-background'
+					)}
+				>
+					<Tooltip.Provider>
+						<Tooltip.Root>
+							<Tooltip.Trigger class="pr-1 opacity-40">
+								<LogIcon class={cn('opacity-50', typeColors[log.type])} />
+							</Tooltip.Trigger>
+							<Tooltip.Content
+								><span class="capitalize select-all">{log.type}</span></Tooltip.Content
+							>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+					<Tooltip.Provider>
+						<Tooltip.Root>
+							<Tooltip.Trigger class="pr-1 opacity-40">
+								{ts_fmt(log.timestamp)}
+							</Tooltip.Trigger>
+							<Tooltip.Content
+								><span class="select-all"
+									>{log.timestamp.toLocaleDateString()}
+									{log.timestamp.getHours()}:{log.timestamp
+										.getMinutes()
+										.toString()
+										.padStart(2, '0')}:{log.timestamp
+										.getSeconds()
+										.toString()
+										.padStart(2, '0')}.{log.timestamp
+										.getMilliseconds()
+										.toString()
+										.padStart(3, '0')}</span
+								></Tooltip.Content
+							>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+					<span>{log.text}</span>
+				</li>
+			{/snippet}
+		</VList>
+	{/if}
+	{#if !logs || logs.state === 'connecting'}
+		<div class="flex size-full items-center justify-center">
+			<Spinner class="size-10" />
+		</div>
+	{:else if logs.state === 'closed'}
+		<div class="flex size-full items-center justify-center">
+			<Card.Root>
+				<Card.Header>
+					<Card.Title>An error has occurred.</Card.Title>
+				</Card.Header>
+				<Card.Content>
+					<Card.Description
+						><p>Connection to agent logs has closed.</p>
+						<p>Try reloading the page!</p></Card.Description
+					>
+				</Card.Content>
+			</Card.Root>
 		</div>
 	{/if}
-	<ScrollArea class="bg-sidebar size-full" bind:viewportRef={scrollArea}>
-		{#if !logs || logs.state === 'connecting'}
-			<div class="flex size-full items-center justify-center">
-				<Spinner class="size-10" />
-			</div>
-		{:else if logs.state === 'closed'}
-			<div class="flex size-full items-center justify-center">
-				<Card.Root>
-					<Card.Header>
-						<Card.Title>An error has occurred.</Card.Title>
-					</Card.Header>
-					<Card.Content>
-						<Card.Description
-							><p>Connection to agent logs has closed.</p>
-							<p>Try reloading the page!</p></Card.Description
-						>
-					</Card.Content>
-				</Card.Root>
-			</div>
-		{:else}
-			<ul class="min-h-0 pb-2 text-sm whitespace-pre-wrap">
-				{#each logs.logs as log, i (i)}
-					{@const LogIcon = icons[log.type]}
-					<li
-						class={cn(
-							'grid grid-cols-[max-content_max-content_auto] items-center gap-x-1 px-2 py-1 pr-3',
-							'hover:bg-primary/10 rounded-sm ',
-							typeColors[log.type],
-							i % 2 == 1 && 'bg-background'
-						)}
-					>
-						<Tooltip.Provider>
-							<Tooltip.Root>
-								<Tooltip.Trigger class="pr-1 opacity-40">
-									<LogIcon class={cn('opacity-50', typeColors[log.type])} />
-								</Tooltip.Trigger>
-								<Tooltip.Content
-									><span class="capitalize select-all">{log.type}</span></Tooltip.Content
-								>
-							</Tooltip.Root>
-						</Tooltip.Provider>
-						<Tooltip.Provider>
-							<Tooltip.Root>
-								<Tooltip.Trigger class="pr-1 opacity-40">
-									{ts_fmt(log.timestamp)}
-								</Tooltip.Trigger>
-								<Tooltip.Content
-									><span class="select-all"
-										>{log.timestamp.toLocaleDateString()}
-										{log.timestamp.getHours()}:{log.timestamp
-											.getMinutes()
-											.toString()
-											.padStart(2, '0')}:{log.timestamp
-											.getSeconds()
-											.toString()
-											.padStart(2, '0')}.{log.timestamp
-											.getMilliseconds()
-											.toString()
-											.padStart(3, '0')}</span
-									></Tooltip.Content
-								>
-							</Tooltip.Root>
-						</Tooltip.Provider>
-						<span>{log.text}</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</ScrollArea>
 </div>
