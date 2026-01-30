@@ -3,10 +3,6 @@
 	"private": false,
 	"version": "1.1.1",
 	"type": "module",
-	"files": [
-		"build"
-	],
-	"bin": "build/server.js",
 	"scripts": {
 		"dev": "vite dev",
 		"gen": "npx openapi-typescript api_v1.json -o src/generated/api.ts",
@@ -16,7 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"prepare": "svelte-kit sync && yarn build"
+        "prepare": "svelte-kit sync"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
