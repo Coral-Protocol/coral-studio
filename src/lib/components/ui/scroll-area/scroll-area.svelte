@@ -7,12 +7,14 @@
 		ref = $bindable(null),
 		viewportRef = $bindable(null),
 		class: className,
+		viewportClass,
 		orientation = 'vertical',
 		scrollbarXClasses = '',
 		scrollbarYClasses = '',
 		children,
 		...restProps
 	}: WithoutChild<ScrollAreaPrimitive.RootProps> & {
+		viewportClass?: string;
 		viewportRef?: HTMLElement | null | undefined;
 		orientation?: 'vertical' | 'horizontal' | 'both' | undefined;
 		scrollbarXClasses?: string | undefined;
@@ -28,7 +30,10 @@
 >
 	<ScrollAreaPrimitive.Viewport
 		data-slot="scroll-area-viewport"
-		class="ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1"
+		class={cn(
+			'ring-ring/10 dark:ring-ring/20 dark:outline-ring/40 outline-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] focus-visible:ring-4 focus-visible:outline-1',
+			viewportClass
+		)}
 		bind:ref={viewportRef}
 	>
 		{@render children?.()}
