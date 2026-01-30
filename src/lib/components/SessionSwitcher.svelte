@@ -59,7 +59,7 @@
 			<Command.Root>
 				<Command.Input placeholder="Search" />
 				<Command.List>
-					{#if ctx.server.sessions.length === 0 && !ctx.session}
+					{#if Object.values(ctx.server.sessions).length === 0 && !ctx.session}
 						<Command.Empty>No sessions found</Command.Empty>
 					{:else}
 						<Command.Group>
