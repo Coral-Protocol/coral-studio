@@ -44,6 +44,7 @@
 	import { base } from '$app/paths';
 	import { useDebounce, watch } from 'runed';
 	import config from '$lib/config';
+	import SessionSwitcher from './SessionSwitcher.svelte';
 
 	let content = $state('');
 	let user_email = $state('');
@@ -167,17 +168,6 @@
 		}
 	});
 
-	let sessionSearcherOpen = $state(false);
-	let value = $state('');
-	let triggerRef = $state<HTMLButtonElement>(null!);
-
-	function closeAndFocusTrigger() {
-		sessionSearcherOpen = false;
-		tick().then(() => {
-			triggerRef.focus();
-		});
-	}
-
 	let openQuickswitch = $state(false),
 		openShortcuts = $state(false),
 		debugToolsOpen = $state(false),
@@ -233,7 +223,7 @@
 		}
 	};
 
-	$inspect(ctx.server.sessions);
+	$inspect(ctx.server.sessions, ctx.session).with(console.debug);
 
 	function unreachable(PUBLIC_LOGIN_BEHAVIOUR: never) {
 		throw new Error('Function not implemented.');
@@ -376,79 +366,7 @@
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
 					<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
-					<Popover.Root bind:open={sessionSearcherOpen}>
-						<section class="my-2 flex w-full gap-2">
-							<Popover.Trigger
-								class="bg-sidebar border-offset-background dark:aria-invalid:border-destructive/40 aria-invalid:border-destructive relative  w-full flex-1 grow justify-between truncate border-1 "
-								aria-invalid={ctx.session !== null && !ctx.session.connected}
-							>
-								{#snippet child({ props })}
-									<Button
-										variant="outline"
-										{...props}
-										role="combobox"
-										aria-expanded={sessionSearcherOpen}
-										bind:ref={triggerRef}
-									>
-										<span class="w-4/5 grow truncate overflow-hidden">
-											{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a Session'}
-										</span>
-										<CaretUpDown />
-									</Button>
-								{/snippet}
-							</Popover.Trigger>
-							<!-- <Button
-								onclick={() => {
-									goto(`${base}/sessions/create`);
-								}}
-								bind:ref={sessionSwitcher}>New</Button
-							> -->
-							<Popover.Content align="start" class="p-1">
-								<Command.Root>
-									<Command.Input placeholder="Search" />
-									<Command.List>
-										{#if ctx.server.sessions.length === 0 && !ctx.session}
-											<Command.Empty>No sessions found</Command.Empty>
-										{:else}
-											<Command.Group>
-												{#each Object.values(ctx.server.sessions) as basicSession (basicSession.sessionId)}
-													<Command.Item
-														class="text-wrap break-all"
-														onSelect={() => {
-															value = basicSession.sessionId;
-															closeAndFocusTrigger();
-															ctx.session = new Session({
-																sessionId: basicSession.sessionId,
-																namespace: ctx.server.namespace,
-																server: ctx.server
-															});
-														}}
-													>
-														{basicSession.sessionId}
-													</Command.Item>
-												{/each}
-
-												{#if ctx.session && !(ctx.session.sessionId in ctx.server.sessions)}
-													<!-- Show current session even if it's not in ctx.server.sessions -->
-													<Command.Item
-														class="font-bold text-wrap break-all"
-														onSelect={() => {
-															if (ctx.session) {
-																value = ctx.session.sessionId;
-																closeAndFocusTrigger();
-															}
-														}}
-													>
-														{ctx.session.sessionId} (current)
-													</Command.Item>
-												{/if}
-											</Command.Group>
-										{/if}
-									</Command.List>
-								</Command.Root>
-							</Popover.Content>
-						</section>
-					</Popover.Root>
+					<SessionSwitcher />
 					<!-- <SidebarLink
 						url="{base}/sessions/overview"
 						icon={IconListMag}
