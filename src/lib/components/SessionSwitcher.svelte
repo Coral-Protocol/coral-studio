@@ -9,6 +9,7 @@
 	import { Session } from '$lib/session.svelte';
 	import { tick } from 'svelte';
 	import { appContext } from '$lib/context';
+	import { cn } from '$lib/utils';
 
 	let ctx = appContext.get();
 
@@ -39,6 +40,14 @@
 					aria-expanded={sessionSearcherOpen}
 					bind:ref={triggerRef}
 				>
+					{#if ctx.session}
+						<span
+							class={cn(
+								'size-2 rounded-full',
+								ctx.session.connected ? 'bg-green-400' : 'animate-pulse bg-orange-400'
+							)}
+						></span>
+					{/if}
 					<span class="w-4/5 grow truncate overflow-hidden">
 						{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a Session'}
 					</span>
