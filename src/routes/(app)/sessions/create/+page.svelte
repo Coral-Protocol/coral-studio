@@ -923,7 +923,7 @@
 																		onSelect={() => addAgent(agent)}
 																	>
 																		<span class="grow">{agent.name}</span>
-																		<IconHeartRegular />
+																		<!-- <IconHeartRegular /> -->
 																	</Command.Item></HoverCard.Trigger
 																>
 																<HoverCard.Content
