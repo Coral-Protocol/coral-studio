@@ -24,21 +24,24 @@ jobs:
             keep-env-derivations = true
             keep-derivations = true
             keep-outputs = true
+            experimental-features = nix-command flakes
 
       - name: Restore and save Nix store and npm cache
         uses: nix-community/cache-nix-action@v6
         with:
-          primary-key: build-${{ runner.os }}-${{ hashFiles('yarn.lock', '.npmrc', 'package.json', 'flake.nix', 'flake.lock') }}
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('yarn.lock', 'flake.lock') }}
+          restore-prefixes-first-match: |
+            nix-${{ runner.os }}-
           # do purge caches
           purge: true
           # purge all versions of the cache
-          purge-prefixes: build-${{ runner.os }}-
-          # created more than 0 seconds ago relative to the start of the `Post Restore` phase
-          purge-created: 0
-          # except the version with the `primary-key`, if it exists
+          purge-prefixes: nix-${{ runner.os }}-
+          # except the primary key, if it exists
           purge-primary-key: never
+          # created more than 7 days ago relative to the start of the `Post Restore` phase
+          purge-created: 604800
           # and collect garbage in the Nix store until it reaches this size in bytes
-          gc-max-store-size: 0
+          gc-max-store-size: 8000000000
 
       - run: |
           set -eu
@@ -82,6 +85,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
-        name: coral-console_${{ steps.vars.outputs.ref }}
         with:
+          name: coral-console_${{ steps.vars.outputs.ref }}.zip
           files: ./bundle.zip
