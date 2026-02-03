@@ -3,6 +3,8 @@ name: "Build and deploy bundle"
 on:  # yamllint disable-line rule:truthy
   push:
     branches:
+    tags:
+      - '*'
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -49,23 +51,26 @@ jobs:
         shell: bash
         run: |
           set -eu
-          # Determine the branch name depending on event type
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BRANCH="${{ github.head_ref }}"
+          # Determine the branch/ref name depending on event type
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            REF="${{ github.ref_name }}"
+          elifif [ "${{ github.event_name }}" = "pull_request" ]; then
+            REF="${{ github.head_ref }}"
           else
-            BRANCH="${{ github.ref_name }}"
+            REF="${{ github.ref_name }}"
           fi
-          # Normalize branch name
-          BRANCH_SAFE=$(echo "$BRANCH" \
+          # Normalize branch/ref name
+          REF_SAFE=$(echo "$REF" \
             | tr '[:upper:]' '[:lower:]' \
             | tr '/' '-' \
             | tr -cs 'a-z0-9._-' '-' \
             | sed 's/^-*//;s/-*$//')
-          echo "branch=$BRANCH_SAFE" >> "$GITHUB_OUTPUT"
+          echo "ref=$REF_SAFE" >> "$GITHUB_OUTPUT"
       - name: Upload Artifact
+        if: github.ref_type != 'tag'
         uses: actions/upload-artifact@v4
         with:
-          name: coral-console_${{ steps.vars.outputs.branch }}
+          name: coral-console_${{ steps.vars.outputs.ref }}
           path: |
             ./output/*
       - name: Prepare for Release
@@ -77,5 +82,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
+        name: coral-console_${{ steps.vars.outputs.ref }}
         with:
           files: ./bundle.zip
