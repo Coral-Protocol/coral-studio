@@ -975,26 +975,6 @@
 										</Menubar.Sub> -->
 									</Menubar.Content>
 								</Menubar.Menu>
-								<Combobox
-									class="ml-auto border-0 "
-									side="bottom"
-									align="start"
-									selectPlaceholder="Add agent"
-									selected={undefined}
-									options={Object.values(ctx.server.catalogs).map((catalog) => ({
-										heading: catalog.identifier.type,
-										items: Object.values(catalog.agents).map((a) => ({
-											label: `${a.name}`,
-											key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-											value: {
-												registrySourceId: catalog.identifier,
-												name: a.name,
-												version: a.versions.at(-1)! // won't be in registry if 0 versions
-											}
-										}))
-									}))}
-									searchPlaceholder="Search..."
-								/>
 							</Menubar.Root>
 							<Tabs.Root bind:value={agentsListTabs} class="min-h-0 flex-1 overflow-hidden">
 								<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
@@ -1135,7 +1115,7 @@
 				>
 					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
 						<Tabs.List
-							class="bg-sidebar flex w-full justify-start rounded-none border-0 *:rounded-none"
+							class="bg-sidebar  flex w-full justify-start rounded-none border-0 *:rounded-none"
 						>
 							<Tabs.Trigger value="json" class="grow-0">JSON{jsonDirty ? '*' : ''}</Tabs.Trigger>
 							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
