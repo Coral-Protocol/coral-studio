@@ -54,7 +54,7 @@ jobs:
           # Determine the branch/ref name depending on event type
           if [ "${{ github.ref_type }}" = "tag" ]; then
             REF="${{ github.ref_name }}"
-          elifif [ "${{ github.event_name }}" = "pull_request" ]; then
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             REF="${{ github.head_ref }}"
           else
             REF="${{ github.ref_name }}"
