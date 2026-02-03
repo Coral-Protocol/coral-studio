@@ -2,6 +2,12 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
+	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
+	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -13,16 +19,11 @@
 
 	import * as Form from '$lib/components/ui/form';
 
+	import { PersistedState } from 'runed';
+
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table/index.js';
-
-	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
-	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
-	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
-	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { idAsKey, type PublicRegistryAgent } from '$lib/threads';
@@ -520,7 +521,7 @@
 
 	$effect(() => {
 		if ($formData.agents.length > 0) {
-			if (currentTab === 'groups') {
+			if (currentTab === 'groups' && settings.current.enableAgentGraphView) {
 				agentsListTabs = 'graph';
 			} else {
 				agentsListTabs = 'table';
@@ -528,12 +529,25 @@
 		}
 	});
 
-	import CodeMirror from 'svelte-codemirror-editor';
-	import { javascript } from '@codemirror/lang-javascript';
-	import { json } from '@codemirror/lang-json';
-	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { preventDefault } from 'svelte/legacy';
+	type Settings = {
+		enableAgentGraphView: boolean;
+		columns: {
+			name: boolean;
+			version: boolean;
+			registrySource: boolean;
+			agent: boolean;
+		};
+	};
+
+	const settings = new PersistedState<Settings>('appSettings', {
+		enableAgentGraphView: true,
+		columns: {
+			name: true,
+			version: true,
+			registrySource: true,
+			agent: true
+		}
+	});
 
 	function toJsObjectLiteral(value: unknown, indent = 2): string {
 		return (
@@ -585,6 +599,18 @@
 			cancelled = true;
 		};
 	});
+
+	function clearSession() {
+		$formData = {
+			groups: [],
+			tools: {},
+			sessionRuntimeSettings: {
+				ttl: 50000
+			},
+			agents: []
+		};
+		selectedAgent = null;
+	}
 </script>
 
 {#snippet optionRow(name: any, opt: any)}
@@ -839,84 +865,112 @@
 								<Menubar.Menu>
 									<Menubar.Trigger>Session</Menubar.Trigger>
 									<Menubar.Content>
-										<Menubar.Item>
-											New Tab <Menubar.Shortcut>⌘T</Menubar.Shortcut>
-										</Menubar.Item>
-										<Menubar.Item>
-											New Window <Menubar.Shortcut>⌘N</Menubar.Shortcut>
-										</Menubar.Item>
-										<Menubar.Item>New Incognito Window</Menubar.Item>
+										<Menubar.Item onSelect={clearSession}>Clear session</Menubar.Item>
 										<Menubar.Separator />
-										<Menubar.Sub>
-											<Menubar.SubTrigger>Share</Menubar.SubTrigger>
-											<Menubar.SubContent>
-												<Menubar.Item>Email link</Menubar.Item>
-												<Menubar.Item>Messages</Menubar.Item>
-												<Menubar.Item>Notes</Menubar.Item>
-											</Menubar.SubContent>
-										</Menubar.Sub>
-										<Menubar.Separator />
-										<Menubar.Item>
-											Print... <Menubar.Shortcut>⌘P</Menubar.Shortcut>
-										</Menubar.Item>
-									</Menubar.Content>
-								</Menubar.Menu>
-								<Menubar.Menu>
-									<Menubar.Trigger>Edit</Menubar.Trigger>
-									<Menubar.Content>
-										<Menubar.Item>
-											Undo <Menubar.Shortcut>⌘Z</Menubar.Shortcut>
-										</Menubar.Item>
-										<Menubar.Item>
-											Redo <Menubar.Shortcut>⇧⌘Z</Menubar.Shortcut>
-										</Menubar.Item>
-										<Menubar.Separator />
-										<Menubar.Sub>
-											<Menubar.SubTrigger>Find</Menubar.SubTrigger>
-											<Menubar.SubContent>
-												<Menubar.Item>Search the web</Menubar.Item>
-												<Menubar.Separator />
-												<Menubar.Item>Find...</Menubar.Item>
-												<Menubar.Item>Find Next</Menubar.Item>
-												<Menubar.Item>Find Previous</Menubar.Item>
-											</Menubar.SubContent>
-										</Menubar.Sub>
-										<Menubar.Separator />
-										<Menubar.Item>Cut</Menubar.Item>
-										<Menubar.Item>Copy</Menubar.Item>
-										<Menubar.Item>Paste</Menubar.Item>
+										<Menubar.Item
+											onSelect={async () => (
+												importFromJson(await navigator.clipboard.readText()),
+												toast.success('Session JSON imported from clipboard')
+											)}>Import JSON from clipboard</Menubar.Item
+										>
+										<Menubar.Item
+											onSelect={() => (
+												navigator.clipboard.writeText(jsonExample),
+												toast.success('Session JSON copied to clipboard')
+											)}>Export JSON to clipboard</Menubar.Item
+										>
 									</Menubar.Content>
 								</Menubar.Menu>
 								<Menubar.Menu>
 									<Menubar.Trigger>View</Menubar.Trigger>
 									<Menubar.Content>
-										<Menubar.CheckboxItem>Always Show Bookmarks Bar</Menubar.CheckboxItem>
-										<Menubar.CheckboxItem>Always Show Full URLs</Menubar.CheckboxItem>
+										<Menubar.CheckboxItem bind:checked={settings.current.enableAgentGraphView}
+											>Always Switch to Graph</Menubar.CheckboxItem
+										>
 										<Menubar.Separator />
-										<Menubar.Item inset>
-											Reload <Menubar.Shortcut>⌘R</Menubar.Shortcut>
-										</Menubar.Item>
-										<Menubar.Item inset>
-											Force Reload <Menubar.Shortcut>⇧⌘R</Menubar.Shortcut>
-										</Menubar.Item>
-										<Menubar.Separator />
-										<Menubar.Item inset>Toggle Fullscreen</Menubar.Item>
-										<Menubar.Separator />
-										<Menubar.Item inset>Hide Sidebar</Menubar.Item>
+										<Menubar.Sub>
+											<Menubar.SubTrigger disabled class="opacity-50">Columns</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Menubar.CheckboxItem>Name</Menubar.CheckboxItem>
+												<Menubar.CheckboxItem>Version</Menubar.CheckboxItem>
+												<Menubar.CheckboxItem>Registry Source</Menubar.CheckboxItem>
+												<Menubar.CheckboxItem>Agent</Menubar.CheckboxItem>
+											</Menubar.SubContent>
+										</Menubar.Sub>
 									</Menubar.Content>
 								</Menubar.Menu>
 								<Menubar.Menu>
-									<Menubar.Trigger>Agents</Menubar.Trigger>
+									<Menubar.Trigger class="">Add agents</Menubar.Trigger>
 									<Menubar.Content>
-										<Menubar.RadioGroup>
-											<Menubar.RadioItem value="andy">Andy</Menubar.RadioItem>
-											<Menubar.RadioItem value="benoit">Benoit</Menubar.RadioItem>
-											<Menubar.RadioItem value="Luis">Luis</Menubar.RadioItem>
-										</Menubar.RadioGroup>
-										<Menubar.Separator />
-										<Menubar.Item inset>Edit...</Menubar.Item>
-										<Menubar.Separator />
-										<Menubar.Item inset>Add Agent...</Menubar.Item>
+										<Command.Root>
+											<Command.Input placeholder="Search agents..." />
+											<Command.List>
+												{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+													<Command.Group heading={`${catalog.identifier.type}`}>
+														{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+															<HoverCard.Root>
+																<HoverCard.Trigger class="m-0"
+																	><Command.Item
+																		class=" w-full cursor-pointer  border-b px-4 py-2"
+																		onSelect={() => addAgent(agent)}
+																	>
+																		<span class="grow">{agent.name}</span>
+																		<IconHeartRegular />
+																	</Command.Item></HoverCard.Trigger
+																>
+																<HoverCard.Content
+																	side="right"
+																	class="max-w-1/2 min-w-full whitespace-pre-wrap"
+																>
+																	{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																		<span class="text-muted">loading...</span>
+																	{:then details}
+																		{details.registryAgent.info.description}
+																	{/await}
+																</HoverCard.Content>
+															</HoverCard.Root>
+														{/each}
+													</Command.Group>
+												{/each}
+											</Command.List>
+										</Command.Root>
+										<!-- <Menubar.Sub>
+											<Menubar.SubTrigger>Marketplace</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Command.Root>
+													<Command.Input placeholder="Search agents..." />
+													<Command.List>
+														{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+															<Command.Group heading={`${catalog.identifier.type}`}>
+																{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+																	<HoverCard.Root>
+																		<HoverCard.Trigger class="m-0"
+																			><Command.Item
+																				class=" w-full cursor-pointer  border-b px-4 py-2"
+																				onSelect={() => addAgent(agent)}
+																			>
+																				<span class="grow">{agent.name}</span>
+																				<IconHeartRegular />
+																			</Command.Item></HoverCard.Trigger
+																		>
+																		<HoverCard.Content
+																			side="right"
+																			class="w-1/2 whitespace-pre-wrap"
+																		>
+																			{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																				<Skeleton class="h-4 w-full" />
+																			{:then details}
+																				{details.registryAgent.info.description}
+																			{/await}
+																		</HoverCard.Content>
+																	</HoverCard.Root>
+																{/each}
+															</Command.Group>
+														{/each}
+													</Command.List>
+												</Command.Root>
+											</Menubar.SubContent>
+										</Menubar.Sub> -->
 									</Menubar.Content>
 								</Menubar.Menu>
 								<Combobox
