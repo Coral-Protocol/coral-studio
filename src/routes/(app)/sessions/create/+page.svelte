@@ -65,7 +65,6 @@
 	import { randomAdjective, randomAnimal } from '$lib/words';
 	import { fade } from 'svelte/transition';
 	import CopyButton from '$lib/components/copy-button.svelte';
-	import { PersistedState } from 'runed';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
