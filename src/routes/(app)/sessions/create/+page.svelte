@@ -5,7 +5,7 @@
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
 	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
+	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
@@ -16,6 +16,9 @@
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
+	import * as Item from '$lib/components/ui/item/index.js';
 
 	import * as Form from '$lib/components/ui/form';
 
