@@ -68,6 +68,7 @@
 	import { randomAdjective, randomAnimal } from '$lib/words';
 	import { fade } from 'svelte/transition';
 	import CopyButton from '$lib/components/copy-button.svelte';
+	import Pip from '$lib/components/pip.svelte';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -902,7 +903,12 @@
 									</Menubar.Content>
 								</Menubar.Menu>
 								<Menubar.Menu>
-									<Menubar.Trigger class="">Add agents</Menubar.Trigger>
+									<Menubar.Trigger class="relative">
+										Add agents
+										{#if $formData.agents.length < 1}
+											<Pip size={2} color="accent" />
+										{/if}
+									</Menubar.Trigger>
 									<Menubar.Content>
 										<Command.Root>
 											<Command.Input placeholder="Search agents..." />
@@ -1057,54 +1063,6 @@
 								</Tabs.Content>
 							</Tabs.Root>
 						</Resizable.Pane>
-						<!-- <Resizable.Handle /> -->
-
-						<!-- <Resizable.Pane class="bg-card flex min-h-0 flex-col" minSize={5} defaultSize={15}>
-							<h2 class="mx-auto py-4">Available Agents</h2>
-
-							{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
-								<ol class="border-t">
-									{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
-										<li class="hover:bg-sidebar grid w-full grid-cols-5 gap-2 border-b px-4 py-2">
-											<Dialog.Root>
-												<Dialog.Trigger
-													type="button"
-													class="{buttonVariants({
-														variant: 'default',
-														size: 'sm'
-													})} col-span-4 w-full grow cursor-help justify-start truncate overflow-hidden text-xs"
-													>{agent.name}</Dialog.Trigger
-												>
-												<Dialog.Content>
-													<Dialog.Header>
-														<Dialog.Title>{agent.name}</Dialog.Title>
-														<Dialog.Description class="whitespace-pre-line">
-															{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																<Skeleton class="h-4 w-full" />
-															{:then details}
-																{details.registryAgent.info.description}
-															{/await}
-														</Dialog.Description>
-													</Dialog.Header>
-													<Dialog.Footer>
-														<Dialog.Close
-															class="truncate {buttonVariants({ variant: 'default' })}"
-															onclick={() => addAgent(agent)}>Add Agent</Dialog.Close
-														>
-													</Dialog.Footer>
-												</Dialog.Content>
-											</Dialog.Root>
-											<Button
-												class="col-span-1 w-full grow  truncate overflow-hidden text-xs "
-												size="sm"
-												onclick={() => addAgent(agent)}
-												><IconPlusRegular /><span class="sr-only">Add</span></Button
-											>
-										</li>
-									{/each}
-								</ol>
-							{/each}
-						</Resizable.Pane> -->
 					</Resizable.PaneGroup>
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
@@ -1611,7 +1569,7 @@
 											}}
 										>
 											<Select.Trigger>
-												<span>Add agents</span>
+												<span>Add agents </span>
 											</Select.Trigger>
 											<Select.Content>
 												{#if $formData.agents.length == 0}
