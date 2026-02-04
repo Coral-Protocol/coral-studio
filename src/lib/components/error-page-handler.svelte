@@ -4,6 +4,7 @@
 	import * as Alert from '$lib/components/ui/alert';
 	import IconAlertCircle from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
 	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import { base } from '$app/paths';
 
 	let { error: propError, status: propStatus } = $props<{
 		error?: string;
@@ -35,7 +36,7 @@
 	</Alert.Root>
 
 	<ol class="mt-4 flex gap-2">
-		<Button href="/">Go Home</Button>
+		<Button href={base}>Go Home</Button>
 		<Button onclick={() => window.history.back()}>Go Back</Button>
 		<Button onclick={() => (window.location.reload(), (reload = true))} class="relative">
 			<Spinner
