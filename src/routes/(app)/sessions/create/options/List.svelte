@@ -1,7 +1,5 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 
 	import { componentMap, type OptionProps, type OptionTypes } from '../OptionField.svelte';

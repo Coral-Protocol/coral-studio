@@ -2,7 +2,6 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Label } from '$lib/components/ui/label';
 	import type { Snippet } from 'svelte';
-	import type { string } from 'zod';
 	import type { LabelRootProps } from 'bits-ui';
 
 	const {
