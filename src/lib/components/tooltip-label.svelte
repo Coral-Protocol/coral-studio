@@ -2,7 +2,7 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import { Label } from '$lib/components/ui/label';
 	import type { Snippet } from 'svelte';
-	import type { string } from 'zod';
+	import type { LabelRootProps } from 'bits-ui';
 
 	const {
 		tooltip,
@@ -11,8 +11,9 @@
 		required,
 		title,
 		class: className,
-		children: labelChild
-	}: {
+		children: labelChild,
+		...rest
+	}: LabelRootProps & {
 		extra?: Record<string, ExtraValue>;
 		tooltip?: string;
 		type?: string;
@@ -23,7 +24,7 @@
 	} = $props();
 
 	type ExtraValue =
-		| true
+		| boolean
 		| string
 		| {
 				value: string | true;
@@ -37,7 +38,8 @@
 			{#snippet child({ props })}
 				<Label
 					{...props}
-					class="{className} relative !m-0 inline w-full cursor-help content-center truncate hover:min-w-max "
+					{...rest}
+					class="{className} relative !m-0 inline w-full cursor-help content-center truncate"
 				>
 					<span class="flex items-center overflow-hidden">
 						<span class="truncate">

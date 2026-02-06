@@ -45,7 +45,6 @@
 	import { zod4 } from 'sveltekit-superforms/adapters';
 	import * as schemas from './schemas';
 
-	import type { HTMLInputTypeAttribute } from 'svelte/elements';
 	import type { paths, components, operations } from '$generated/api';
 	import { onMount, tick } from 'svelte';
 
@@ -69,6 +68,7 @@
 	import { fade } from 'svelte/transition';
 	import CopyButton from '$lib/components/copy-button.svelte';
 	import Pip from '$lib/components/pip.svelte';
+	import OptionField from './OptionField.svelte';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -77,38 +77,6 @@
 	/// {a?: number | undefined} -> {a: number | undefined}
 	type Complete<T> = {
 		[P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : T[P] | undefined;
-	};
-
-	const inputTypes: {
-		[K in PublicRegistryAgent['options'][string]['type']]: HTMLInputTypeAttribute;
-	} = {
-		string: 'text',
-		number: 'number',
-		secret: 'password',
-		blob: 'file',
-		'list[blob]': 'file',
-		bool: 'number',
-		i8: 'number',
-		'list[i8]': 'number',
-		f64: 'number',
-		'list[f64]': 'number',
-		f32: 'number',
-		'list[f32]': 'number',
-		i32: 'number',
-		'list[i32]': 'number',
-		i64: 'text',
-		'list[i64]': 'text',
-		i16: 'number',
-		'list[i16]': 'number',
-		'list[string]': 'string',
-		u8: 'number',
-		'list[u8]': 'number',
-		u32: 'number',
-		'list[u32]': 'number',
-		u64: 'text',
-		'list[u64]': 'text',
-		u16: 'number',
-		'list[u16]': 'number'
 	};
 
 	let ctx = appContext.get();
@@ -174,8 +142,8 @@
 						server: ctx.server
 					});
 				} else {
-					throw new Error('no data received');
 					sendingForm = false;
+					throw new Error('no data received');
 				}
 			} catch (e) {
 				console.log(e);
@@ -222,9 +190,6 @@
 			}
 		}
 	} satisfies Provider;
-
-	let newServerAddress: string = $state('');
-	let newServerPort: string = $state('');
 
 	const importFromJson = (json: string) => {
 		try {
@@ -615,220 +580,6 @@
 		selectedAgent = null;
 	}
 </script>
-
-{#snippet optionRow(name: any, opt: any)}
-	<li class="hover:bg-muted/50 border-b px-4 py-2">
-		<Form.ElementField
-			class="flex gap-2"
-			{form}
-			name="agents[{selectedAgent!}].options.{name}.value"
-		>
-			<Form.Control>
-				{#snippet children({ props })}
-					<TooltipLabel
-						class="max-w-1/4 min-w-1/4 {opt.required ? 'hover:pr-[0.5em]' : ''}"
-						title={name}
-						tooltip={opt?.display?.description ?? 'No description provided.'}
-						extra={{
-							required: opt.required,
-							type: opt.type
-						}}
-					>
-						{opt?.display?.label ?? name}
-					</TooltipLabel>
-
-					{#if opt.type === 'blob'}
-						<Input
-							{...props}
-							class="m-0"
-							type={inputTypes[opt.type as keyof typeof inputTypes]}
-							bind:value={
-								() => $formData.agents[selectedAgent!]!.options[name]?.value,
-								(value) => {
-									$formData.agents[selectedAgent!]!.options[name] = {
-										type: opt.type,
-										value
-									} as any; // FIXME: !!
-								}
-							}
-							aria-invalid={$allErrors.length > 0 &&
-								opt.required &&
-								$formData.agents[selectedAgent!]!.options[name]?.value === undefined}
-							placeholder={'default' in opt ? opt.default?.toString() : undefined}
-						/>
-					{:else if opt.type.includes('list')}
-						{@const list = Array.isArray($formData.agents[selectedAgent!]!.options[name]?.value)
-							? ($formData.agents[selectedAgent!]!.options[name]!.value as any[])
-							: []}
-						<ol class="flex w-full flex-col gap-1 rounded-md">
-							<li>
-								<Button
-									onclick={() => {
-										const optObj = $formData.agents[selectedAgent!]!.options[name];
-										if (optObj && Array.isArray(optObj.value)) {
-											(optObj.value as string[]).push('');
-										} else {
-											$formData.agents[selectedAgent!]!.options[name] = {
-												type: opt.type,
-												value: ['']
-											} as any;
-										}
-										$formData.agents = $formData.agents;
-									}}
-									class="m-0 w-full">Add value</Button
-								>
-							</li>
-							{#each list, i}
-								<li>
-									<ButtonGroup.Root class="m-0 w-full">
-										<Input
-											type={opt.secret
-												? 'password'
-												: inputTypes[opt.type as keyof typeof inputTypes]}
-											bind:value={
-												() => {
-													const optObj = $formData.agents[selectedAgent!]!.options[name];
-													const arr = Array.isArray(optObj?.value)
-														? (optObj.value as any[])
-														: undefined;
-													return arr ? arr[i] : '';
-												},
-												(value) => {
-													const optObj = $formData.agents[selectedAgent!]!.options[name];
-													if (!optObj || !Array.isArray(optObj.value)) {
-														// initialize as array and set the i'th element
-														$formData.agents[selectedAgent!]!.options[name] = {
-															type: opt.type,
-															value: []
-														} as any;
-													}
-													($formData.agents[selectedAgent!]!.options[name]!.value as any[])[i] =
-														value;
-													// trigger reactivity
-													$formData.agents = $formData.agents;
-												}
-											}
-										/>
-										<Button
-											variant="outline"
-											class="m-0"
-											size="icon"
-											onclick={() => {
-												const optObj = $formData.agents[selectedAgent!]!.options[name];
-												if (optObj && Array.isArray(optObj.value)) {
-													(optObj.value as string[]).splice(i, 1);
-													// trigger reactivity
-													$formData.agents = $formData.agents;
-												}
-											}}
-										>
-											<IconXRegular />
-										</Button>
-									</ButtonGroup.Root>
-								</li>
-							{/each}
-						</ol>
-					{:else if opt.type === 'bool'}
-						<ButtonGroup.Root class="m-0 justify-start">
-							<Button
-								class={cn(
-									($formData.agents[selectedAgent!]!.options[name]?.value ?? opt.default) ===
-										true && 'bg-accent text-accent-foreground'
-								)}
-								onclick={() => {
-									const optObj = $formData.agents[selectedAgent!]!.options[name];
-									if (optObj) {
-										optObj.value = true;
-									} else {
-										$formData.agents[selectedAgent!]!.options[name] = {
-											type: opt.type,
-											value: true
-										} as any;
-									}
-									$formData.agents = $formData.agents;
-								}}>True</Button
-							>
-							<Button
-								class=" {$formData.agents[selectedAgent!]!.options[name]?.value === false ||
-								($formData.agents[selectedAgent!]!.options[name]?.value === undefined &&
-									opt.default === false)
-									? 'bg-accent text-accent-foreground'
-									: ''}"
-								onclick={() => {
-									const optObj = $formData.agents[selectedAgent!]!.options[name];
-									if (optObj) {
-										optObj.value = false;
-									} else {
-										$formData.agents[selectedAgent!]!.options[name] = {
-											type: opt.type,
-											value: false
-										} as any;
-									}
-									$formData.agents = $formData.agents;
-								}}>False</Button
-							>
-						</ButtonGroup.Root>
-					{:else if opt?.display?.multiline === true}
-						<Textarea
-							{...props}
-							class="relative m-0 h-42 resize-none"
-							bind:value={
-								() => {
-									const v = $formData.agents[selectedAgent!]!.options[name]?.value;
-									return typeof v === 'string' || typeof v === 'number' ? String(v) : '';
-								},
-								(value) => {
-									$formData.agents[selectedAgent!]!.options[name] = {
-										type: opt.type,
-										value
-									} as any;
-								}
-							}
-							defaultValue={opt.default}
-							aria-invalid={(() => {
-								const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
-								if (error && JSON.stringify(error).includes('{}')) return undefined;
-								else if (error) return true;
-								else return undefined;
-							})()}
-							placeholder={'default' in opt ? opt.default?.toString() : undefined}
-						/>
-					{:else}
-						<Input
-							{...props}
-							type={opt.secret ? 'password' : inputTypes[opt.type as keyof typeof inputTypes]}
-							bind:value={
-								() => $formData.agents[selectedAgent!]!.options[name]?.value,
-								(value) => {
-									$formData.agents[selectedAgent!]!.options[name] = {
-										type: opt.type,
-										value
-									} as any; // FIXME: !!
-								}
-							}
-							class="m-0 w-full "
-							defaultValue={opt.default}
-							aria-invalid={(() => {
-								const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
-								if (error && JSON.stringify(error).includes('{}')) return undefined;
-								else if (error) return true;
-								else return undefined;
-							})()}
-							placeholder={'default' in opt ? opt.default?.toString() : undefined}
-						/>
-					{/if}
-				{/snippet}
-			</Form.Control>
-		</Form.ElementField>
-
-		{#if JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name]) !== '{}' && JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name])}
-			<span class="text-xs">
-				{$errors?.agents?.[selectedAgent!]?.options?.[name]?.value ??
-					$errors?.agents?.[selectedAgent!]?.options?.[name]}
-			</span>
-		{/if}
-	</li>
-{/snippet}
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
 	<Sidebar.Trigger class="-ml-1" />
@@ -1393,7 +1144,12 @@
 														<Accordion.Content class="!p-0">
 															<ol>
 																{#each entries as [name, opt] (name)}
-																	{@render optionRow(name, opt)}
+																	<OptionField
+																		superform={form}
+																		agent={selectedAgent!}
+																		{name}
+																		meta={opt}
+																	/>
 																{/each}
 															</ol>
 														</Accordion.Content>
@@ -1402,7 +1158,12 @@
 											{:else}
 												<ol>
 													{#each entries as [name, opt] (name)}
-														{@render optionRow(name, opt)}
+														<OptionField
+															superform={form}
+															agent={selectedAgent!}
+															{name}
+															meta={opt}
+														/>
 													{/each}
 												</ol>
 											{/if}
