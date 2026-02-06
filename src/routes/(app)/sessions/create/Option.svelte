@@ -15,6 +15,7 @@
 		: never;
 	export type OptionProps<Type extends OptionTypes = OptionTypes> = {
 		meta: Extract<components['schemas']['RegistryAgent']['options'][string], { type: Type }>;
+		type: Type;
 		value: store.Writable<Extract<Option, { type: Type }>['value'] | undefined>;
 		props: Expand<ControlAttrs>;
 	};
@@ -38,11 +39,16 @@
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 
+	import IconArrowUUpLeft from 'phosphor-icons-svelte/IconArrowUUpLeftRegular.svelte';
+
 	import { cn } from '$lib/utils';
 
 	import type { components } from '$generated/api';
 	import Bool from './options/Bool.svelte';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
+	import String from './options/String.svelte';
+	import Number from './options/Number.svelte';
+	import Blob from './options/Blob.svelte';
 
 	type Props = {
 		superform: SuperForm<Schema>;
@@ -70,37 +76,44 @@
 	const componentMap: {
 		[K in OptionTypes]: Component<any> | undefined;
 	} = {
-		string: undefined,
-		number: undefined,
+		string: String,
+		secret: String,
+
 		bool: Bool,
-		secret: undefined,
-		blob: undefined,
+		blob: Blob,
+
+		number: Number,
+		i8: Number,
+		i16: Number,
+		i32: Number,
+		i64: Number,
+		u8: Number,
+		u16: Number,
+		u32: Number,
+		u64: Number,
+		f32: Number,
+		f64: Number,
+
 		'list[blob]': undefined,
-		i8: undefined,
 		'list[i8]': undefined,
-		i16: undefined,
 		'list[i16]': undefined,
-		i32: undefined,
 		'list[i32]': undefined,
-		i64: undefined,
 		'list[i64]': undefined,
-		u8: undefined,
 		'list[u8]': undefined,
-		u16: undefined,
 		'list[u16]': undefined,
-		u32: undefined,
 		'list[u32]': undefined,
-		u64: undefined,
 		'list[u64]': undefined,
-		f32: undefined,
 		'list[f32]': undefined,
-		f64: undefined,
 		'list[f64]': undefined,
 		'list[string]': undefined
 	};
 </script>
 
-<Form.ElementField class="flex gap-2" {form} name="agents[{agent}].options.{name}.value">
+<Form.ElementField
+	class="grid grid-cols-[1fr_3fr] gap-2"
+	{form}
+	name="agents[{agent}].options.{name}.value"
+>
 	<Form.Control>
 		{#snippet children({ props })}
 			<TooltipLabel
@@ -118,7 +131,7 @@
 			{#if type}
 				{@const O = componentMap[type] as Component<OptionProps>}
 				{#if O}
-					<O {props} {value} {meta} />
+					<O {type} {props} {value} {meta} />
 				{:else}
 					hmm: {type}
 				{/if}
