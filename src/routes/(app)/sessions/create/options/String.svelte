@@ -2,7 +2,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
 
-	import type { OptionProps } from '../Option.svelte';
+	import type { OptionProps } from '../OptionField.svelte';
 
 	type Props = OptionProps<'string' | 'secret'>;
 

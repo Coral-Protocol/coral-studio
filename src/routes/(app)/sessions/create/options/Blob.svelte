@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Input } from '$lib/components/ui/input';
 
-	import type { OptionProps } from '../Option.svelte';
+	import type { OptionProps } from '../OptionField.svelte';
 
 	type Props = OptionProps<
 		'number' | 'i8' | 'i16' | 'i32' | 'i64' | 'u8' | 'u16' | 'u32' | 'u64' | 'f32' | 'f64'

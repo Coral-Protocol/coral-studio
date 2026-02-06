@@ -4,7 +4,7 @@
 
 	import { cn } from '$lib/utils';
 
-	import type { OptionProps } from '../Option.svelte';
+	import type { OptionProps } from '../OptionField.svelte';
 
 	type Props = OptionProps<'bool'>;
 

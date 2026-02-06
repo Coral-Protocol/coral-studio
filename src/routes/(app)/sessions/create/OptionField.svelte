@@ -22,22 +22,13 @@
 </script>
 
 <script lang="ts">
-	// import * as schemas from './schemas';
-
 	import type { Component } from 'svelte';
-	import type { HTMLInputAttributes } from 'svelte/elements';
 	import * as store from 'svelte/store';
-	import {
-		formFieldProxy,
-		type SuperForm,
-		type FormPathLeaves,
-		type FormFieldProxy,
-		type FormPath
-	} from 'sveltekit-superforms';
+	import { type SuperForm } from 'sveltekit-superforms';
 
 	import * as Form from '$lib/components/ui/form';
-	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { buttonVariants } from '$lib/components/ui/button';
 
 	import IconArrowUUpLeft from 'phosphor-icons-svelte/IconArrowUUpLeftRegular.svelte';
 
@@ -57,7 +48,7 @@
 		meta: components['schemas']['RegistryAgent']['options'][string];
 	};
 
-	let { superform: form, agent, name, meta, ...rest }: Props = $props();
+	let { superform: form, agent, name, meta }: Props = $props();
 	const { form: formData, errors } = form;
 
 	let type = $derived(meta.type);
@@ -109,34 +100,59 @@
 	};
 </script>
 
-<Form.ElementField
-	class="grid grid-cols-[1fr_3fr] gap-2"
-	{form}
-	name="agents[{agent}].options.{name}.value"
->
-	<Form.Control>
-		{#snippet children({ props })}
-			<TooltipLabel
-				class="max-w-1/4 min-w-1/4 {meta.required ? 'hover:pr-[0.5em]' : ''}"
-				title={name}
-				for={props.id}
-				tooltip={meta.display?.description ?? 'No description provided.'}
-				extra={{
-					required: meta.required ?? false,
-					type: meta.type
-				}}
-			>
-				{meta.display?.label ?? name}
-			</TooltipLabel>
-			{#if type}
-				{@const O = componentMap[type] as Component<OptionProps>}
-				{#if O}
-					<O {type} {props} {value} {meta} />
-				{:else}
-					hmm: {type}
+<li class="hover:bg-muted/50 border-b px-4 py-2">
+	<Form.ElementField
+		class="grid grid-cols-[1fr_3fr] gap-2 space-y-0"
+		{form}
+		name="agents[{agent}].options.{name}.value"
+	>
+		<Form.Control>
+			{#snippet children({ props })}
+				<div class="grid grid-cols-[auto_min-content] items-center gap-1">
+					<TooltipLabel
+						title={name}
+						for={props.id}
+						tooltip={meta.display?.description ?? 'No description provided.'}
+						extra={{
+							required: meta.required ?? false,
+							type: meta.type
+						}}
+					>
+						{meta.display?.label ?? name}
+					</TooltipLabel>
+					{#if meta.default !== undefined && $value !== undefined && $value !== meta.default}
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger
+									class={cn(buttonVariants({ size: 'icon' }))}
+									onclick={() => {
+										$value = meta.default as any;
+									}}
+								>
+									<IconArrowUUpLeft />
+								</Tooltip.Trigger>
+								<Tooltip.Content>Revert to default</Tooltip.Content>
+							</Tooltip.Root>
+						</Tooltip.Provider>
+					{/if}
+				</div>
+				{#if type}
+					{@const O = componentMap[type] as Component<OptionProps>}
+					{#if O}
+						<O {type} {props} {value} {meta} />
+					{:else}
+						Unknown option type - {type}
+					{/if}
 				{/if}
-			{/if}
-		{/snippet}
-	</Form.Control>
-</Form.ElementField>
-<!-- {#if $errors}<span class="invalid">{$errors}</span>{/if} -->
+			{/snippet}
+		</Form.Control>
+	</Form.ElementField>
+
+	<!-- FIXME: error prop -->
+	<!-- {#if JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name]) !== '{}' && JSON.stringify($errors?.agents?.[selectedAgent!]?.options?.[name])} -->
+	<!-- 	<span class="text-xs"> -->
+	<!-- 		{$errors?.agents?.[selectedAgent!]?.options?.[name]?.value ?? -->
+	<!-- 			$errors?.agents?.[selectedAgent!]?.options?.[name]} -->
+	<!-- 	</span> -->
+	<!-- {/if} -->
+</li>
