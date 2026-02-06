@@ -328,57 +328,26 @@
 		</Sidebar.GroupLabel>
 		<Sidebar.GroupContent>
 			<Sidebar.Menu>
-				<!-- <SidebarLink url="{base}/" icon={IconHome} title="Home" /> -->
 				<SidebarLink url="{base}/server/registry" icon={IconPackage} title="Agent Registry" />
 				<SidebarLink url="{base}/server/logs" icon={IconNotepad} title="Logs" disabled />
+				<SidebarLink url="{base}/templates" icon={IconFileArchive} title="Templates" />
+				<SidebarLink
+					url="{base}/templates/create"
+					icon={IconChats}
+					title="Template builder"
+					disabled={ctx.server.alive === false}
+				/>
 			</Sidebar.Menu>
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
 	<Sidebar.Content class="gap-0 overflow-hidden">
-		<!-- <Sidebar.Group>
-			<Sidebar.Separator />
-
-			<Sidebar.GroupLabel class="text-sidebar-foreground flex flex-row gap-1 pr-0 text-sm">
-				<span class="text-muted-foreground grow font-sans font-medium tracking-wide select-none"
-					>Finance</span
-				>
-			</Sidebar.GroupLabel>
-			<Sidebar.GroupContent>
-				<Sidebar.Menu>
-					<SidebarLink
-						url="{base}/finance/wallet"
-						icon={IconWallet}
-						title="Wallet"
-						disable={sessCtx.connection === null}
-					/>
-					<SidebarLink
-						url="{base}/finance/dashboard"
-						icon={IconDashboard}
-						title="Dashboard"
-						disable={sessCtx.connection === null}
-					/>
-				</Sidebar.Menu>
-			</Sidebar.GroupContent>
-		</Sidebar.Group> -->
 		<Sidebar.Group class="">
 			<Sidebar.Separator />
 
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
+					<Sidebar.GroupLabel class="text-muted-foreground">Active Sessions</Sidebar.GroupLabel>
 					<SessionSwitcher />
-					<!-- <SidebarLink
-						url="{base}/sessions/overview"
-						icon={IconListMag}
-						title="Session Overview"
-						disable={!sessCtx.session}
-					/> -->
-					<SidebarLink
-						url="{base}/sessions/create"
-						icon={IconChats}
-						title="Session builder"
-						disabled={ctx.server.alive === false}
-					/>
 					<NavBundle
 						items={[
 							{
