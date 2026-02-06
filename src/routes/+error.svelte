@@ -1,8 +1,35 @@
 <script lang="ts">
-	import { page } from '$app/state';
+	import * as Sidebar from '$lib/components/ui/sidebar';
+	import AppSidebar from '$lib/components/app-sidebar.svelte';
+	import { socketCtx, UserInput } from '$lib/socket.svelte';
+	import { appContext, type AppContext } from '$lib/context';
+	import { CoralServer } from '$lib/CoralServer.svelte';
+	import { onMount } from 'svelte';
+	import ErrorPageHandler from '$lib/components/error-page-handler.svelte';
+
+	let ctx: AppContext = $state({
+		server: new CoralServer(),
+		connection: null,
+		session: null,
+		sessions: null,
+		registry: null,
+		logs: null
+	});
+	appContext.set(ctx);
+
+	onMount(() => {
+		ctx.server.fetchAll();
+	});
+
+	let socket = $state({
+		userInput: new UserInput()
+	});
+	socketCtx.set(socket);
 </script>
 
-<main class="flex grow flex-col items-center justify-center">
-	<h1 class="text-5xl font-bold">{page.status}</h1>
-	<p class="text-xl">{page.error?.message}</p>
-</main>
+<Sidebar.Provider>
+	<AppSidebar />
+	<Sidebar.Inset class="relative">
+		<ErrorPageHandler />
+	</Sidebar.Inset>
+</Sidebar.Provider>
