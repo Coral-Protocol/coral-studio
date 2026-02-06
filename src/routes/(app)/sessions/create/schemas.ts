@@ -357,38 +357,43 @@ const formSchema = z.object({
 });
 
 export const makeFormSchema = (server: CoralServer) =>
-	formSchema.superRefine((data, ctx) => {
-		data.agents.forEach((agent, i) => {
-			// const regAgent = registryAgents[`${agent.id.name}${agent.id.version}`];
-			// if (!regAgent) {
-			// 	ctx.addIssue({
-			// 		code: 'custom',
-			// 		path: ['agent', i, 'agentName'],
-			// 		message: `Agent name ${agent.id.name}@${agent.id.version} not found in registry.`
-			// 	});
-			// 	return;
-			// }
-			// const runtime = agent.provider.runtime;
-			// if (runtime && regAgent.runtimes.indexOf(runtime) === -1) {
-			// 	ctx.addIssue({
-			// 		code: 'custom',
-			// 		path: ['agent', i, 'provider', 'runtime'],
-			// 		message: `Runtime ${runtime} not available for this agent.`
-			// 	});
-			// }
-			// const options = Object.entries(regAgent.options ?? {});
-			// for (const [name, opt] of options) {
-			// 	if ('required' in opt && opt.required !== true) continue;
-			// 	const val = agent.options[name];
-			// 	if (!val || (val.type === 'string' && val.value.length === 0)) {
-			// 		ctx.addIssue({
-			// 			code: 'custom',
-			// 			path: ['agents', i, 'options', name],
-			// 			message: `Missing required option`
-			// 		});
-			// 	}
-			// }
-		});
+	formSchema.superRefine(async (data, ctx) => {
+		Promise.all(
+			data.agents.map(async (agent, i) => {
+				const meta = await server.lookupAgent(agent.id);
+				// TODO: verify restrictions
+
+				// const regAgent = registryAgents[`${agent.id.name}${agent.id.version}`];
+				// if (!regAgent) {
+				// 	ctx.addIssue({
+				// 		code: 'custom',
+				// 		path: ['agent', i, 'agentName'],
+				// 		message: `Agent name ${agent.id.name}@${agent.id.version} not found in registry.`
+				// 	});
+				// 	return;
+				// }
+				const runtime = agent.provider.runtime;
+				if (runtime && !(runtime in meta.registryAgent.runtimes)) {
+					ctx.addIssue({
+						code: 'custom',
+						path: ['agent', i, 'provider', 'runtime'],
+						message: `Runtime ${runtime} not available for this agent.`
+					});
+				}
+				const options = Object.entries(meta.registryAgent.options ?? {});
+				for (const [name, opt] of options) {
+					if (opt.required !== true) continue;
+					const val = agent.options[name];
+					if (val === undefined || (val.type === 'string' && val.value.length === 0)) {
+						ctx.addIssue({
+							code: 'custom',
+							path: ['agents', i, 'options', name, 'value'],
+							message: `Missing required option`
+						});
+					}
+				}
+			})
+		);
 	});
 
 export type FormSchema = typeof formSchema;
