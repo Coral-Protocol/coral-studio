@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Input } from '$lib/components/ui/input';
 	import { Textarea } from '$lib/components/ui/textarea';
+	import { cn } from '$lib/utils';
 
 	import type { OptionProps } from '../OptionField.svelte';
 
@@ -13,7 +14,7 @@
 {#if meta.display?.multiline === true}
 	<Textarea
 		{...props}
-		class="relative m-0 h-16 resize-y"
+		class={cn('relative m-0 resize-y', !!meta.default && 'h-30')}
 		bind:value={$value}
 		defaultValue={meta.default}
 	/>
