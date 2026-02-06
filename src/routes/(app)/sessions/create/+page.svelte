@@ -7,6 +7,7 @@
 	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
 	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
+	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
 	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
@@ -69,6 +70,8 @@
 	import CopyButton from '$lib/components/copy-button.svelte';
 	import Pip from '$lib/components/pip.svelte';
 	import OptionField from './OptionField.svelte';
+	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
+	import SidebarTab from './SidebarTab.svelte';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -888,23 +891,22 @@
 		<Resizable.Pane defaultSize={50} minSize={25} class="bg-card flex min-h-0 flex-col gap-4">
 			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
 				<Tabs.List class="bg-sidebar flex w-full rounded-none border-0 *:rounded-none">
-					<Tabs.Trigger value="agent" class="flex items-center truncate">
-						<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
-						<span class=" m-auto hidden xl:inline">Agent editor</span>
-					</Tabs.Trigger>
-
-					<Tabs.Trigger value="session" class="flex items-center truncate">
-						<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-						<span
-							class=" m-auto hidden xl:inline {$errors?.sessionRuntimeSettings?.ttl
-								? 'text-destructive'
-								: ''}">Session details</span
-						>
-					</Tabs.Trigger>
-					<Tabs.Trigger value="groups" class="flex items-center truncate">
-						<IconWrenchRegular class="m-auto size-6 xl:hidden xl:size-0 " />
-						Agent Groups
-					</Tabs.Trigger>
+					<SidebarTab
+						value="agent"
+						icon={IconRobotRegular}
+						invalid={Object.values($errors?.agents ?? {}).length > 0}>Agent</SidebarTab
+					>
+					<SidebarTab
+						value="groups"
+						icon={IconUsersThreeRegular}
+						invalid={Object.values($errors?.groups ?? {}).length > 0}>Groups</SidebarTab
+					>
+					<SidebarTab
+						value="session"
+						icon={IconWrenchRegular}
+						invalid={Object.values($errors?.sessionRuntimeSettings ?? {}).length > 0}
+						>Session</SidebarTab
+					>
 				</Tabs.List>
 				{@const availableOptions = {}}
 				{#key selectedAgent}
