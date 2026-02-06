@@ -1,7 +1,6 @@
 <script lang="ts">
-	import * as Form from '$lib/components/ui/form';
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
+	import { Button } from '$lib/components/ui/button';
 
 	import { cn } from '$lib/utils';
 
@@ -28,4 +27,3 @@
 		>
 	</ButtonGroup.Root>
 {/if}
-<!-- {#if $errors}<span class="invalid">{$errors}</span>{/if} -->

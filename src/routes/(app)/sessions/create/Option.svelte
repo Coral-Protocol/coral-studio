@@ -55,7 +55,6 @@
 	const { form: formData, errors } = form;
 
 	let type = $derived(meta.type);
-	$inspect($formData.agents[agent]);
 	let value = $derived(
 		store.toStore(
 			() => {
@@ -63,7 +62,6 @@
 			},
 			(value) => {
 				if (!$formData.agents[agent]) return;
-				console.log(`SET -> ${value}`);
 				$formData.agents[agent].options[name] = { type, value } as any; // Safety: trust me
 			}
 		)
