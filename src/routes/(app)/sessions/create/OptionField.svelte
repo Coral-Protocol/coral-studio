@@ -19,6 +19,47 @@
 		value: store.Writable<Extract<Option, { type: Type }>['value'] | undefined>;
 		props: Expand<ControlAttrs>;
 	};
+
+	import Bool from './options/Bool.svelte';
+	import String from './options/String.svelte';
+	import Number from './options/Number.svelte';
+	import Blob from './options/Blob.svelte';
+	import List from './options/List.svelte';
+
+	export const componentMap: {
+		[K in OptionTypes]: Component<any> | undefined;
+	} = {
+		string: String,
+		secret: String,
+
+		bool: Bool,
+		blob: Blob,
+
+		number: Number,
+		i8: Number,
+		i16: Number,
+		i32: Number,
+		i64: Number,
+		u8: Number,
+		u16: Number,
+		u32: Number,
+		u64: Number,
+		f32: Number,
+		f64: Number,
+
+		'list[blob]': List,
+		'list[i8]': List,
+		'list[i16]': List,
+		'list[i32]': List,
+		'list[i64]': List,
+		'list[u8]': List,
+		'list[u16]': List,
+		'list[u32]': List,
+		'list[u64]': List,
+		'list[f32]': List,
+		'list[f64]': List,
+		'list[string]': List
+	};
 </script>
 
 <script lang="ts">
@@ -35,11 +76,7 @@
 	import { cn } from '$lib/utils';
 
 	import type { components } from '$generated/api';
-	import Bool from './options/Bool.svelte';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
-	import String from './options/String.svelte';
-	import Number from './options/Number.svelte';
-	import Blob from './options/Blob.svelte';
 
 	type Props = {
 		superform: SuperForm<Schema>;
@@ -64,39 +101,11 @@
 		)
 	);
 
-	const componentMap: {
-		[K in OptionTypes]: Component<any> | undefined;
-	} = {
-		string: String,
-		secret: String,
-
-		bool: Bool,
-		blob: Blob,
-
-		number: Number,
-		i8: Number,
-		i16: Number,
-		i32: Number,
-		i64: Number,
-		u8: Number,
-		u16: Number,
-		u32: Number,
-		u64: Number,
-		f32: Number,
-		f64: Number,
-
-		'list[blob]': undefined,
-		'list[i8]': undefined,
-		'list[i16]': undefined,
-		'list[i32]': undefined,
-		'list[i64]': undefined,
-		'list[u8]': undefined,
-		'list[u16]': undefined,
-		'list[u32]': undefined,
-		'list[u64]': undefined,
-		'list[f32]': undefined,
-		'list[f64]': undefined,
-		'list[string]': undefined
+	const valuesEqual = (a: any, b: any) => {
+		if (Array.isArray(a) && Array.isArray(b)) {
+			return a.every((v, i) => v === b[i]);
+		}
+		return a === b;
 	};
 </script>
 
@@ -120,7 +129,7 @@
 					>
 						{meta.display?.label ?? name}
 					</TooltipLabel>
-					{#if meta.default !== undefined && $value !== undefined && $value !== meta.default}
+					{#if meta.default !== undefined && $value !== undefined && !valuesEqual($value, meta.default)}
 						<Tooltip.Provider>
 							<Tooltip.Root>
 								<Tooltip.Trigger
