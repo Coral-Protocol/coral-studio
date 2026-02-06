@@ -52,10 +52,10 @@
 
 .dark {
 	/* ---------- Core Surfaces (NO saturation) ---------- */
-	--background: oklch(0.23 0 0);
+	--background: oklch(0.23 0 0);       /* #171717 */
 	--card: oklch(0.26 0 0);
 	--popover: oklch(0.26 0 0);
-	--secondary: oklch(0.32 0 0);
+	--secondary: oklch(0.78 0.17 75);
 	--muted: oklch(0.32 0 0);
 	--input: oklch(0.28 0 0);
 
@@ -64,40 +64,43 @@
 	--sidebar-accent: oklch(0.32 0 0);
 
 	/* ---------- Text ---------- */
-	--foreground: oklch(0.97 0 0);
-	--card-foreground: oklch(0.97 0 0);
-	--popover-foreground: oklch(0.97 0 0);
-	--secondary-foreground: oklch(0.97 0 0);
-	--sidebar-foreground: oklch(0.97 0 0);
+	--foreground: oklch(1 0 0);          /* #FFFFFF */
+	--card-foreground: oklch(1 0 0);
+	--popover-foreground: oklch(1 0 0);
+	--secondary-foreground: oklch(1 0 0);
+	--sidebar-foreground: oklch(1 0 0);
 
-	--muted-foreground: oklch(0.72 0 0);
+	--muted-foreground: oklch(0.70 0 0); /* #A1A0A0 */
 
 	/* ---------- Primary (structural, neutral) ---------- */
 	--primary: oklch(0.26 0 0);
-	--primary-foreground: oklch(0.97 0 0);
+	--primary-foreground: oklch(1 0 0);
 
 	/* ---------- Accent (ONLY saturated UI color) ---------- */
-	--accent: oklch(0.45 0.08 272);
-	--accent-foreground: oklch(0.97 0 0);
+	--accent: oklch(0.67 0.18 55);        /* #FF5C00 */
+	--accent-foreground: oklch(1 0 0);
+
+	/* ---------- Secondary Brand Highlight ---------- */
+	--brand-secondary: oklch(0.78 0.17 75); /* #FF9A01 */
 
 	/* ---------- Destructive (semantic saturation allowed) ---------- */
-	--destructive: oklch(0.65 0.25 25);
+	--destructive: oklch(0.67 0.20 35);   /* red-orange danger */
 
 	/* ---------- Borders & Focus ---------- */
 	--border: oklch(1 0 0 / 12%);
-	--ring: oklch(0.6 0 0);
+	--ring: oklch(0.70 0 0);
 
 	/* ---------- Sidebar Semantic ---------- */
-	--sidebar-primary: oklch(0.55 0 0);
-	--sidebar-primary-foreground: oklch(0.97 0 0);
-	--sidebar-accent-foreground: oklch(0.97 0 0);
+	--sidebar-primary: oklch(0.34 0 0);
+	--sidebar-primary-foreground: oklch(1 0 0);
+	--sidebar-accent-foreground: oklch(1 0 0);
 	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.6 0 0);
+	--sidebar-ring: oklch(0.70 0 0);
 
 	/* ---------- Telemetry (semantic colors allowed) ---------- */
-	--telemetry-assistant: oklch(0.75 0.23 145);
-	--telemetry-user: oklch(0.78 0.18 180);
-	--telemetry-tool: oklch(0.80 0.22 85);
+	--telemetry-assistant: oklch(0.65 0.14 215); /* #009EB3 */
+	--telemetry-user: oklch(0.78 0.17 75);       /* #FF9A01 */
+	--telemetry-tool: oklch(0.67 0.18 55);       /* #FF5C00 */
 }
 
 
