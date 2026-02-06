@@ -18,6 +18,7 @@
 		type: Type;
 		value: store.Writable<Extract<Option, { type: Type }>['value'] | undefined>;
 		props: Expand<ControlAttrs>;
+		errors: string[];
 	};
 
 	import Bool from './options/Bool.svelte';
@@ -147,8 +148,9 @@
 				</div>
 				{#if type}
 					{@const O = componentMap[type] as Component<OptionProps>}
+					{@const errs = $errors.agents?.[agent]?.options?.[name]?.value ?? []}
 					{#if O}
-						<O {type} {props} {value} {meta} />
+						<O {type} {props} {value} {meta} errors={errs} />
 					{:else}
 						Unknown option type - {type}
 					{/if}

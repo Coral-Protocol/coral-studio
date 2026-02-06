@@ -7,7 +7,7 @@
 		'number' | 'i8' | 'i16' | 'i32' | 'i64' | 'u8' | 'u16' | 'u32' | 'u64' | 'f32' | 'f64'
 	>;
 
-	let { meta, value, props }: Props = $props();
+	let { meta, value, props, errors }: Props = $props();
 </script>
 
 <Input
@@ -16,13 +16,6 @@
 	bind:value={$value}
 	class="m-0 w-full"
 	defaultValue={meta.default}
-	aria-invalid={(() => {
-		return undefined;
-		// FIXME: error prop
-		// const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
-		// if (error && JSON.stringify(error).includes('{}')) return undefined;
-		// else if (error) return true;
-		// else return undefined;
-	})()}
+	aria-invalid={errors.length > 0}
 	placeholder={meta.default?.toString()}
 />

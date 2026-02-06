@@ -7,7 +7,7 @@
 
 	type Props = OptionProps<'string' | 'secret'>;
 
-	let { meta, value, props }: Props = $props();
+	let { meta, value, props, errors }: Props = $props();
 	let isSecret = $derived(meta.type === 'secret' ? true : meta.secret);
 </script>
 
@@ -17,6 +17,7 @@
 		class={cn('relative m-0 resize-y', !!meta.default && 'h-30')}
 		bind:value={$value}
 		defaultValue={meta.default}
+		aria-invalid={errors.length > 0}
 	/>
 {:else}
 	<Input
@@ -25,13 +26,6 @@
 		bind:value={$value}
 		class="m-0 w-full"
 		defaultValue={meta.default}
-		aria-invalid={(() => {
-			return undefined;
-			// FIXME: error prop
-			// const error = $errors?.agents?.[selectedAgent!]?.options?.[name];
-			// if (error && JSON.stringify(error).includes('{}')) return undefined;
-			// else if (error) return true;
-			// else return undefined;
-		})()}
+		aria-invalid={errors.length > 0}
 	/>
 {/if}
