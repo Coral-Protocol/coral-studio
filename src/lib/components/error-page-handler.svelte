@@ -36,7 +36,7 @@
 	</Alert.Root>
 
 	<ol class="mt-4 flex gap-2">
-		<Button href={base}>Go Home</Button>
+		<Button href="{base}/">Go Home</Button>
 		<Button onclick={() => window.history.back()}>Go Back</Button>
 		<Button onclick={() => (window.location.reload(), (reload = true))} class="relative">
 			<Spinner
