@@ -614,6 +614,8 @@
 		};
 		selectedAgent = null;
 	}
+
+	let selectedAgents: Set<number> = $state(new Set());
 </script>
 
 {#snippet optionRow(name: any, opt: any)}
@@ -903,6 +905,31 @@
 									</Menubar.Content>
 								</Menubar.Menu>
 								<Menubar.Menu>
+									<Menubar.Trigger>Selection</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.Item onSelect={() => (selectedAgent = null)}
+											>Clear Selection</Menubar.Item
+										>
+										<Menubar.Item
+											onSelect={() => (selectedAgents = new Set($formData.agents.map((_, i) => i)))}
+											>Select all</Menubar.Item
+										>
+										<Menubar.Separator />
+
+										<Menubar.Item
+											onSelect={() => (
+												Array.from(selectedAgents)
+													.sort((a, b) => b - a)
+													.forEach((i) => removeAgent(i)),
+												(selectedAgents = new Set())
+											)}>Delete selected</Menubar.Item
+										>
+										<Menubar.Separator />
+										<Menubar.Item onSelect={() => (selectedAgent = null)}>Copy</Menubar.Item>
+										<Menubar.Item onSelect={() => (selectedAgent = null)}>Paste</Menubar.Item>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Menubar.Menu>
 									<Menubar.Trigger class="relative">
 										Add agents
 										{#if $formData.agents.length < 1}
@@ -987,7 +1014,17 @@
 									<Table.Root class="w-full">
 										<Table.Header>
 											<Table.Row>
-												<Table.Head><Checkbox /></Table.Head>
+												<Table.Head
+													><Checkbox
+														onCheckedChange={(checked) => {
+															if (checked) {
+																selectedAgents = new Set($formData.agents.map((_, i) => i));
+															} else {
+																selectedAgents = new Set();
+															}
+														}}
+													/></Table.Head
+												>
 												<Table.Head>Name</Table.Head>
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
@@ -996,39 +1033,52 @@
 											</Table.Row>
 										</Table.Header>
 										<Table.Body>
-											{#each $formData.agents as agent, i}
-												<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
-													<Table.Cell class="max-w-[100px]">
-														<p class="truncate font-medium"><Checkbox /></p>
-													</Table.Cell>
-													<Table.Cell class="max-w-[100px]" onclick={() => (selectedAgent = i)}>
-														<p class="truncate font-medium">{agent.name}</p>
-													</Table.Cell>
+											{#key selectedAgents}
+												{#each $formData.agents as agent, i}
+													<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
+														<Table.Cell class="max-w-[100px]">
+															<p class="truncate font-medium">
+																<Checkbox
+																	checked={selectedAgents.has(i)}
+																	onCheckedChange={(checked) => {
+																		if (checked) {
+																			selectedAgents.add(i);
+																		} else {
+																			selectedAgents.delete(i);
+																		}
+																	}}
+																/>
+															</p>
+														</Table.Cell>
+														<Table.Cell class="max-w-[100px]" onclick={() => (selectedAgent = i)}>
+															<p class="truncate font-medium">{agent.name}</p>
+														</Table.Cell>
 
-													<Table.Cell class="max-w-[10px]" onclick={() => (selectedAgent = i)}>
-														<p class="truncate">{agent.id.version}</p>
-													</Table.Cell>
+														<Table.Cell class="max-w-[10px]" onclick={() => (selectedAgent = i)}>
+															<p class="truncate">{agent.id.version}</p>
+														</Table.Cell>
 
-													<Table.Cell
-														class="max-w-[120px] min-w-[120px]"
-														onclick={() => (selectedAgent = i)}
-													>
-														<p class="truncate">{agent.id.registrySourceId.type}</p>
-													</Table.Cell>
-
-													<Table.Cell class="max-w-[240px]" onclick={() => (selectedAgent = i)}>
-														<p class="truncate">{agent.id.name}</p>
-													</Table.Cell>
-
-													<Table.Cell class="flex gap-2">
-														<TwostepButton
-															disabled={selectedAgent === null}
-															class="hover:bg-destructive/50 my-2 grow truncate"
-															onclick={() => removeAgent(i)}>Remove</TwostepButton
+														<Table.Cell
+															class="max-w-[120px] min-w-[120px]"
+															onclick={() => (selectedAgent = i)}
 														>
-													</Table.Cell>
-												</Table.Row>
-											{/each}
+															<p class="truncate">{agent.id.registrySourceId.type}</p>
+														</Table.Cell>
+
+														<Table.Cell class="max-w-[240px]" onclick={() => (selectedAgent = i)}>
+															<p class="truncate">{agent.id.name}</p>
+														</Table.Cell>
+
+														<Table.Cell class="flex gap-2">
+															<TwostepButton
+																disabled={selectedAgent === null}
+																class="hover:bg-destructive/50 my-2 grow truncate"
+																onclick={() => removeAgent(i)}>Remove</TwostepButton
+															>
+														</Table.Cell>
+													</Table.Row>
+												{/each}
+											{/key}
 										</Table.Body>
 									</Table.Root>
 								</Tabs.Content>
