@@ -2,6 +2,12 @@
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import { Separator } from '$lib/components/ui/separator';
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
+	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
+	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
+	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
+	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
@@ -9,20 +15,18 @@
 	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Card from '$lib/components/ui/card/index.js';
-	import * as Item from '$lib/components/ui/item';
+	import * as Menubar from '$lib/components/ui/menubar/index.js';
+	import * as Command from '$lib/components/ui/command/index.js';
+	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
+	import * as Item from '$lib/components/ui/item/index.js';
 
 	import * as Form from '$lib/components/ui/form';
+
+	import { PersistedState } from 'runed';
 
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table/index.js';
-
-	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
-	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
-	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconPlusRegular from 'phosphor-icons-svelte/IconPlusRegular.svelte';
-	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 
 	import { cn } from '$lib/utils';
 	import { idAsKey, type PublicRegistryAgent } from '$lib/threads';
@@ -64,7 +68,7 @@
 	import { randomAdjective, randomAnimal } from '$lib/words';
 	import { fade } from 'svelte/transition';
 	import CopyButton from '$lib/components/copy-button.svelte';
-	import { PersistedState } from 'runed';
+	import Pip from '$lib/components/pip.svelte';
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -520,11 +524,31 @@
 
 	$effect(() => {
 		if ($formData.agents.length > 0) {
-			if (currentTab === 'groups') {
+			if (currentTab === 'groups' && settings.current.enableAgentGraphView) {
 				agentsListTabs = 'graph';
 			} else {
 				agentsListTabs = 'table';
 			}
+		}
+	});
+
+	type Settings = {
+		enableAgentGraphView: boolean;
+		columns: {
+			name: boolean;
+			version: boolean;
+			registrySource: boolean;
+			agent: boolean;
+		};
+	};
+
+	const settings = new PersistedState<Settings>('appSettings', {
+		enableAgentGraphView: true,
+		columns: {
+			name: true,
+			version: true,
+			registrySource: true,
+			agent: true
 		}
 	});
 
@@ -578,6 +602,18 @@
 			cancelled = true;
 		};
 	});
+
+	function clearSession() {
+		$formData = {
+			groups: [],
+			tools: {},
+			sessionRuntimeSettings: {
+				ttl: 50000
+			},
+			agents: []
+		};
+		selectedAgent = null;
+	}
 </script>
 
 {#snippet optionRow(name: any, opt: any)}
@@ -828,6 +864,124 @@
 							minSize={25}
 							defaultSize={50}
 						>
+							<Menubar.Root class="bg-sidebar border-0 border-b">
+								<Menubar.Menu>
+									<Menubar.Trigger>Session</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.Item onSelect={clearSession}>Clear session</Menubar.Item>
+										<Menubar.Separator />
+										<Menubar.Item
+											onSelect={async () => (
+												importFromJson(await navigator.clipboard.readText()),
+												toast.success('Session JSON imported from clipboard')
+											)}>Import JSON from clipboard</Menubar.Item
+										>
+										<Menubar.Item
+											onSelect={() => (
+												navigator.clipboard.writeText(jsonExample),
+												toast.success('Session JSON copied to clipboard')
+											)}>Export JSON to clipboard</Menubar.Item
+										>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Menubar.Menu>
+									<Menubar.Trigger>View</Menubar.Trigger>
+									<Menubar.Content>
+										<Menubar.CheckboxItem bind:checked={settings.current.enableAgentGraphView}
+											>Always Switch to Graph</Menubar.CheckboxItem
+										>
+										<Menubar.Separator />
+										<Menubar.Sub>
+											<Menubar.SubTrigger disabled class="opacity-50">Columns</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Menubar.CheckboxItem>Name</Menubar.CheckboxItem>
+												<Menubar.CheckboxItem>Version</Menubar.CheckboxItem>
+												<Menubar.CheckboxItem>Registry Source</Menubar.CheckboxItem>
+												<Menubar.CheckboxItem>Agent</Menubar.CheckboxItem>
+											</Menubar.SubContent>
+										</Menubar.Sub>
+									</Menubar.Content>
+								</Menubar.Menu>
+								<Menubar.Menu>
+									<Menubar.Trigger class="relative">
+										Add agents
+										{#if $formData.agents.length < 1}
+											<Pip size={2} color="accent" />
+										{/if}
+									</Menubar.Trigger>
+									<Menubar.Content>
+										<Command.Root>
+											<Command.Input placeholder="Search agents..." />
+											<Command.List>
+												{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+													<Command.Group heading={`${catalog.identifier.type}`}>
+														{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+															<HoverCard.Root>
+																<HoverCard.Trigger class="m-0"
+																	><Command.Item
+																		class=" w-full cursor-pointer  border-b px-4 py-2"
+																		onSelect={() => addAgent(agent)}
+																	>
+																		<span class="grow">{agent.name}</span>
+																		<!-- <IconHeartRegular /> -->
+																	</Command.Item></HoverCard.Trigger
+																>
+																<HoverCard.Content
+																	side="right"
+																	class="max-w-1/2 min-w-full whitespace-pre-wrap"
+																>
+																	{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																		<span class="text-muted">loading...</span>
+																	{:then details}
+																		{details.registryAgent.info.description}
+																	{/await}
+																</HoverCard.Content>
+															</HoverCard.Root>
+														{/each}
+													</Command.Group>
+												{/each}
+											</Command.List>
+										</Command.Root>
+										<!-- <Menubar.Sub>
+											<Menubar.SubTrigger>Marketplace</Menubar.SubTrigger>
+											<Menubar.SubContent>
+												<Command.Root>
+													<Command.Input placeholder="Search agents..." />
+													<Command.List>
+														{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
+															<Command.Group heading={`${catalog.identifier.type}`}>
+																{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+																	<HoverCard.Root>
+																		<HoverCard.Trigger class="m-0"
+																			><Command.Item
+																				class=" w-full cursor-pointer  border-b px-4 py-2"
+																				onSelect={() => addAgent(agent)}
+																			>
+																				<span class="grow">{agent.name}</span>
+																				<IconHeartRegular />
+																			</Command.Item></HoverCard.Trigger
+																		>
+																		<HoverCard.Content
+																			side="right"
+																			class="w-1/2 whitespace-pre-wrap"
+																		>
+																			{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
+																				<Skeleton class="h-4 w-full" />
+																			{:then details}
+																				{details.registryAgent.info.description}
+																			{/await}
+																		</HoverCard.Content>
+																	</HoverCard.Root>
+																{/each}
+															</Command.Group>
+														{/each}
+													</Command.List>
+												</Command.Root>
+											</Menubar.SubContent>
+										</Menubar.Sub> -->
+									</Menubar.Content>
+								</Menubar.Menu>
+							</Menubar.Root>
 							<Tabs.Root bind:value={agentsListTabs} class="min-h-0 flex-1 overflow-hidden">
 								<Tabs.Content value="table" class="flex min-h-0 flex-1 overflow-hidden ">
 									<Table.Root class="w-full">
@@ -909,57 +1063,9 @@
 								</Tabs.Content>
 							</Tabs.Root>
 						</Resizable.Pane>
-						<Resizable.Handle />
-
-						<Resizable.Pane class="bg-card flex min-h-0 flex-col" minSize={5} defaultSize={15}>
-							<h2 class="mx-auto py-4">Available Agents</h2>
-
-							{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
-								<ol class="border-t">
-									{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
-										<li class="hover:bg-sidebar grid w-full grid-cols-5 gap-2 border-b px-4 py-2">
-											<Dialog.Root>
-												<Dialog.Trigger
-													type="button"
-													class="{buttonVariants({
-														variant: 'default',
-														size: 'sm'
-													})} col-span-4 w-full grow cursor-help justify-start truncate overflow-hidden text-xs"
-													>{agent.name}</Dialog.Trigger
-												>
-												<Dialog.Content>
-													<Dialog.Header>
-														<Dialog.Title>{agent.name}</Dialog.Title>
-														<Dialog.Description class="whitespace-pre-line">
-															{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																<Skeleton class="h-4 w-full" />
-															{:then details}
-																{details.registryAgent.info.description}
-															{/await}
-														</Dialog.Description>
-													</Dialog.Header>
-													<Dialog.Footer>
-														<Dialog.Close
-															class="truncate {buttonVariants({ variant: 'default' })}"
-															onclick={() => addAgent(agent)}>Add Agent</Dialog.Close
-														>
-													</Dialog.Footer>
-												</Dialog.Content>
-											</Dialog.Root>
-											<Button
-												class="col-span-1 w-full grow  truncate overflow-hidden text-xs "
-												size="sm"
-												onclick={() => addAgent(agent)}
-												><IconPlusRegular /><span class="sr-only">Add</span></Button
-											>
-										</li>
-									{/each}
-								</ol>
-							{/each}
-						</Resizable.Pane>
 					</Resizable.PaneGroup>
 				</Resizable.Pane>
-				<Resizable.Handle />
+				<Resizable.Handle withHandle />
 				<Resizable.Pane
 					class=" flex h-full min-h-0 flex-col !overflow-y-scroll"
 					minSize={25}
@@ -967,7 +1073,7 @@
 				>
 					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
 						<Tabs.List
-							class="bg-sidebar flex w-full justify-start rounded-none border-0 *:rounded-none"
+							class="bg-sidebar  flex w-full justify-start rounded-none border-0 *:rounded-none"
 						>
 							<Tabs.Trigger value="json" class="grow-0">JSON{jsonDirty ? '*' : ''}</Tabs.Trigger>
 							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
@@ -1027,10 +1133,10 @@
 				</Resizable.Pane>
 			</Resizable.PaneGroup>
 		</Resizable.Pane>
-		<Resizable.Handle />
+		<Resizable.Handle withHandle />
 		<Resizable.Pane defaultSize={50} minSize={25} class="bg-card flex min-h-0 flex-col gap-4">
 			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
-				<Tabs.List class="flex w-full rounded-none border-0 *:rounded-none">
+				<Tabs.List class="bg-sidebar flex w-full rounded-none border-0 *:rounded-none">
 					<Tabs.Trigger value="agent" class="flex items-center truncate">
 						<IconMenu class="m-auto size-6 xl:hidden xl:size-0 " />
 						<span class=" m-auto hidden xl:inline">Agent editor</span>
@@ -1463,7 +1569,7 @@
 											}}
 										>
 											<Select.Trigger>
-												<span>Add agents</span>
+												<span>Add agents </span>
 											</Select.Trigger>
 											<Select.Content>
 												{#if $formData.agents.length == 0}
