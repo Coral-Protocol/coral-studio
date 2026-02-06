@@ -40,7 +40,7 @@
 				<Label
 					{...props}
 					{...rest}
-					class="{className} relative !m-0 inline w-full cursor-help content-center truncate hover:min-w-max "
+					class="{className} relative !m-0 inline w-full cursor-help content-center truncate"
 				>
 					<span class="flex items-center overflow-hidden">
 						<span class="truncate">
