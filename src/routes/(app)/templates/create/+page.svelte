@@ -30,7 +30,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 
 	import { cn } from '$lib/utils';
-	import { idAsKey, type PublicRegistryAgent } from '$lib/threads';
+	import { idAsKey, type PublicRegistryAgent, type Registry } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
 	import { tools } from '$lib/mcptools';
 
@@ -72,6 +72,177 @@
 	import OptionField from './OptionField.svelte';
 	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import SidebarTab from './SidebarTab.svelte';
+	import { page } from '$app/state';
+
+	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
+		switch (source) {
+			case 'local':
+				return { type: 'local' };
+
+			case 'marketplace':
+				return { type: 'marketplace' };
+
+			case 'linked':
+				return { type: 'linked', linkedServerId: 'default' };
+		}
+	}
+
+	const addAgent = async (name: string, source: any, version: string) => {
+		try {
+			const existingCount = $formData.agents.filter((a) => a.id.name === name).length;
+			const registrySourceId = sourceToRegistryId(source as AgentSource);
+			const detailed = await ctx.server
+				.lookupAgent({ name, version, registrySourceId })
+				.catch((e) => {
+					toast.error(`${e}`);
+					console.error(e);
+					return null;
+				});
+			if (detailed) {
+				try {
+					$formData.agents.push({
+						id: {
+							name,
+							version,
+							registrySourceId
+						},
+						name: name + (existingCount > 0 ? `-${existingCount}` : ''),
+						description: '',
+						providerType: 'local',
+						provider: {
+							runtime: Object.keys(detailed.registryAgent.runtimes)[0] as any,
+							remote_request: {
+								maxCost: { type: 'micro_coral', amount: 1000 },
+								serverSource: { type: 'servers', servers: [] }
+							}
+						},
+						customToolAccess: new Set(),
+						blocking: false,
+						options: {}
+					});
+					detailedAgent = null;
+					$formData.agents = $formData.agents;
+					selectedAgent = $formData.agents.length - 1;
+				} catch (error) {
+					console.error('Failed to add agent:', error);
+				}
+			}
+		} catch (error) {
+			console.error('Failed to lookup agent:', error);
+		}
+	};
+
+	const AGENT_REGEX = /^(marketplace|linked|local):(.+?)@(\d+\.\d+\.\d+)$/;
+	const agentsQuery = page.url.searchParams.get('agents');
+
+	type AgentSource = 'marketplace' | 'linked' | 'local';
+	let parsedAgents: ParsedAgent[] = [];
+
+	onMount(async () => {
+		try {
+			const result = parseAgentsQuery(agentsQuery);
+			parsedAgents = result.agents;
+
+			for (const agent of parsedAgents) {
+				console.log(
+					'following url instructions to add agent: ' +
+						agent.name +
+						'@' +
+						agent.version +
+						' from ' +
+						agent.source +
+						' '
+				);
+				await addAgent(agent.name, agent.source, agent.version);
+			}
+		} catch (err) {
+			console.error('Failed to parse agents:', err);
+		}
+	});
+	interface ParsedAgent {
+		source: AgentSource;
+		name: string;
+		version: string;
+		raw: string;
+	}
+
+	function parseAgentsQuery(query: string | null) {
+		if (!query) return { agents: [], errors: [] as string[] };
+
+		const agentsFromQuery: ParsedAgent[] = [];
+		const errors: string[] = [];
+
+		for (const raw of query.split(',')) {
+			const trimmed = raw.trim();
+			if (!trimmed) continue;
+
+			const match = trimmed.match(AGENT_REGEX);
+
+			if (!match) {
+				errors.push(`Invalid agent format: "${trimmed}"`);
+				continue;
+			}
+
+			const [, source, name, version] = match;
+
+			agentsFromQuery.push({
+				source: source as AgentSource,
+				name: name ?? '',
+				version: version ?? '',
+				raw: trimmed
+			});
+		}
+
+		return { agents: agentsFromQuery, errors };
+	}
+
+	let lastDeletedAgent: {
+		agent: any;
+		index: number;
+	} | null = $state(null);
+
+	const removeAgent = (index: number) => {
+		if (index < 0 || index >= $formData.agents.length) return;
+
+		const agent = $formData.agents[index];
+
+		lastDeletedAgent = {
+			agent,
+			index
+		};
+
+		$formData.agents.splice(index, 1);
+		$formData.agents = $formData.agents;
+
+		// Maintain selection invariants
+		if (selectedAgent !== null) {
+			if (selectedAgent === index) {
+				selectedAgent = 0;
+			} else if (selectedAgent > index) {
+				selectedAgent--;
+			}
+		}
+
+		toast(`Agent "${lastDeletedAgent.agent.name}" deleted`, {
+			action: {
+				label: 'Undo',
+				onClick: restoreAgent
+			}
+		});
+	};
+
+	const restoreAgent = () => {
+		if (!lastDeletedAgent) return;
+
+		$formData.agents.splice(lastDeletedAgent.index, 0, lastDeletedAgent.agent);
+
+		$formData.agents = $formData.agents;
+		toast.success('Agent "' + lastDeletedAgent.agent.name + '" restored');
+
+		selectedAgent = lastDeletedAgent.index;
+
+		lastDeletedAgent = null;
+	};
 
 	type CreateSessionRequest = NonNullable<
 		operations['createSession']['requestBody']
@@ -91,6 +262,9 @@
 	let currentTab = $state('agent');
 
 	let sendingForm = $state(false);
+
+	let catalogsLoaded = $derived(Object.keys(ctx.server.catalogs).length > 0);
+
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
 		SPA: true,
@@ -113,7 +287,6 @@
 			try {
 				sendingForm = true;
 				const body = await asJson;
-				// console.log({ body });
 				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
 					params: {
 						path: { namespace: ctx.server.namespace }
@@ -361,121 +534,6 @@
 
 	const isMobile = new IsMobile();
 
-	const addAgent = async (agent: any) => {
-		const catalog = Object.values(ctx.server.catalogs).at(0);
-
-		try {
-			if (!agent) {
-				throw new Error('No agents found in registry');
-			}
-
-			if (!catalog) {
-				throw new Error('Catalog failed to load');
-			}
-
-			if (!Array.isArray(agent.versions) || agent.versions.length === 0) {
-				throw new Error('Agent has no available versions');
-			}
-
-			// Resolve detailed catalog info for this agent + version
-			const detailed = await ctx.server.lookupAgent({
-				name: agent.name,
-				version: agent.versions[0],
-				registrySourceId: { ...catalog.identifier }
-			});
-
-			if (!detailed?.registryAgent?.runtimes) {
-				throw new Error('Agent runtimes are missing from catalog');
-			}
-
-			const runtimes = Object.keys(detailed.registryAgent.runtimes);
-			if (runtimes.length === 0) {
-				throw new Error('Agent has no supported runtimes');
-			}
-
-			const runtime = runtimes[0] as any;
-
-			const existingCount = $formData.agents.filter((a) => a.id.name === agent.name).length;
-			selectedAgent = null;
-
-			$formData.agents.push({
-				id: {
-					name: agent.name,
-					version: agent.versions[0],
-					registrySourceId: { ...catalog.identifier }
-				},
-				name: agent.name + (existingCount > 0 ? `-${existingCount}` : ''),
-				description: '',
-				provider: {
-					remote_request: {
-						maxCost: { type: 'micro_coral', amount: 1000 },
-						serverSource: { type: 'servers', servers: [] }
-					},
-					runtime
-				},
-				providerType: 'local',
-				customToolAccess: new Set(),
-				blocking: false,
-				options: {}
-			});
-
-			detailedAgent = null;
-			$formData.agents = $formData.agents;
-			selectedAgent = $formData.agents.length - 1;
-		} catch (err) {
-			const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-			toast.error(message);
-		}
-	};
-
-	let lastDeletedAgent: {
-		agent: any;
-		index: number;
-	} | null = $state(null);
-
-	const removeAgent = (index: number) => {
-		if (index < 0 || index >= $formData.agents.length) return;
-
-		const agent = $formData.agents[index];
-
-		lastDeletedAgent = {
-			agent,
-			index
-		};
-
-		$formData.agents.splice(index, 1);
-		$formData.agents = $formData.agents;
-
-		// Maintain selection invariants
-		if (selectedAgent !== null) {
-			if (selectedAgent === index) {
-				selectedAgent = 0;
-			} else if (selectedAgent > index) {
-				selectedAgent--;
-			}
-		}
-
-		toast(`Agent "${lastDeletedAgent.agent.name}" deleted`, {
-			action: {
-				label: 'Undo',
-				onClick: restoreAgent
-			}
-		});
-	};
-
-	const restoreAgent = () => {
-		if (!lastDeletedAgent) return;
-
-		$formData.agents.splice(lastDeletedAgent.index, 0, lastDeletedAgent.agent);
-
-		$formData.agents = $formData.agents;
-		toast.success('Agent "' + lastDeletedAgent.agent.name + '" restored');
-
-		selectedAgent = lastDeletedAgent.index;
-
-		lastDeletedAgent = null;
-	};
-
 	const UNGROUPED = '__ungrouped';
 
 	let groupedOptions = $derived(
@@ -667,19 +725,24 @@
 										<Command.Root>
 											<Command.Input placeholder="Search agents..." />
 											<Command.List>
-												{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
-													<Command.Group heading={`${catalog.identifier.type}`}>
-														{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
+												{#each Object.values(ctx.server.catalogs) as catalog}
+													<Command.Group heading={catalog.identifier.type}>
+														{#each Object.values(catalog.agents) as agent}
 															<HoverCard.Root>
-																<HoverCard.Trigger class="m-0"
-																	><Command.Item
-																		class=" w-full cursor-pointer  border-b px-4 py-2"
-																		onSelect={() => addAgent(agent)}
+																<HoverCard.Trigger class="m-0">
+																	<Command.Item
+																		class="w-full cursor-pointer border-b px-4 py-2"
+																		onSelect={() =>
+																			addAgent(
+																				agent.name,
+																				catalog.identifier.type,
+																				agent.versions[0]!
+																			)}
 																	>
 																		<span class="grow">{agent.name}</span>
-																		<!-- <IconHeartRegular /> -->
-																	</Command.Item></HoverCard.Trigger
-																>
+																	</Command.Item>
+																</HoverCard.Trigger>
+
 																<HoverCard.Content
 																	side="right"
 																	class="max-w-1/2 min-w-full whitespace-pre-wrap"
@@ -790,29 +853,9 @@
 									{#if $formData.agents.length !== 0}
 										<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
 									{:else}
-										<Card.Root class="m-auto w-1/4">
-											<Card.Header>
-												<Card.Title>Session creator</Card.Title>
-											</Card.Header>
-											<Card.Content class="flex flex-col gap-2 text-sm ">
-												<span>Sessions let agents coordinate.</span>
-
-												<span>Agents appear as nodes in a graph.</span>
-
-												<span>Connections represent agent groups.</span>
-											</Card.Content>
-											<Card.Footer>
-												<Button
-													class="grow {selectedAgent !== null &&
-													$formData.agents.length > selectedAgent
-														? ''
-														: 'bg-accent/90'} w-fit truncate "
-													onclick={addAgent}
-												>
-													<span>Add an agent</span>
-												</Button>
-											</Card.Footer>
-										</Card.Root>
+										<p>
+											No agents added yet. Use the "Add agents" menu to add agents to your session.
+										</p>
 									{/if}
 								</Tabs.Content>
 							</Tabs.Root>
