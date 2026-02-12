@@ -223,8 +223,6 @@
 		}
 	};
 
-	$inspect(ctx.server.sessions, ctx.session).with(console.debug);
-
 	function unreachable(PUBLIC_LOGIN_BEHAVIOUR: never) {
 		throw new Error('Function not implemented.');
 	}
