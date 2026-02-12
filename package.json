@@ -6,13 +6,13 @@
 	"scripts": {
 		"dev": "vite dev",
 		"gen": "npx openapi-typescript api_v1.json -o src/generated/api.ts",
-		"build": "yarn gen && vite build",
+		"build": "yarn prepare && vite build",
 		"preview": "node build/server.js",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"check": "yarn prepare && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "yarn prepare && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-        "prepare": "svelte-kit sync"
+        "prepare": "svelte-kit sync && yarn gen"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
