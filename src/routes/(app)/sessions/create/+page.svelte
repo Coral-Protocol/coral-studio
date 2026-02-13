@@ -132,12 +132,12 @@
 	};
 
 	const AGENT_REGEX = /^(marketplace|linked|local):(.+?)@(\d+\.\d+\.\d+)$/;
+	const agentsQuery = page.url.searchParams.get('agents');
 
 	type AgentSource = 'marketplace' | 'linked' | 'local';
-	let parsedAgents: ParsedAgent[] = $state([]);
+	let parsedAgents: ParsedAgent[] = [];
 
 	onMount(async () => {
-		const agentsQuery = page.url.searchParams.get('agents');
 		try {
 			const result = parseAgentsQuery(agentsQuery);
 			parsedAgents = result.agents;
