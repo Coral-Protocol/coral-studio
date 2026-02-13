@@ -77,7 +77,7 @@
 	--primary-foreground: oklch(1 0 0);
 
 	/* ---------- Accent (ONLY saturated UI color) ---------- */
-	--accent: oklch(0.67 0.18 55);        /* #FF5C00 */
+	--accent: oklch(68.37% 0.2120 40.6);        /* #FF5C00 */
 	--accent-foreground: oklch(1 0 0);
 
 	/* ---------- Secondary Brand Highlight ---------- */
@@ -105,8 +105,8 @@
 
 
 @theme inline {
-	--font-sans: 'Urbanist', ui-sans-serif, sans-serif;
-	--font-mono: 'Geist Mono', ui-monospace, monospace, system-ui;
+    --font-sans: 'Inter', ui-sans-serif, sans-serif;
+  	--font-mono: 'Oxanium', ui-monospace, monospace, system-ui;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
