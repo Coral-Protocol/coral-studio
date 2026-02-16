@@ -8,6 +8,8 @@ import type { CoralServer } from './CoralServer.svelte';
 import { createWebsocket } from './websocket.svelte';
 
 export type SessionAgentState = components['schemas']['SessionAgentState'];
+export type SessionAgentStatus = SessionAgentState['status'];
+
 export type SessionThread = components['schemas']['SessionThread'];
 
 export class Session {

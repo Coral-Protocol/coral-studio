@@ -19,7 +19,7 @@
 			Object.entries(ctx.session.agents).map(([title, agent]) => ({
 				title,
 				url: `${base}/agent/#${title}`,
-				state: agent.isConnected ? (agent.isWaiting ? 'listening' : 'busy') : 'disconnected'
+				state: agent.status.type
 			}))
 	);
 
