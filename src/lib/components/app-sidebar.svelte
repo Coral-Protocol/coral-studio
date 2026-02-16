@@ -123,10 +123,12 @@
 			await ctx.server.fetchAll();
 			ctx.server.alive = true;
 			connecting = false;
+			toast.success('Connection refreshed');
 		} catch (e) {
 			connecting = false;
 			error = `${e}`;
 			throw e;
+			toast.error('Failed to refresh connection. ' + error);
 		}
 	};
 
@@ -300,7 +302,7 @@
 					<Tooltip.Trigger disabled={error === null}>
 						<span
 							class={cn(
-								'text-muted-foreground  font-mono text-xs font-normal',
+								'text-muted-foreground font-normal',
 								(error || !ctx.server.alive) && 'text-destructive'
 							)}
 						>
