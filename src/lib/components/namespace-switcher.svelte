@@ -63,13 +63,14 @@
 						<div>
 							<Logo class="text-foreground size-8" />
 						</div>
-						<div class="flex flex-col gap-0.5 leading-none">
-							<span class="font-sans text-xs font-bold tracking-widest uppercase"
-								>Coral Console</span
-							>
-							<span class="">{ctx.server.namespace}</span>
+						<div class="flex flex-col gap-0.5 text-lg leading-none">
+							<span class="font-[Oxanium] font-bold tracking-widest"
+								>coral<span class="text-primary/50">OS</span>
+							</span>
+							<span class="text-primary/50 font-sans text-sm">Console</span>
 						</div>
-						<CaretUpDown class="ml-auto" />
+						<span class="ml-auto">{ctx.server.namespace}</span>
+						<CaretUpDown />
 					</Sidebar.MenuButton>
 				{/snippet}
 			</DropdownMenu.Trigger>
