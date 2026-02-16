@@ -86,11 +86,11 @@
 		<Command.Group heading="Sessions">
 			{#if sessions.length > 0}
 				<!--TODO: Ensure no undefined sessionIds also to prevent duplicated keys-->
-				{#each sessions as basicSession (basicSession.sessionId)}
+				{#each sessions as basicSession (basicSession.id)}
 					<Command.Item
 						onSelect={() => {
 							ctx.session = new Session({
-								sessionId: basicSession.sessionId,
+								sessionId: basicSession.id,
 								namespace: ctx.server.namespace,
 								server: ctx.server
 							});

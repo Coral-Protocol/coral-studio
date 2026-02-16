@@ -25,8 +25,10 @@ export const agentIdOf = (agentId: RegistryAgentIdentifier) =>
 
 type APIClient = Client<paths, `${string}/${string}`>;
 
-type BetterSession = Omit<components['schemas']['BasicSession'], 'closing'> & {
-	state: 'open' | 'closing' | 'closed';
+export type NamespaceData = Omit<components['schemas']['SessionNamespaceState'], 'sessions'> & {
+	sessions: {
+		[sessionId: string]: components['schemas']['SessionStateBase'];
+	};
 };
 
 export class CoralServer {
@@ -78,9 +80,7 @@ export class CoralServer {
 
 	// TODO (alan): store Session classes here (supa svelty)
 	allSessions: {
-		[namespace: string]: {
-			[sessionId: string]: BetterSession;
-		};
+		[namespace: string]: NamespaceData;
 	} = $state({});
 
 	// TODO (alan): better server state repr
@@ -88,7 +88,7 @@ export class CoralServer {
 	public namespace = $state((browser && localStorage.getItem('namespace')) || 'default');
 	public namespaces = $derived(Object.keys(this.allSessions));
 
-	public sessions = $derived(this.allSessions[this.namespace] ?? {});
+	public sessions = $derived(this.allSessions[this.namespace]?.sessions ?? {});
 
 	public lsmSock = $derived(
 		createWebsocket(`/ws/v1/events/lsm?namespaceFilter=${encodeURIComponent(this.namespace)}`)
@@ -113,28 +113,41 @@ export class CoralServer {
 			}
 			switch (data.type) {
 				case 'namespace_created':
-					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
+					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {
+						name: data.namespace,
+						annotations: data.namespaceAnnotations,
+						// TODO: more data from server please
+						deleteOnLastSessionExit: false,
+						sessions: {}
+					};
 					break;
 				case 'session_created':
-					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
-					this.allSessions[data.namespace]![data.sessionId] = {
-						sessionId: data.sessionId,
-						state: 'open'
+					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {
+						name: data.namespace,
+						annotations: data.namespaceAnnotations,
+						// TODO: more data from server please
+						deleteOnLastSessionExit: false,
+						sessions: {}
+					};
+					this.allSessions[data.namespace]!.sessions[data.sessionId] = {
+						id: data.sessionId,
+						namespace: data.namespace,
+						timestamp: data.timestamp,
+						// TODO: more data from server please
+						annotations: {},
+						status: { type: 'pending_execution' }
 					};
 					break;
 				case 'session_closing':
-					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
-					this.allSessions[data.namespace]![data.sessionId] = {
-						sessionId: data.sessionId,
-						state: 'closing'
-					};
+					if (!this.allSessions[data.namespace]?.sessions[data.sessionId]) return;
+					// TODO: more data from server please
+					// this.allSessions[data.namespace]!.sessions[data.sessionId]!.base.status = {
+					// 	type: 'closing'
+					// };
 					break;
 				case 'session_closed':
-					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {};
-					this.allSessions[data.namespace]![data.sessionId] = {
-						sessionId: data.sessionId,
-						state: 'closed'
-					};
+					if (!this.allSessions[data.namespace]?.sessions[data.sessionId]) return;
+					// TODO: more data from server please
 					break;
 				default:
 					break;
@@ -166,7 +179,12 @@ export class CoralServer {
 	}
 
 	public addNamespace(namespace: string) {
-		this.allSessions[namespace] = {};
+		this.allSessions[namespace] = {
+			name: namespace,
+			annotations: {},
+			deleteOnLastSessionExit: false,
+			sessions: {}
+		};
 	}
 
 	public async fetchRegistries() {
@@ -186,36 +204,41 @@ export class CoralServer {
 	}
 
 	public async fetchSessions(namespace?: string) {
-		const mapSessions = (
-			sessions: components['schemas']['BasicSession'][]
-		): { [sessionId: string]: BetterSession } =>
-			Object.fromEntries(
-				sessions.map((s) => [
-					s.sessionId,
-					{ sessionId: s.sessionId, state: s.closing ? 'closed' : 'open' }
-				])
-			);
-
 		if (namespace) {
-			const res = await this.api.GET(`/api/v1/sessions/{namespace}`, {
+			const res = await this.api.GET(`/api/v1/local/namespace/{namespace}`, {
 				params: { path: { namespace } }
 			});
 			if (res.response.status === 404) {
 				// wrapped GET normally handles this, but 404 usually does not mean good things,
 				// so we have to manually mark ourselves alive
 				this.alive = true;
-				this.allSessions[namespace] = {};
+				this.addNamespace(namespace);
 				return;
 			}
 			if (res.error) throw new Error(`Error fetching sessions - ${res.error.message}`);
 
-			this.allSessions[namespace] = mapSessions(res.data);
+			this.allSessions[namespace] = {
+				name: namespace,
+				// TODO: more data from server please
+				annotations: {},
+				deleteOnLastSessionExit: false,
+				sessions: Object.fromEntries(res.data.map((s) => [s.id, s]))
+			};
 		} else {
-			const res = await this.api.GET('/api/v1/sessions');
+			const res = await this.api.GET('/api/v1/local');
 			if (res.error) throw new Error(`Error fetching sessions`);
 
+			// FIXME: oub
 			this.allSessions = Object.fromEntries(
-				res.data.map((s) => [s.namespace, mapSessions(s.sessions)])
+				res.data.map((s) => [
+					s.name,
+					{
+						name: s.name,
+						annotations: s.annotations,
+						deleteOnLastSessionExit: s.deleteOnLastSessionExit,
+						sessions: Object.fromEntries(s.sessions.map((s) => [s.id, s]))
+					}
+				])
 			);
 		}
 	}

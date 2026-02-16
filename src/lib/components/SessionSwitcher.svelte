@@ -63,20 +63,20 @@
 						<Command.Empty>No sessions found</Command.Empty>
 					{:else}
 						<Command.Group>
-							{#each Object.values(ctx.server.sessions) as basicSession (basicSession.sessionId)}
+							{#each Object.values(ctx.server.sessions) as basicSession (basicSession.id)}
 								<Command.Item
 									class="text-wrap break-all"
 									onSelect={() => {
-										value = basicSession.sessionId;
+										value = basicSession.id;
 										closeAndFocusTrigger();
 										ctx.session = new Session({
-											sessionId: basicSession.sessionId,
+											sessionId: basicSession.id,
 											namespace: ctx.server.namespace,
 											server: ctx.server
 										});
 									}}
 								>
-									{basicSession.sessionId}
+									{basicSession.id}
 								</Command.Item>
 							{/each}
 
