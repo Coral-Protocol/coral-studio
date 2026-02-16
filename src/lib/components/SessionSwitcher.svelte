@@ -48,7 +48,7 @@
 							)}
 						></span>
 					{/if}
-					<span class="w-4/5 grow truncate overflow-hidden text-left text-[15px]">
+					<span class="w-4/5 grow truncate overflow-hidden text-left">
 						{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a session'}
 					</span>
 					<CaretUpDown />
