@@ -73,7 +73,7 @@
 	--muted-foreground: oklch(0.70 0 0); /* #A1A0A0 */
 
 	/* ---------- Primary (structural, neutral) ---------- */
-	--primary: oklch(0.26 0 0);
+	--primary: oklch(0.923 0.003 48.717);
 	--primary-foreground: oklch(1 0 0);
 
 	/* ---------- Accent (ONLY saturated UI color) ---------- */
@@ -152,7 +152,7 @@
 		@apply border-border outline-ring/50;
 	}
 	body {
-		@apply bg-background text-foreground font-mono;
+		@apply bg-background text-foreground font-sans;
 		font-optical-sizing: auto;
 	}
 
@@ -175,7 +175,7 @@
 	h4,
 	h5,
 	h6 {
-		@apply font-sans tracking-wider;
+		@apply font-mono tracking-wider;
 	}
 
 	/* Dracula Theme v1.2.5
