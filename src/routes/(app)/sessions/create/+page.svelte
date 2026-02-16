@@ -872,7 +872,7 @@
 				>
 					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
 						<Tabs.List
-							class="bg-sidebar  flex w-full justify-start rounded-none border-0 *:rounded-none"
+							class="bg-sidebar  flex w-full justify-start rounded-none border-b *:rounded-none"
 						>
 							<Tabs.Trigger value="json" class="grow-0">JSON{jsonDirty ? '*' : ''}</Tabs.Trigger>
 							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
@@ -903,7 +903,7 @@
 								}}
 								lang={json()}
 								theme={dracula}
-								class="ͼo h-full"
+								class="ͼo h-full [&_.cm-content]:p-0! "
 							/>
 						</Tabs.Content>
 						<Tabs.Content value="js" class="relative overflow-y-auto">
@@ -915,7 +915,7 @@
 								lang={javascript()}
 								theme={dracula}
 								readonly
-								class="ͼo h-full"
+								class="ͼo h-full [&_.cm-content]:p-0! "
 							/>
 						</Tabs.Content>
 					</Tabs.Root>
@@ -935,7 +935,7 @@
 		<Resizable.Handle withHandle />
 		<Resizable.Pane defaultSize={50} minSize={25} class="bg-background flex min-h-0 flex-col gap-4">
 			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
-				<Tabs.List class="bg-sidebar flex w-full rounded-none border-0 *:rounded-none">
+				<Tabs.List class="bg-sidebar flex w-full rounded-none border-b *:rounded-none">
 					<SidebarTab
 						value="agent"
 						icon={IconRobotRegular}
@@ -1376,7 +1376,7 @@
 												$formData.groups = $formData.groups;
 											}}
 										>
-											<Select.Trigger>
+											<Select.Trigger class="mt-4">
 												<span>Add agents </span>
 											</Select.Trigger>
 											<Select.Content>
