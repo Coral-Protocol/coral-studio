@@ -933,7 +933,7 @@
 			</Resizable.PaneGroup>
 		</Resizable.Pane>
 		<Resizable.Handle withHandle />
-		<Resizable.Pane defaultSize={50} minSize={25} class="bg-card flex min-h-0 flex-col gap-4">
+		<Resizable.Pane defaultSize={50} minSize={25} class="bg-background flex min-h-0 flex-col gap-4">
 			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
 				<Tabs.List class="bg-sidebar flex w-full rounded-none border-0 *:rounded-none">
 					<SidebarTab
@@ -1324,17 +1324,18 @@
 						<ToolInput superform={form} id={selectedTool} />
 					{/if}
 				</Tabs.Content>
-				<Tabs.Content value="groups" class="flex flex-col gap-4 px-4">
-					<h1>Agent Groups</h1>
-					<header class="flex gap-2">
-						<p class="text-sm">Agents require a shared group to communicate with each other.</p>
+				<Tabs.Content value="groups" class="flex flex-col ">
+					<header class="flex w-full flex-col gap-4 border-b p-4">
+						<p class="text-sm">
+							Agents can only communicate with other agents in their group, agents with no group
+							cannot collaborate.
+						</p>
 						{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
 							<Tooltip.Provider>
 								<Tooltip.Root delayDuration={100}>
-									<Tooltip.Trigger
+									<Tooltip.Trigger class="w-fit"
 										><Button
-											size="icon"
-											class="w-fit gap-1 px-3"
+											class="gap-1 px-3"
 											disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
 											onclick={() => {
 												$formData.groups = [...$formData.groups, []];
@@ -1348,7 +1349,6 @@
 							</Tooltip.Provider>
 						{:else}
 							<Button
-								size="icon"
 								class="w-fit gap-1 px-3"
 								onclick={() => {
 									$formData.groups = [...$formData.groups, []];
@@ -1356,7 +1356,7 @@
 							>
 						{/if}
 					</header>
-					<ul class="mt-2 flex flex-col gap-4">
+					<ul class=" flex flex-col gap-4">
 						{#each $formData.groups as link, i}
 							<Accordion.Root type="single">
 								<Accordion.Item value="item-1">
