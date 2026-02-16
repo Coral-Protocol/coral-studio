@@ -106,7 +106,8 @@
 
 @theme inline {
     --font-sans: 'Inter', ui-sans-serif, sans-serif;
-  	--font-mono: 'Oxanium', ui-monospace, monospace, system-ui;
+  	--font-brand: 'Oxanium', ui-monospace, monospace, system-ui;
+	--font-mono: 'JetBrains Mono', ui-monospace, monospace, system-ui;
 	--radius-sm: calc(var(--radius) - 4px);
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
