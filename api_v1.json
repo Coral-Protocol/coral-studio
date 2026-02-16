@@ -10,74 +10,13 @@
   "servers" : [ ],
   "tags" : [ ],
   "paths" : {
-    "/api/v1/sessions/{namespace}" : {
-      "get" : {
-        "tags" : [ "sessions" ],
-        "summary" : "List sessions in namespace",
-        "description" : "Returns a list of all sessions in a specific namespace",
-        "operationId" : "getSessionsInNamespace",
-        "parameters" : [ {
-          "name" : "namespace",
-          "in" : "path",
-          "description" : "The namespace to list sessions from",
-          "required" : true,
-          "deprecated" : false,
-          "explode" : false,
-          "schema" : {
-            "type" : "string",
-            "title" : "String"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "Success",
-            "headers" : { },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/BasicSession"
-                  },
-                  "title" : "ArrayList<BasicSession>"
-                }
-              }
-            }
-          },
-          "404" : {
-            "description" : "Invalid namespace provided",
-            "headers" : { },
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/RouteException"
-                }
-              }
-            }
-          }
-        },
-        "deprecated" : false,
-        "security" : [ {
-          "token" : [ ]
-        } ]
-      },
+    "/api/v1/local/session" : {
       "post" : {
-        "tags" : [ "sessions" ],
+        "tags" : [ "local" ],
         "summary" : "Create session",
         "description" : "Creates a new session in a given namespace",
         "operationId" : "createSession",
-        "parameters" : [ {
-          "name" : "namespace",
-          "in" : "path",
-          "description" : "The namespace this session should be created in.  This namespace will be created if it does not exist.",
-          "required" : true,
-          "deprecated" : false,
-          "explode" : false,
-          "schema" : {
-            "type" : "string",
-            "title" : "String"
-          }
-        } ],
+        "parameters" : [ ],
         "requestBody" : {
           "description" : "The session request body, containing the agents to use in the session and other settings",
           "content" : {
@@ -130,12 +69,12 @@
         } ]
       }
     },
-    "/api/v1/sessions" : {
+    "/api/v1/local/namespace" : {
       "get" : {
-        "tags" : [ "sessions" ],
-        "summary" : "Get all sessions from all namespaces",
-        "description" : "Returns a list of namespaces containing their respective sessions",
-        "operationId" : "getAllSessions",
+        "tags" : [ "local" ],
+        "summary" : "Get a list of namespaces names",
+        "description" : "Returns a list of namespaces",
+        "operationId" : "getAllNamespaces",
         "parameters" : [ ],
         "responses" : {
           "200" : {
@@ -146,9 +85,60 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/BasicNamespace"
+                    "type" : "string",
+                    "title" : "String"
                   },
-                  "title" : "ArrayList<BasicNamespace>"
+                  "title" : "ArrayList<String>"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "local" ],
+        "summary" : "Create namespace",
+        "description" : "Creates a new empty namespace",
+        "operationId" : "createNamespace",
+        "parameters" : [ ],
+        "requestBody" : {
+          "description" : "Namespace settings",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SessionNamespaceRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "403" : {
+            "description" : "Invalid application ID or privacy key",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Invalid namespace settings providewd",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
                 }
               }
             }
@@ -160,12 +150,129 @@
         } ]
       }
     },
-    "/api/v1/sessions/{namespace}/{sessionId}" : {
+    "/api/v1/local/namespace/{namespace}" : {
       "get" : {
-        "tags" : [ "sessions" ],
-        "summary" : "Get session state",
-        "description" : "Returns the current state of a session, the agents, threads and their messages",
-        "operationId" : "getSessionState",
+        "tags" : [ "local" ],
+        "summary" : "List sessions in namespace",
+        "description" : "Returns a list of all sessions in a specific namespace",
+        "operationId" : "getSessionsInNamespace",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The namespace to list sessions from",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SessionStateBase"
+                  },
+                  "title" : "ArrayList<SessionStateBase>"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Invalid namespace provided",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      },
+      "delete" : {
+        "tags" : [ "local" ],
+        "summary" : "Delete a namespace",
+        "description" : "Deletes a given namespace, closing any session that it may contain",
+        "operationId" : "deleteNamespace",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The namespace to delete",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "Invalid namespace provided",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/local" : {
+      "get" : {
+        "tags" : [ "local" ],
+        "summary" : "Get a list of namespace states and their contained sessions states",
+        "description" : "Returns a list of namespace states and their contained sessions states",
+        "operationId" : "getAllSessions",
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SessionNamespaceState"
+                  },
+                  "title" : "ArrayList<SessionNamespaceState>"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      }
+    },
+    "/api/v1/local/session/{namespace}/{sessionId}" : {
+      "get" : {
+        "tags" : [ "local" ],
+        "summary" : "Get extended session state",
+        "description" : "Returns a session's state, extended with: agents, threads and thread messages",
+        "operationId" : "getExtendedSessionState",
         "parameters" : [ {
           "name" : "namespace",
           "in" : "path",
@@ -196,13 +303,85 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/SessionState"
+                  "$ref" : "#/components/schemas/SessionStateExtended"
                 }
               }
             }
           },
           "404" : {
-            "description" : "If either namespace or session ID is invalid",
+            "description" : "Either namespace or session ID is invalid",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          }
+        },
+        "deprecated" : false,
+        "security" : [ {
+          "token" : [ ]
+        } ]
+      },
+      "post" : {
+        "tags" : [ "local" ],
+        "summary" : "Executes a session",
+        "description" : "Executes a session was created with deferred execution",
+        "operationId" : "executeDeferredSession",
+        "parameters" : [ {
+          "name" : "namespace",
+          "in" : "path",
+          "description" : "The namespace of the session",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        }, {
+          "name" : "sessionId",
+          "in" : "path",
+          "description" : "The sessionId of the session",
+          "required" : true,
+          "deprecated" : false,
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "title" : "String"
+          }
+        } ],
+        "requestBody" : {
+          "description" : "Settings for the execution of the session",
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SessionRuntimeSettings"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "headers" : { }
+          },
+          "404" : {
+            "description" : "Either namespace or session ID is invalid",
+            "headers" : { },
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RouteException"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "The session exists but is not pending execution",
             "headers" : { },
             "content" : {
               "application/json" : {
@@ -219,7 +398,7 @@
         } ]
       },
       "delete" : {
-        "tags" : [ "sessions" ],
+        "tags" : [ "local" ],
         "summary" : "Close an active session",
         "description" : "Closes an active session, cancelling all running agents",
         "operationId" : "closeSession",
@@ -1240,9 +1419,17 @@
             "namespace" : {
               "type" : "string",
               "title" : "String"
+            },
+            "namespaceAnnotations" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashMap<String,String>"
             }
           },
-          "required" : [ "namespace", "timestamp", "type" ],
+          "required" : [ "namespace", "namespaceAnnotations", "timestamp", "type" ],
           "title" : "namespace_closed"
         }, {
           "type" : "object",
@@ -1259,9 +1446,17 @@
             "namespace" : {
               "type" : "string",
               "title" : "String"
+            },
+            "namespaceAnnotations" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashMap<String,String>"
             }
           },
-          "required" : [ "namespace", "timestamp", "type" ],
+          "required" : [ "namespace", "namespaceAnnotations", "timestamp", "type" ],
           "title" : "namespace_created"
         }, {
           "type" : "object",
@@ -1282,9 +1477,17 @@
             "namespace" : {
               "type" : "string",
               "title" : "String"
+            },
+            "namespaceAnnotations" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashMap<String,String>"
             }
           },
-          "required" : [ "namespace", "sessionId", "timestamp", "type" ],
+          "required" : [ "namespace", "namespaceAnnotations", "sessionId", "timestamp", "type" ],
           "title" : "session_closed"
         }, {
           "type" : "object",
@@ -1305,9 +1508,17 @@
             "namespace" : {
               "type" : "string",
               "title" : "String"
+            },
+            "namespaceAnnotations" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashMap<String,String>"
             }
           },
-          "required" : [ "namespace", "sessionId", "timestamp", "type" ],
+          "required" : [ "namespace", "namespaceAnnotations", "sessionId", "timestamp", "type" ],
           "title" : "session_closing"
         }, {
           "type" : "object",
@@ -1328,10 +1539,49 @@
             "namespace" : {
               "type" : "string",
               "title" : "String"
+            },
+            "namespaceAnnotations" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashMap<String,String>"
             }
           },
-          "required" : [ "namespace", "sessionId", "timestamp", "type" ],
+          "required" : [ "namespace", "namespaceAnnotations", "sessionId", "timestamp", "type" ],
           "title" : "session_created"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "session_running" ],
+              "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
+            "sessionId" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "namespace" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "namespaceAnnotations" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "string",
+                "title" : "String"
+              },
+              "title" : "LinkedHashMap<String,String>"
+            }
+          },
+          "required" : [ "namespace", "namespaceAnnotations", "sessionId", "timestamp", "type" ],
+          "title" : "session_running"
         } ],
         "discriminator" : {
           "propertyName" : "type"
@@ -1358,6 +1608,44 @@
           },
           "required" : [ "name", "timestamp", "type" ],
           "title" : "agent_connected"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "agent_sleep_start" ],
+              "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "timestamp", "type" ],
+          "title" : "agent_sleep_start"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "type" : {
+              "type" : "string",
+              "enum" : [ "agent_sleep_stop" ],
+              "title" : "String"
+            },
+            "timestamp" : {
+              "type" : "string",
+              "title" : "UTC timestamp ISO-8601"
+            },
+            "name" : {
+              "type" : "string",
+              "title" : "String"
+            }
+          },
+          "required" : [ "name", "timestamp", "type" ],
+          "title" : "agent_sleep_stop"
         }, {
           "type" : "object",
           "properties" : {
@@ -3427,6 +3715,14 @@
               "$ref" : "#/components/schemas/X402BudgetedResource"
             },
             "title" : "ArrayList<X402BudgetedResource>"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashMap<String,String>"
           }
         },
         "required" : [ "id", "name", "provider" ],
@@ -3799,6 +4095,31 @@
         },
         "title" : "ToolAnnotations"
       },
+      "SessionNamespaceRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name of this namespace",
+            "title" : "String"
+          },
+          "deleteOnLastSessionExit" : {
+            "type" : "boolean",
+            "description" : "\n        If this is true the namespace will be deleted when the last session in this namespace closes.  Note that this\n        does not guarantee that the namespace will never be empty, because namespaces can be created without sessions\n    ",
+            "title" : "Boolean"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashMap<String,String>"
+          }
+        },
+        "required" : [ "annotations", "deleteOnLastSessionExit", "name" ],
+        "title" : "SessionNamespaceRequest"
+      },
       "SessionRuntimeSettings" : {
         "type" : "object",
         "properties" : {
@@ -3807,6 +4128,11 @@
             "format" : "int64",
             "description" : "If specified, the session will never live longer than this many milliseconds.",
             "title" : "Long"
+          },
+          "extendedEndReport" : {
+            "type" : "boolean",
+            "description" : "If specified, the end report generated for this session will be extended, including threads and messages",
+            "title" : "Boolean"
           },
           "persistenceMode" : {
             "anyOf" : [ {
@@ -3867,6 +4193,7 @@
             "description" : "Webhooks executed for this session"
           }
         },
+        "required" : [ "extendedEndReport" ],
         "title" : "SessionRuntimeSettings"
       },
       "SessionWebhooks" : {
@@ -3898,11 +4225,89 @@
             "$ref" : "#/components/schemas/AgentGraphRequest",
             "description" : "A request for the agents in this session"
           },
-          "sessionRuntimeSettings" : {
-            "$ref" : "#/components/schemas/SessionRuntimeSettings"
+          "namespaceProvider" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "description" : "\n        Provides a full namespace request to create an ad hoc namespace if the namespace doesn't already exist.  Note\n        that this will not update an existing namespace, so for example, there is no guarantee that annotations \n        specified on this request end up on the namespace that this session belongs in.\n        ",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "create_if_not_exists" ],
+                  "title" : "String"
+                },
+                "namespaceRequest" : {
+                  "$ref" : "#/components/schemas/SessionNamespaceRequest"
+                }
+              },
+              "required" : [ "namespaceRequest", "type" ],
+              "title" : "create_if_not_exists"
+            }, {
+              "type" : "object",
+              "description" : "Indicates that the session request should use an existing namespace",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "use_existing" ],
+                  "title" : "String"
+                },
+                "name" : {
+                  "type" : "string",
+                  "title" : "String"
+                }
+              },
+              "required" : [ "name", "type" ],
+              "title" : "use_existing"
+            } ],
+            "description" : "A description of what namespace this session should run in",
+            "discriminator" : {
+              "propertyName" : "type"
+            },
+            "title" : "SessionNamespaceProvider"
+          },
+          "execution" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "description" : "The session's execution is deferred.  A deferred execution must be executed manually later",
+              "properties" : {
+                "mode" : {
+                  "type" : "string",
+                  "enum" : [ "defer" ],
+                  "title" : "String"
+                }
+              },
+              "required" : [ "mode" ],
+              "title" : "defer"
+            }, {
+              "type" : "object",
+              "description" : "The session should be executed immediately with the specified runtime settings",
+              "properties" : {
+                "mode" : {
+                  "type" : "string",
+                  "enum" : [ "immediate" ],
+                  "title" : "String"
+                },
+                "runtimeSettings" : {
+                  "$ref" : "#/components/schemas/SessionRuntimeSettings"
+                }
+              },
+              "required" : [ "mode" ],
+              "title" : "immediate"
+            } ],
+            "discriminator" : {
+              "propertyName" : "mode"
+            },
+            "title" : "SessionRequestExecution"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashMap<String,String>"
           }
         },
-        "required" : [ "agentGraphRequest" ],
+        "required" : [ "agentGraphRequest", "namespaceProvider" ],
         "title" : "SessionRequest"
       },
       "SessionIdentifier" : {
@@ -3933,84 +4338,9 @@
         "required" : [ "message" ],
         "title" : "RouteException"
       },
-      "BasicSession" : {
+      "SessionStateBase" : {
         "type" : "object",
-        "properties" : {
-          "sessionId" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "closing" : {
-            "type" : "boolean",
-            "title" : "Boolean"
-          }
-        },
-        "required" : [ "closing", "sessionId" ],
-        "title" : "BasicSession"
-      },
-      "BasicNamespace" : {
-        "type" : "object",
-        "properties" : {
-          "namespace" : {
-            "type" : "string",
-            "title" : "String"
-          },
-          "sessions" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/BasicSession"
-            },
-            "title" : "ArrayList<BasicSession>"
-          }
-        },
-        "required" : [ "namespace", "sessions" ],
-        "title" : "BasicNamespace"
-      },
-      "SessionAgentState" : {
-        "type" : "object",
-        "description" : "The state of an agent running in a session",
-        "properties" : {
-          "name" : {
-            "type" : "string",
-            "description" : "The name given for this agent in the AgentGraph, this is unique in the graph",
-            "title" : "String"
-          },
-          "registryAgentIdentifier" : {
-            "$ref" : "#/components/schemas/RegistryAgentIdentifier",
-            "description" : "The identifier for this agent's registry entry.  See RegistryAgent for more information"
-          },
-          "isWaiting" : {
-            "type" : "boolean",
-            "description" : "True when the agent is waiting for a message from another agent",
-            "title" : "Boolean"
-          },
-          "isConnected" : {
-            "type" : "boolean",
-            "description" : "True after agent process was launched and made a connection to the Coral MCP server.  The agent will not be responsive until connected",
-            "title" : "Boolean"
-          },
-          "description" : {
-            "type" : "string",
-            "description" : "The description of this agent, given to other agents in the graph",
-            "title" : "String"
-          },
-          "links" : {
-            "type" : "array",
-            "description" : "A list of agents that this agent is aware of, constructed from agent groups in the AgentGraph",
-            "items" : {
-              "type" : "string",
-              "title" : "String"
-            },
-            "title" : "LinkedHashSet<String>",
-            "uniqueItems" : true
-          }
-        },
-        "required" : [ "isConnected", "isWaiting", "links", "name", "registryAgentIdentifier" ],
-        "title" : "SessionAgentState"
-      },
-      "SessionState" : {
-        "type" : "object",
-        "description" : "The state of a running session",
+        "description" : "The base state of a running session, without agent or threads",
         "properties" : {
           "id" : {
             "type" : "string",
@@ -4027,6 +4357,274 @@
             "description" : "The namespace that this session resides in",
             "title" : "String"
           },
+          "status" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "description" : "\n        The session is closing and will soon be removed from memory.  The closing status can only be observed when \n        the session has persistence configure in SessionRuntimeSettings.  Note that there is no closed state for \n        sessions, as closed sessions are deleted from memory\n        ",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "closing" ],
+                  "title" : "String"
+                },
+                "executionTime" : {
+                  "type" : "string",
+                  "title" : "UTC timestamp ISO-8601"
+                },
+                "closingTime" : {
+                  "type" : "string",
+                  "title" : "UTC timestamp ISO-8601"
+                }
+              },
+              "required" : [ "closingTime", "executionTime", "type" ],
+              "title" : "closing"
+            }, {
+              "type" : "object",
+              "description" : "This session status is only achieved when creating sessions with deferred execution",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "pending_execution" ],
+                  "title" : "String"
+                }
+              },
+              "required" : [ "type" ],
+              "title" : "pending_execution"
+            }, {
+              "type" : "object",
+              "description" : "\n        The session launched it's agents and is currently running.  The session's status will remain as running until:\n        \n        1. All the agents in the session exit, or\n        2. The session's TTL expires, or\n        3. Manual exit \n        ",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "executed" ],
+                  "title" : "String"
+                },
+                "executionTime" : {
+                  "type" : "string",
+                  "title" : "UTC timestamp ISO-8601"
+                }
+              },
+              "required" : [ "executionTime", "type" ],
+              "title" : "executed"
+            } ],
+            "description" : "The status of the session",
+            "discriminator" : {
+              "propertyName" : "type"
+            },
+            "title" : "SessionStatus"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashMap<String,String>"
+          }
+        },
+        "required" : [ "annotations", "id", "namespace", "status", "timestamp" ],
+        "title" : "SessionStateBase"
+      },
+      "SessionNamespaceState" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name of this namespace",
+            "title" : "String"
+          },
+          "deleteOnLastSessionExit" : {
+            "type" : "boolean",
+            "description" : "Whether or not this namespace will be deleted when the last session exits",
+            "title" : "Boolean"
+          },
+          "sessions" : {
+            "type" : "array",
+            "description" : "A list of sessions that exist inside this namespace",
+            "items" : {
+              "$ref" : "#/components/schemas/SessionStateBase"
+            },
+            "title" : "ArrayList<SessionStateBase>"
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "description" : "Annotations for this namespace",
+            "title" : "LinkedHashMap<String,String>"
+          }
+        },
+        "required" : [ "annotations", "deleteOnLastSessionExit", "name", "sessions" ],
+        "title" : "SessionNamespaceState"
+      },
+      "SessionAgentState" : {
+        "type" : "object",
+        "description" : "The state of an agent running in a session",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "description" : "The name given for this agent in the AgentGraph, this is unique in the graph",
+            "title" : "String"
+          },
+          "registryAgentIdentifier" : {
+            "$ref" : "#/components/schemas/RegistryAgentIdentifier",
+            "description" : "The identifier for this agent's registry entry.  See RegistryAgent for more information"
+          },
+          "status" : {
+            "anyOf" : [ {
+              "type" : "object",
+              "description" : "The agent is running and potentially has a connection with the agent's MCP server",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "running" ],
+                  "title" : "String"
+                },
+                "connectionStatus" : {
+                  "anyOf" : [ {
+                    "type" : "object",
+                    "description" : "The agent has an active MCP connection with the agent's MCP server",
+                    "properties" : {
+                      "type" : {
+                        "type" : "string",
+                        "enum" : [ "connected" ],
+                        "title" : "String"
+                      },
+                      "communicationStatus" : {
+                        "anyOf" : [ {
+                          "type" : "object",
+                          "description" : "The agent is sleeping",
+                          "properties" : {
+                            "type" : {
+                              "type" : "string",
+                              "enum" : [ "sleeping" ],
+                              "title" : "String"
+                            }
+                          },
+                          "required" : [ "type" ],
+                          "title" : "sleeping"
+                        }, {
+                          "type" : "object",
+                          "description" : "The agent is not waiting for messages or sleeping and is assumed to be thinking",
+                          "properties" : {
+                            "type" : {
+                              "type" : "string",
+                              "enum" : [ "thinking" ],
+                              "title" : "String"
+                            }
+                          },
+                          "required" : [ "type" ],
+                          "title" : "thinking"
+                        }, {
+                          "type" : "object",
+                          "description" : "The agent is waiting for a message",
+                          "properties" : {
+                            "type" : {
+                              "type" : "string",
+                              "enum" : [ "waiting_message" ],
+                              "title" : "String"
+                            }
+                          },
+                          "required" : [ "type" ],
+                          "title" : "waiting_message"
+                        } ],
+                        "discriminator" : {
+                          "propertyName" : "type"
+                        },
+                        "title" : "SessionAgentCommunicationStatus"
+                      }
+                    },
+                    "required" : [ "communicationStatus", "type" ],
+                    "title" : "connected"
+                  }, {
+                    "type" : "object",
+                    "description" : "The agent is not connected to the agent's MCP server, it may be trying to connect actively or it may have encountered an error",
+                    "properties" : {
+                      "type" : {
+                        "type" : "string",
+                        "enum" : [ "not_connected" ],
+                        "title" : "String"
+                      }
+                    },
+                    "required" : [ "type" ],
+                    "title" : "not_connected"
+                  } ],
+                  "discriminator" : {
+                    "propertyName" : "type"
+                  },
+                  "title" : "SessionAgentConnectionStatus"
+                }
+              },
+              "required" : [ "connectionStatus", "type" ],
+              "title" : "running"
+            }, {
+              "type" : "object",
+              "description" : "The agent's runtime started and then subsequently stopped",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "stopped" ],
+                  "title" : "String"
+                }
+              },
+              "required" : [ "type" ],
+              "title" : "stopped"
+            }, {
+              "type" : "object",
+              "description" : "The agent is waiting to be launched",
+              "properties" : {
+                "type" : {
+                  "type" : "string",
+                  "enum" : [ "waiting" ],
+                  "title" : "String"
+                }
+              },
+              "required" : [ "type" ],
+              "title" : "waiting"
+            } ],
+            "description" : "Nested status state for this agent, running -> connected -> thinking/waiting/sleeping",
+            "discriminator" : {
+              "propertyName" : "type"
+            },
+            "title" : "SessionAgentStatus"
+          },
+          "description" : {
+            "type" : "string",
+            "description" : "The description of this agent, given to other agents in the graph",
+            "title" : "String"
+          },
+          "links" : {
+            "type" : "array",
+            "description" : "A list of agents that this agent is aware of, constructed from agent groups in the AgentGraph",
+            "items" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashSet<String>",
+            "uniqueItems" : true
+          },
+          "annotations" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string",
+              "title" : "String"
+            },
+            "title" : "LinkedHashMap<String,String>"
+          }
+        },
+        "required" : [ "annotations", "links", "name", "registryAgentIdentifier", "status" ],
+        "title" : "SessionAgentState"
+      },
+      "SessionStateExtended" : {
+        "type" : "object",
+        "description" : "The state of a running session",
+        "properties" : {
+          "base" : {
+            "$ref" : "#/components/schemas/SessionStateBase",
+            "description" : "Base session state"
+          },
           "agents" : {
             "type" : "array",
             "description" : "A list of the states of all agents in this session",
@@ -4042,15 +4640,10 @@
               "$ref" : "#/components/schemas/SessionThread"
             },
             "title" : "ArrayList<SessionThread>"
-          },
-          "closing" : {
-            "type" : "boolean",
-            "description" : "True if the session is closing, closing sessions have no running agents and will only be kept in memory for as long as the persistence settings specify",
-            "title" : "Boolean"
           }
         },
-        "required" : [ "agents", "closing", "id", "namespace", "threads", "timestamp" ],
-        "title" : "SessionState"
+        "required" : [ "agents", "base", "threads" ],
+        "title" : "SessionStateExtended"
       },
       "AgentRegistrySource" : {
         "type" : "object",
