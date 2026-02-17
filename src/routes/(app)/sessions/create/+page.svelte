@@ -727,6 +727,7 @@
 										<Command.Root>
 											<Command.Input placeholder="Search agents..." />
 											<Command.List>
+											<Command.Empty>No agents found.</Command.Empty>
 												{#each Object.values(ctx.server.catalogs) as catalog}
 													<Command.Group heading={catalog.identifier.type}>
 														{#each Object.values(catalog.agents) as agent}
