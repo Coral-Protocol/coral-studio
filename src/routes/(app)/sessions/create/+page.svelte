@@ -56,7 +56,6 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 
 	import CodeMirror from 'svelte-codemirror-editor';
-	import { javascript } from '@codemirror/lang-javascript';
 	import { json } from '@codemirror/lang-json';
 	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -72,6 +71,13 @@
 	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import SidebarTab from './SidebarTab.svelte';
 	import { page } from '$app/state';
+	import hljs from 'highlight.js';
+
+	import javascript from 'highlight.js/lib/languages/javascript';
+	import python from 'highlight.js/lib/languages/python';
+
+	hljs.registerLanguage('javascript', javascript);
+	hljs.registerLanguage('python', python);
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -594,7 +600,8 @@
 
 	let jsonExample = $state<string>('');
 	let jsonDirty = $state(false);
-	let fetchExample = $state<string>('');
+	let jsExample = $state<string>('');
+	let pyExample = $state<string>('');
 	$effect(() => {
 		let cancelled = false;
 
@@ -619,9 +626,23 @@
 					'  )',
 					'});'
 				].join('\n');
+
+				pyExample = [
+					'import requests',
+					'',
+					'headers = {',
+					"    'Content-Type': 'application/json',",
+					"    'Authorization': 'Bearer YOUR_SECRET_TOKEN'",
+					'}',
+					'',
+					'json_data = ' + jsBody,
+					'',
+					"response = requests.post('http://localhost:5555/api/v1/sessions/{namespace}', headers=headers, json=json_data)",
+					'print(response.text)'
+				].join('\n');
 			} catch (e) {
 				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
-				fetchExample = '// Failed to generate Javscript, does your session contain invalid data?';
+				jsExample = '// Failed to generate JavaScript, does your session contain invalid data?';
 				console.error(e);
 			}
 		})();
@@ -727,7 +748,7 @@
 										<Command.Root>
 											<Command.Input placeholder="Search agents..." />
 											<Command.List>
-											<Command.Empty>No agents found.</Command.Empty>
+												<Command.Empty>No agents found.</Command.Empty>
 												{#each Object.values(ctx.server.catalogs) as catalog}
 													<Command.Group heading={catalog.identifier.type}>
 														{#each Object.values(catalog.agents) as agent}
@@ -807,8 +828,8 @@
 									<Table.Root class="w-full">
 										<Table.Header>
 											<Table.Row>
-												<Table.Head><Checkbox /></Table.Head>
-												<Table.Head>Name</Table.Head>
+												<Table.Head class="w-12"><Checkbox /></Table.Head>
+												<Table.Head class="">Name</Table.Head>
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
 												<Table.Head>Agent</Table.Head>
@@ -818,25 +839,22 @@
 										<Table.Body>
 											{#each $formData.agents as agent, i}
 												<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
-													<Table.Cell class="max-w-[100px]">
+													<Table.Cell>
 														<p class="truncate font-medium"><Checkbox /></p>
 													</Table.Cell>
-													<Table.Cell class="max-w-[100px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate font-medium">{agent.name}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[10px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.version}</p>
 													</Table.Cell>
 
-													<Table.Cell
-														class="max-w-[120px] min-w-[120px]"
-														onclick={() => (selectedAgent = i)}
-													>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.registrySourceId.type}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[240px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.name}</p>
 													</Table.Cell>
 
@@ -875,8 +893,13 @@
 						<Tabs.List
 							class="bg-sidebar  flex w-full justify-start rounded-none border-b *:rounded-none"
 						>
-							<Tabs.Trigger value="json" class="grow-0">JSON{jsonDirty ? '*' : ''}</Tabs.Trigger>
-							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
+							<Tabs.Trigger value="json" class="grow-0"
+								>Session editor{jsonDirty ? '*' : ''}</Tabs.Trigger
+							>
+							<Separator orientation="vertical" class="" />
+							<Tabs.Trigger value="js" class="grow-0">JavaScript</Tabs.Trigger>
+							<Tabs.Trigger value="py" class="grow-0">Python</Tabs.Trigger>
+							<!-- <Tabs.Trigger value="curl" class="grow-0">cURL</Tabs.Trigger> -->
 						</Tabs.List>
 						<Tabs.Content value="json" class="relative overflow-y-auto">
 							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
@@ -909,16 +932,40 @@
 						</Tabs.Content>
 						<Tabs.Content value="js" class="relative overflow-y-auto">
 							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={fetchExample} />
+								<CopyButton value={jsExample} />
 							</section>
-							<CodeMirror
-								bind:value={fetchExample}
-								lang={javascript()}
-								theme={dracula}
-								readonly
-								class="ͼo h-full [&_.cm-content]:p-0! "
-							/>
+							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
+									jsExample.trim(),
+									{
+										language: 'javascript',
+										ignoreIllegals: true
+									}
+								).value}</pre>
 						</Tabs.Content>
+						<Tabs.Content value="py" class="relative overflow-y-auto">
+							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+								<CopyButton value={pyExample} />
+							</section>
+							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
+									pyExample.trim(),
+									{
+										language: 'python',
+										ignoreIllegals: true
+									}
+								).value}</pre>
+						</Tabs.Content>
+						<!-- <Tabs.Content value="curl" class="relative overflow-y-auto">
+							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+								<CopyButton value={jsExample} />
+							</section>
+							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
+									jsExample.trim(),
+									{
+										language: 'plaintext',
+										ignoreIllegals: true
+									}
+								).value}</pre>
+						</Tabs.Content> -->
 					</Tabs.Root>
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
 						<Form.Button
