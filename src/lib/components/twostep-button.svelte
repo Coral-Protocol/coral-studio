@@ -40,8 +40,8 @@
 		<Dialog.Header>
 			<Dialog.Title>{title}</Dialog.Title>
 			<Dialog.Description>
-				<p class="mx-auto p-4 text-xs">
-					Tip: Shift-click remove to skip this confirmation.
+				<p class="mx-auto py-4 text-xs">
+					Hold shift when clicking to skip this confirmation.
 				</p></Dialog.Description
 			>
 		</Dialog.Header>
@@ -57,7 +57,6 @@
 			>
 			<Button
 				class="grow"
-				variant="secondary"
 				onclick={() => {
 					open = false;
 				}}>No</Button
