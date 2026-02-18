@@ -8,6 +8,8 @@ import type { CoralServer } from './CoralServer.svelte';
 import { createWebsocket } from './websocket.svelte';
 
 export type SessionAgentState = components['schemas']['SessionAgentState'];
+export type SessionAgentStatus = SessionAgentState['status'];
+
 export type SessionThread = components['schemas']['SessionThread'];
 
 export class Session {
@@ -46,7 +48,7 @@ export class Session {
 		this.socket = socket;
 
 		server.api
-			.GET('/api/v1/sessions/{namespace}/{sessionId}', {
+			.GET('/api/v1/local/session/{namespace}/{sessionId}/extended', {
 				params: { path: { namespace, sessionId: sessionId } }
 			})
 			.then((res) => {
@@ -119,21 +121,24 @@ export class Session {
 						toast.warning("Got agent update about an agent we don't know!");
 						return;
 					}
-					this.agents[data.name]!.isConnected = true;
+					this.agents[data.name]!.status = {
+						type: 'running',
+						connectionStatus: { type: 'not_connected' }
+					};
 					break;
 				case 'agent_wait_start':
 					if (!this.agents[data.name]) {
 						toast.warning("Got agent update about an agent we don't know!");
 						return;
 					}
-					this.agents[data.name]!.isWaiting = true;
+					this.agents[data.name]!.status = { type: 'waiting' };
 					break;
 				case 'agent_wait_stop':
 					if (!this.agents[data.name]) {
 						toast.warning("Got agent update about an agent we don't know!");
 						return;
 					}
-					this.agents[data.name]!.isWaiting = false;
+					this.agents[data.name]!.status = { type: 'stopped' };
 					break;
 				case 'thread_created':
 					console.log('new thread');

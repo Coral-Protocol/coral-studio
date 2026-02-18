@@ -9,7 +9,8 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import SidebarLink from './sidebar-link.svelte';
 	import { cn } from '$lib/utils';
-	import type { AgentStateEnum } from '$lib';
+	import type { SessionAgentStatus } from '$lib/session.svelte';
+	import { type SessionAgentStatusMap, resolveStateMap } from '$lib';
 
 	let {
 		items
@@ -24,17 +25,22 @@
 				title: string;
 				url: string;
 				badge?: number;
-				state?: AgentStateEnum;
+				state?: SessionAgentStatus;
 			}[];
 		}[];
 	} = $props();
 
-	const stateColors: { [K in AgentStateEnum]: string } = {
-		disconnected: 'border-primary/30 border bg-transparent',
-		connecting: 'bg-primary/30 animate-pulse',
-		listening: 'bg-green-400',
-		busy: 'bg-orange-400 animate-pulse',
-		dead: 'bg-destructive'
+	const stateColors: SessionAgentStatusMap<string> = {
+		waiting: 'border-primary/30 border bg-transparent',
+		running: {
+			connected: {
+				sleeping: 'bg-blue-400',
+				thinking: 'bg-orange-400 animate-pulse',
+				waiting_message: 'bg-green-400'
+			},
+			not_connected: 'bg-primary/30 animate-pulse'
+		},
+		stopped: 'bg-destructive'
 	};
 </script>
 
@@ -71,8 +77,11 @@
 													{#snippet child({ props })}
 														<a href={subItem.url} {...props}>
 															{#if subItem.state}
-																<span class={cn('size-2 rounded-full', stateColors[subItem.state])}
-																	><span class="sr-only">({subItem.state})</span></span
+																<span
+																	class={cn(
+																		'size-2 rounded-full',
+																		resolveStateMap(subItem.state, stateColors)
+																	)}><span class="sr-only">({subItem.state})</span></span
 																>
 															{/if}
 															<span class="truncate font-sans font-medium tracking-wide"
