@@ -637,8 +637,7 @@
 					'',
 					'json_data = ' + jsBody,
 					'',
-					"response = requests.post('http://localhost:5555/api/v1/sessions/{namespace}', headers=headers, json=json_data)",
-					'print(response.text)'
+					"response = requests.post('http://localhost:5555/api/v1/sessions/{namespace}', headers=headers, json=json_data)"
 				].join('\n');
 			} catch (e) {
 				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
