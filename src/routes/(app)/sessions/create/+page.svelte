@@ -614,7 +614,7 @@
 
 				const jsBody = toJsObjectLiteral(body, 4);
 
-				fetchExample = [
+				jsExample = [
 					"fetch('http://localhost:5555/api/v1/local/session', {",
 					"  method: 'POST',",
 					'  headers: {',
