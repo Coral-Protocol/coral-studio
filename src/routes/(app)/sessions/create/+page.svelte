@@ -32,7 +32,6 @@
 	import { cn } from '$lib/utils';
 	import { idAsKey, type PublicRegistryAgent, type Registry } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
-	import { tools } from '$lib/mcptools';
 
 	import Combobox from '$lib/components/combobox.svelte';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
@@ -288,10 +287,7 @@
 			try {
 				sendingForm = true;
 				const body = await asJson;
-				const res = await ctx.server.api.POST('/api/v1/sessions/{namespace}', {
-					params: {
-						path: { namespace: ctx.server.namespace }
-					},
+				const res = await ctx.server.api.POST('/api/v1/local/session', {
 					body
 				});
 				sendingForm = false;
@@ -306,13 +302,6 @@
 					return;
 				}
 				if (res.data) {
-					if (!(ctx.server.namespace in ctx.server.allSessions))
-						ctx.server.allSessions[ctx.server.namespace] = {};
-					// TODO @alan: replace with websocket notifications
-					ctx.server.allSessions[ctx.server.namespace]![res.data.sessionId] = {
-						sessionId: res.data.sessionId,
-						state: 'open'
-					};
 					ctx.session = new Session({
 						sessionId: res.data.sessionId,
 						namespace: ctx.server.namespace,
@@ -385,22 +374,23 @@
 						{
 							id,
 							name: k,
-							schema: {
-								inputSchema: v.schema.inputSchema,
-								outputSchema: v.schema.outputSchema,
-								name: v.schema.name,
-								description: v.schema.description
-							},
+							schema: v.schema,
 							transport: v.transport
 						} satisfies schemas.CustomTool
 					];
 				})
 			);
+			const defaultRuntimeSettings = {
+				ttl: 50000
+			};
 			$formData = {
 				tools,
 				groups: data.agentGraphRequest.groups ?? [],
 				sessionRuntimeSettings: {
-					ttl: data.sessionRuntimeSettings?.ttl ?? 50000
+					...defaultRuntimeSettings,
+					...(data.execution && data.execution.mode === 'immediate'
+						? data.execution.runtimeSettings
+						: {})
 				},
 				agents: data.agentGraphRequest.agents.map((agent) => ({
 					id: agent.id,
@@ -503,8 +493,20 @@
 				groups: $formData.groups,
 				customTools
 			},
-			sessionRuntimeSettings: {
-				ttl: $formData.sessionRuntimeSettings.ttl
+			namespaceProvider: {
+				type: 'create_if_not_exists',
+				namespaceRequest: {
+					name: ctx.server.namespace,
+					annotations: {},
+					deleteOnLastSessionExit: false
+				}
+			},
+			execution: {
+				mode: 'immediate',
+				runtimeSettings: {
+					extendedEndReport: false,
+					ttl: $formData.sessionRuntimeSettings.ttl
+				}
 			}
 		} satisfies CreateSessionRequest;
 	});
@@ -607,7 +609,7 @@
 				const jsBody = toJsObjectLiteral(body, 4);
 
 				fetchExample = [
-					"fetch('http://localhost:5555/api/v1/sessions/{namespace}', {",
+					"fetch('http://localhost:5555/api/v1/local/session', {",
 					"  method: 'POST',",
 					'  headers: {',
 					"    'Content-Type': 'application/json',",

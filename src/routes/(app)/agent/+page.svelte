@@ -12,10 +12,10 @@
 	import LogsComponent from '$lib/components/logs.svelte';
 	import RemoteControl from '$lib/components/remote-control.svelte';
 	import { appContext } from '$lib/context';
-	import { agentStateOf } from '$lib';
 	import { cn } from '$lib/utils';
 	import { base } from '$app/paths';
 	import { Logs } from '$lib/logs.svelte';
+	import { humanReadableMap, resolveStateMap } from '$lib';
 
 	let ctx = appContext.get();
 	let conn = $derived(ctx.session);
@@ -61,7 +61,7 @@
 			</Tabs.List>
 			<Tabs.Content value="main">
 				<h1 class="text-3xl font-bold">{agentName}</h1>
-				<p>{agentStateOf(agent)}</p>
+				<p>{resolveStateMap(agent.status, humanReadableMap)}</p>
 				<p class={cn(agent.description && 'text-muted-foreground')}>
 					{agent.description || 'No description.'}
 				</p>
