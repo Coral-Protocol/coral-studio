@@ -48,7 +48,7 @@ export class Session {
 		this.socket = socket;
 
 		server.api
-			.GET('/api/v1/local/session/{namespace}/{sessionId}', {
+			.GET('/api/v1/local/session/{namespace}/{sessionId}/extended', {
 				params: { path: { namespace, sessionId: sessionId } }
 			})
 			.then((res) => {

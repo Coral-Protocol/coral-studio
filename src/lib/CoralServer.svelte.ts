@@ -25,7 +25,7 @@ export const agentIdOf = (agentId: RegistryAgentIdentifier) =>
 
 type APIClient = Client<paths, `${string}/${string}`>;
 
-export type NamespaceData = Omit<components['schemas']['SessionNamespaceState'], 'sessions'> & {
+export type NamespaceData = components['schemas']['SessionNamespaceStateBase'] & {
 	sessions: {
 		[sessionId: string]: components['schemas']['SessionStateBase'];
 	};
@@ -113,48 +113,46 @@ export class CoralServer {
 			}
 			switch (data.type) {
 				case 'namespace_created':
-					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {
-						name: data.namespace,
-						annotations: data.namespaceAnnotations,
-						// TODO: more data from server please
-						deleteOnLastSessionExit: false,
-						sessions: {}
+					let ns_state = data.initialState;
+					this.allSessions[ns_state.name] = {
+						...ns_state,
+						sessions: this.allSessions[ns_state.name]?.sessions ?? {}
+					};
+					break;
+				case 'namespace_closed':
+					ns_state = data.finalState;
+					this.allSessions[ns_state.name] = {
+						...ns_state,
+						sessions: this.allSessions[ns_state.name]?.sessions ?? {}
 					};
 					break;
 				case 'session_created':
-					this.allSessions[data.namespace] = this.allSessions[data.namespace] ?? {
-						name: data.namespace,
-						annotations: data.namespaceAnnotations,
-						// TODO: more data from server please
-						deleteOnLastSessionExit: false,
-						sessions: {}
-					};
-					this.allSessions[data.namespace]!.sessions[data.sessionId] = {
-						id: data.sessionId,
-						namespace: data.namespace,
-						timestamp: data.timestamp,
-						// TODO: more data from server please
-						annotations: {},
-						status: { type: 'pending_execution' }
-					};
+					ns_state = data.namespaceState;
+					let sess_state = data.initialSessionState;
+					if (!(ns_state.name in this.allSessions)) return;
+					this.allSessions[ns_state.name]!.sessions[sess_state.id] = sess_state;
+					break;
+				case 'session_running':
+					ns_state = data.namespaceState;
+					sess_state = data.sessionState;
+					if (!(ns_state.name in this.allSessions)) return;
+					this.allSessions[ns_state.name]!.sessions[sess_state.id] = sess_state;
 					break;
 				case 'session_closing':
-					if (!this.allSessions[data.namespace]?.sessions[data.sessionId]) return;
-					// TODO: more data from server please
-					// this.allSessions[data.namespace]!.sessions[data.sessionId]!.base.status = {
-					// 	type: 'closing'
-					// };
+					ns_state = data.namespaceState;
+					sess_state = data.sessionState;
+					if (!(ns_state.name in this.allSessions)) return;
+					this.allSessions[ns_state.name]!.sessions[sess_state.id] = sess_state;
 					break;
 				case 'session_closed':
-					if (!this.allSessions[data.namespace]?.sessions[data.sessionId]) return;
-					// TODO: more data from server please
+					ns_state = data.namespaceState;
+					sess_state = data.finalSessionState;
+					if (!(ns_state.name in this.allSessions)) return;
+					this.allSessions[ns_state.name]!.sessions[sess_state.id] = sess_state;
 					break;
+
 				default:
 					break;
-			}
-			if (data.namespace !== this.namespace) {
-				console.warn(`skipping event on namespace we care not for (${data.namespace})`);
-				return;
 			}
 		};
 		const onopen = () => {
@@ -217,25 +215,20 @@ export class CoralServer {
 			}
 			if (res.error) throw new Error(`Error fetching sessions - ${res.error.message}`);
 
-			this.allSessions[namespace] = {
-				name: namespace,
-				// TODO: more data from server please
-				annotations: {},
-				deleteOnLastSessionExit: false,
-				sessions: Object.fromEntries(res.data.map((s) => [s.id, s]))
-			};
+			if (!this.allSessions[namespace]) {
+				console.error("looked up namespace sessions for namespace we didn't know about before!");
+				return;
+			}
+			this.allSessions[namespace].sessions = Object.fromEntries(res.data.map((s) => [s.id, s]));
 		} else {
-			const res = await this.api.GET('/api/v1/local');
+			const res = await this.api.GET('/api/v1/local/namespace/extended');
 			if (res.error) throw new Error(`Error fetching sessions`);
 
-			// FIXME: oub
 			this.allSessions = Object.fromEntries(
 				res.data.map((s) => [
-					s.name,
+					s.base.name,
 					{
-						name: s.name,
-						annotations: s.annotations,
-						deleteOnLastSessionExit: s.deleteOnLastSessionExit,
+						...s.base,
 						sessions: Object.fromEntries(s.sessions.map((s) => [s.id, s]))
 					}
 				])

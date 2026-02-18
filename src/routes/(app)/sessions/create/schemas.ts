@@ -188,12 +188,7 @@ export const ToolTransport = z.discriminatedUnion('type', [
 	z.object({ type: z.literal('http'), url: z.string().nonempty() })
 ]);
 
-export const ToolSchema = z.object({
-	inputSchema: z.record(z.string(), z.any()),
-	outputSchema: z.record(z.string(), z.any()).optional(),
-	name: z.string().optional(),
-	description: z.string().optional()
-});
+export const ToolSchema = z.record(z.string(), z.any());
 
 export const CustomToolSchema = z.object({
 	id: z.string().nonempty(),

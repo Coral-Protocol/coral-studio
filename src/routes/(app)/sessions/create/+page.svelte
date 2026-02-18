@@ -32,7 +32,6 @@
 	import { cn } from '$lib/utils';
 	import { idAsKey, type PublicRegistryAgent, type Registry } from '$lib/threads';
 	import { Session } from '$lib/session.svelte';
-	import { tools } from '$lib/mcptools';
 
 	import Combobox from '$lib/components/combobox.svelte';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
@@ -375,12 +374,7 @@
 						{
 							id,
 							name: k,
-							schema: {
-								inputSchema: v.schema.inputSchema,
-								outputSchema: v.schema.outputSchema,
-								name: v.schema.name,
-								description: v.schema.description
-							},
+							schema: v.schema,
 							transport: v.transport
 						} satisfies schemas.CustomTool
 					];
