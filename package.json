@@ -12,7 +12,7 @@
 		"check:watch": "yarn prepare && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-        "prepare": "svelte-kit sync && yarn gen"
+		"prepare": "svelte-kit sync && yarn gen"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",

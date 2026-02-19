@@ -66,6 +66,6 @@
 		</Sidebar.MenuButton>
 	{/if}
 	{#if badge}
-		<Sidebar.MenuBadge class="bg-accent">{badge}</Sidebar.MenuBadge>
+		<Sidebar.MenuBadge class="bg-primary/10">{badge}</Sidebar.MenuBadge>
 	{/if}
 </Sidebar.MenuItem>

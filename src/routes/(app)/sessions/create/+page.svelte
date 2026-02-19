@@ -56,7 +56,6 @@
 	import { Spinner } from '$lib/components/ui/spinner';
 
 	import CodeMirror from 'svelte-codemirror-editor';
-	import { javascript } from '@codemirror/lang-javascript';
 	import { json } from '@codemirror/lang-json';
 	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -72,6 +71,13 @@
 	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import SidebarTab from './SidebarTab.svelte';
 	import { page } from '$app/state';
+	import hljs from 'highlight.js';
+
+	import javascript from 'highlight.js/lib/languages/javascript';
+	import python from 'highlight.js/lib/languages/python';
+
+	hljs.registerLanguage('javascript', javascript);
+	hljs.registerLanguage('python', python);
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -132,13 +138,12 @@
 	};
 
 	const AGENT_REGEX = /^(marketplace|linked|local):(.+?)@(\d+\.\d+\.\d+)$/;
+	const agentsQuery = page.url.searchParams.get('agents');
 
 	type AgentSource = 'marketplace' | 'linked' | 'local';
-	let parsedAgents: ParsedAgent[] = $state([]);
+	let parsedAgents: ParsedAgent[] = [];
 
 	onMount(async () => {
-		const agentsQuery = page.url.searchParams.get('agents');
-
 		try {
 			const result = parseAgentsQuery(agentsQuery);
 			parsedAgents = result.agents;
@@ -595,7 +600,8 @@
 
 	let jsonExample = $state<string>('');
 	let jsonDirty = $state(false);
-	let fetchExample = $state<string>('');
+	let jsExample = $state<string>('');
+	let pyExample = $state<string>('');
 	$effect(() => {
 		let cancelled = false;
 
@@ -608,7 +614,7 @@
 
 				const jsBody = toJsObjectLiteral(body, 4);
 
-				fetchExample = [
+				jsExample = [
 					"fetch('http://localhost:5555/api/v1/local/session', {",
 					"  method: 'POST',",
 					'  headers: {',
@@ -620,9 +626,22 @@
 					'  )',
 					'});'
 				].join('\n');
+
+				pyExample = [
+					'import requests',
+					'',
+					'headers = {',
+					"    'Content-Type': 'application/json',",
+					"    'Authorization': 'Bearer YOUR_SECRET_TOKEN'",
+					'}',
+					'',
+					'json_data = ' + jsBody,
+					'',
+					"response = requests.post('http://localhost:5555/api/v1/sessions/{namespace}', headers=headers, json=json_data)"
+				].join('\n');
 			} catch (e) {
 				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
-				fetchExample = '// Failed to generate Javscript, does your session contain invalid data?';
+				jsExample = '// Failed to generate JavaScript, does your session contain invalid data?';
 				console.error(e);
 			}
 		})();
@@ -728,6 +747,7 @@
 										<Command.Root>
 											<Command.Input placeholder="Search agents..." />
 											<Command.List>
+												<Command.Empty>No agents found.</Command.Empty>
 												{#each Object.values(ctx.server.catalogs) as catalog}
 													<Command.Group heading={catalog.identifier.type}>
 														{#each Object.values(catalog.agents) as agent}
@@ -807,8 +827,8 @@
 									<Table.Root class="w-full">
 										<Table.Header>
 											<Table.Row>
-												<Table.Head><Checkbox /></Table.Head>
-												<Table.Head>Name</Table.Head>
+												<Table.Head class="w-12"><Checkbox /></Table.Head>
+												<Table.Head class="">Name</Table.Head>
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
 												<Table.Head>Agent</Table.Head>
@@ -818,25 +838,22 @@
 										<Table.Body>
 											{#each $formData.agents as agent, i}
 												<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
-													<Table.Cell class="max-w-[100px]">
+													<Table.Cell>
 														<p class="truncate font-medium"><Checkbox /></p>
 													</Table.Cell>
-													<Table.Cell class="max-w-[100px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate font-medium">{agent.name}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[10px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.version}</p>
 													</Table.Cell>
 
-													<Table.Cell
-														class="max-w-[120px] min-w-[120px]"
-														onclick={() => (selectedAgent = i)}
-													>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.registrySourceId.type}</p>
 													</Table.Cell>
 
-													<Table.Cell class="max-w-[240px]" onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (selectedAgent = i)}>
 														<p class="truncate">{agent.id.name}</p>
 													</Table.Cell>
 
@@ -873,10 +890,15 @@
 				>
 					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
 						<Tabs.List
-							class="bg-sidebar  flex w-full justify-start rounded-none border-0 *:rounded-none"
+							class="bg-sidebar  flex w-full justify-start rounded-none border-b *:rounded-none"
 						>
-							<Tabs.Trigger value="json" class="grow-0">JSON{jsonDirty ? '*' : ''}</Tabs.Trigger>
-							<Tabs.Trigger value="js" class="grow-0">Javascript</Tabs.Trigger>
+							<Tabs.Trigger value="json" class="grow-0"
+								>Session editor{jsonDirty ? '*' : ''}</Tabs.Trigger
+							>
+							<Separator orientation="vertical" class="" />
+							<Tabs.Trigger value="js" class="grow-0">JavaScript</Tabs.Trigger>
+							<Tabs.Trigger value="py" class="grow-0">Python</Tabs.Trigger>
+							<!-- <Tabs.Trigger value="curl" class="grow-0">cURL</Tabs.Trigger> -->
 						</Tabs.List>
 						<Tabs.Content value="json" class="relative overflow-y-auto">
 							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
@@ -904,21 +926,45 @@
 								}}
 								lang={json()}
 								theme={dracula}
-								class="ͼo h-full"
+								class="ͼo h-full [&_.cm-content]:p-0! "
 							/>
 						</Tabs.Content>
 						<Tabs.Content value="js" class="relative overflow-y-auto">
 							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={fetchExample} />
+								<CopyButton value={jsExample} />
 							</section>
-							<CodeMirror
-								bind:value={fetchExample}
-								lang={javascript()}
-								theme={dracula}
-								readonly
-								class="ͼo h-full"
-							/>
+							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
+									jsExample.trim(),
+									{
+										language: 'javascript',
+										ignoreIllegals: true
+									}
+								).value}</pre>
 						</Tabs.Content>
+						<Tabs.Content value="py" class="relative overflow-y-auto">
+							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+								<CopyButton value={pyExample} />
+							</section>
+							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
+									pyExample.trim(),
+									{
+										language: 'python',
+										ignoreIllegals: true
+									}
+								).value}</pre>
+						</Tabs.Content>
+						<!-- <Tabs.Content value="curl" class="relative overflow-y-auto">
+							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
+								<CopyButton value={jsExample} />
+							</section>
+							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
+									jsExample.trim(),
+									{
+										language: 'plaintext',
+										ignoreIllegals: true
+									}
+								).value}</pre>
+						</Tabs.Content> -->
 					</Tabs.Root>
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
 						<Form.Button
@@ -934,9 +980,9 @@
 			</Resizable.PaneGroup>
 		</Resizable.Pane>
 		<Resizable.Handle withHandle />
-		<Resizable.Pane defaultSize={50} minSize={25} class="bg-card flex min-h-0 flex-col gap-4">
+		<Resizable.Pane defaultSize={50} minSize={25} class="bg-background flex min-h-0 flex-col gap-4">
 			<Tabs.Root bind:value={currentTab} class="w-full grow overflow-hidden">
-				<Tabs.List class="bg-sidebar flex w-full rounded-none border-0 *:rounded-none">
+				<Tabs.List class="bg-sidebar flex w-full rounded-none border-b *:rounded-none">
 					<SidebarTab
 						value="agent"
 						icon={IconRobotRegular}
@@ -1226,116 +1272,123 @@
 						{/if}
 					</Tabs.Content>
 				{/key}
-				<Tabs.Content value="session" class="flex flex-col gap-4 px-4">
-					<h1>Session settings</h1>
+				<Tabs.Content value="session" class="flex flex-col gap-4 ">
+					<section class="flex flex-col gap-4 px-4">
+						<h1 class="font-semibold">Session settings</h1>
 
-					<Form.ElementField
-						{form}
-						name="sessionRuntimeSettings.ttl"
-						class="flex items-center gap-2 "
-					>
-						<Form.Control>
-							{#snippet children({ props })}
-								<TooltipLabel
-									title="Time to live (TTL)"
-									tooltip="Measured in milliseconds, the time to live is the maximum duration a session can last"
-									extra={{
-										required: true,
-										type: 'number'
-									}}
-									class="max-w-1/4 min-w-1/4"
-								>
-									Time to live
-								</TooltipLabel>
-								<Input
-									{...props}
-									bind:value={$formData.sessionRuntimeSettings.ttl}
-									placeholder="time in milliseconds"
-									maxlength={15778476000}
-									type="number"
-									class="grow"
-								/>
-							{/snippet}
-						</Form.Control>
-					</Form.ElementField>
-					<span class="text-muted-foreground flex flex-col justify-between">
-						<TooltipLabel tooltip="Based off Session time to live settings" class=" max-w-fit">
-							Maximum session duration: {formatMsToHHMMSS(
-								$formData.sessionRuntimeSettings.ttl ?? 0
-							) ?? 'HH:MM:SS'}
-						</TooltipLabel>
-
-						<TooltipLabel
-							tooltip="Maximum cost of the session, calculated by number of agents, per minute."
-							class="max-w-fit"
+						<Form.ElementField
+							{form}
+							name="sessionRuntimeSettings.ttl"
+							class="flex items-center gap-2 "
 						>
-							Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
-						</TooltipLabel>
-					</span>
-					{#if $errors?.sessionRuntimeSettings?.ttl && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}' && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}'}
-						<span class="text-xs">
-							{$errors?.sessionRuntimeSettings?.ttl}
+							<Form.Control>
+								{#snippet children({ props })}
+									<TooltipLabel
+										title="Time to live (TTL)"
+										tooltip="Measured in milliseconds, the time to live is the maximum duration a session can last"
+										extra={{
+											required: true,
+											type: 'number'
+										}}
+										class="max-w-1/4 min-w-1/4"
+									>
+										Time to live
+									</TooltipLabel>
+									<Input
+										{...props}
+										bind:value={$formData.sessionRuntimeSettings.ttl}
+										placeholder="time in milliseconds"
+										maxlength={15778476000}
+										type="number"
+										class="grow"
+									/>
+								{/snippet}
+							</Form.Control>
+						</Form.ElementField>
+						<span class="text-muted-foreground flex flex-col justify-between">
+							<TooltipLabel tooltip="Based off Session time to live settings" class=" max-w-fit">
+								Maximum session duration: {formatMsToHHMMSS(
+									$formData.sessionRuntimeSettings.ttl ?? 0
+								) ?? 'HH:MM:SS'}
+							</TooltipLabel>
+
+							<TooltipLabel
+								tooltip="Maximum cost of the session, calculated by number of agents, per minute."
+								class="max-w-fit"
+							>
+								Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
+							</TooltipLabel>
 						</span>
-					{/if}
+						{#if $errors?.sessionRuntimeSettings?.ttl && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}' && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}'}
+							<span class="text-xs">
+								{$errors?.sessionRuntimeSettings?.ttl}
+							</span>
+						{/if}
+					</section>
 					<Separator />
-					<h1>Custom Tools</h1>
-					<Item.Root variant="outline" class="p-2">
-						<Item.Content>
-							<ScrollArea>
-								{#if Object.keys($formData.tools).length == 0}
-									<p
-										class="text-muted-foreground flex h-9 w-full place-items-center justify-center"
-									>
-										No tools.
-									</p>
-								{/if}
-								{#each Object.values($formData.tools) as tool (tool.id)}
-									<Toggle
-										class="flex w-full justify-start pr-0"
-										bind:pressed={() => selectedTool === tool.id, () => (selectedTool = tool.id)}
-									>
-										<p class="grow text-left">{tool.name}</p>
-										<TwostepButton
-											class="size-9"
-											variant="ghostDestructive"
-											onclick={() => {
-												delete $formData.tools[tool.id];
-												$formData.tools = $formData.tools;
-												selectedAgent =
-													selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-											}}><IconTrash /></TwostepButton
+					<section class="flex flex-col gap-4 px-4">
+						<h1 class="font-semibold">Custom Tools</h1>
+						<Button
+							onclick={() => {
+								const id = crypto.randomUUID() as string;
+								($formData.tools[id] = {
+									id,
+									name: `${randomAdjective()}-${randomAnimal()}`,
+									transport: { type: 'http', url: '' },
+									schema: { inputSchema: {}, outputSchema: undefined, name: undefined }
+								}),
+									(selectedTool = id);
+							}}>+</Button
+						>
+						<Item.Root variant="outline" class="p-2">
+							<Item.Content>
+								<ScrollArea>
+									{#if Object.keys($formData.tools).length == 0}
+										<p
+											class="text-muted-foreground flex h-9 w-full place-items-center justify-center"
 										>
-									</Toggle>
-								{/each}
-							</ScrollArea>
-						</Item.Content>
-					</Item.Root>
-					<Button
-						onclick={() => {
-							const id = crypto.randomUUID() as string;
-							$formData.tools[id] = {
-								id,
-								name: `${randomAdjective()}-${randomAnimal()}`,
-								transport: { type: 'http', url: '' },
-								schema: { inputSchema: {}, outputSchema: undefined, name: undefined }
-							};
-						}}>+</Button
-					>
-					{#if selectedTool !== null}
-						<ToolInput superform={form} id={selectedTool} />
-					{/if}
+											No tools.
+										</p>
+									{/if}
+									{#each Object.values($formData.tools) as tool (tool.id)}
+										<Toggle
+											class="flex w-full justify-start pr-0"
+											bind:pressed={() => selectedTool === tool.id, () => (selectedTool = tool.id)}
+										>
+											<p class="grow text-left">{tool.name}</p>
+											<TwostepButton
+												class="size-9"
+												variant="ghostDestructive"
+												onclick={() => {
+													delete $formData.tools[tool.id];
+													$formData.tools = $formData.tools;
+													selectedAgent =
+														selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
+												}}><IconTrash /></TwostepButton
+											>
+										</Toggle>
+									{/each}
+								</ScrollArea>
+							</Item.Content>
+						</Item.Root>
+
+						{#if selectedTool !== null}
+							<ToolInput superform={form} id={selectedTool} />
+						{/if}
+					</section>
 				</Tabs.Content>
-				<Tabs.Content value="groups" class="flex flex-col gap-4 px-4">
-					<h1>Agent Groups</h1>
-					<header class="flex gap-2">
-						<p class="text-sm">Agents require a shared group to communicate with each other.</p>
+				<Tabs.Content value="groups" class="flex flex-col ">
+					<header class="flex w-full flex-col gap-4 border-b p-4">
+						<p class="text-sm">
+							Agents can only communicate with other agents in their group, agents with no group
+							cannot collaborate.
+						</p>
 						{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
 							<Tooltip.Provider>
 								<Tooltip.Root delayDuration={100}>
-									<Tooltip.Trigger
+									<Tooltip.Trigger class="w-fit"
 										><Button
-											size="icon"
-											class="w-fit gap-1 px-3"
+											class="gap-1 px-3"
 											disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
 											onclick={() => {
 												$formData.groups = [...$formData.groups, []];
@@ -1349,7 +1402,6 @@
 							</Tooltip.Provider>
 						{:else}
 							<Button
-								size="icon"
 								class="w-fit gap-1 px-3"
 								onclick={() => {
 									$formData.groups = [...$formData.groups, []];
@@ -1357,18 +1409,18 @@
 							>
 						{/if}
 					</header>
-					<ul class="mt-2 flex flex-col gap-4">
+					<ul class=" flex flex-col">
 						{#each $formData.groups as link, i}
 							<Accordion.Root type="single">
 								<Accordion.Item value="item-1">
-									<Accordion.Trigger variant="compact">
+									<Accordion.Trigger variant="compact" class="border-b">
 										<span
 											>Group {i + 1}
 											<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
 											></span
 										>
 									</Accordion.Trigger>
-									<Accordion.Content>
+									<Accordion.Content class="border-b">
 										<Select.Root
 											type="multiple"
 											value={link}
@@ -1377,7 +1429,7 @@
 												$formData.groups = $formData.groups;
 											}}
 										>
-											<Select.Trigger>
+											<Select.Trigger class="mt-4">
 												<span>Add agents </span>
 											</Select.Trigger>
 											<Select.Content>

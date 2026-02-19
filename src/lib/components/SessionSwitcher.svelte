@@ -48,8 +48,8 @@
 							)}
 						></span>
 					{/if}
-					<span class="w-4/5 grow truncate overflow-hidden">
-						{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a Session'}
+					<span class="w-4/5 grow truncate overflow-hidden text-left">
+						{ctx.session?.sessionId ? ctx.session.sessionId : 'Select a session'}
 					</span>
 					<CaretUpDown />
 				</Button>
