@@ -56,8 +56,6 @@
 	let connecting = $state(false);
 	let error: string | null = $state(null);
 
-	let tourOpen = $state(false);
-
 	const onNoAuth = useDebounce(() => {
 		switch (config.PUBLIC_LOGIN_BEHAVIOUR) {
 			case 'token':
@@ -131,9 +129,6 @@
 			toast.error('Failed to refresh connection. ' + error);
 		}
 	};
-
-	let namespaceSwitcher = $state(null) as unknown as HTMLButtonElement;
-	let sessionSwitcher = $state(null) as unknown as HTMLButtonElement;
 
 	let feedbackVisible = $state(false);
 
@@ -228,7 +223,27 @@
 	function unreachable(PUBLIC_LOGIN_BEHAVIOUR: never) {
 		throw new Error('Function not implemented.');
 	}
+
+	let namespaceSwitcher = $state(null) as unknown as HTMLButtonElement;
+	let creator = $state(null) as unknown as HTMLButtonElement;
+	let tourOpen = $state(false);
 </script>
+
+<Tour
+	bind:open={tourOpen}
+	items={[
+		{
+			target: namespaceSwitcher,
+			side: 'right',
+			text: "Welcome to Coral Studio!\n\nFirst, let's create a new Template"
+		}
+		// {
+		// 	target: sessionSwitcher,
+		// 	side: 'right',
+		// 	text: 'Then, once connected:\n\nCreate a session here.'
+		// }
+	]}
+/>
 
 <svelte:window on:keydown={handleKeydown} />
 
@@ -237,7 +252,7 @@
 <Quickswitch {ctx} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
-<Welcome bind:open={welcomeOpen} />
+<Welcome bind:open={welcomeOpen} bind:tourToggle={tourOpen} />
 
 <div class="fixed top-3 right-3 z-50 flex items-center gap-2">
 	<button
@@ -272,22 +287,6 @@
 		</Tooltip.Root>
 	</Tooltip.Provider>
 </div>
-
-<!-- <Tour
-	open={tourOpen}
-	items={[
-		{
-			target: serverSwitcher,
-			side: 'right',
-			text: 'Welcome to Coral Studio!\n\nFirst, connect to your server here.'
-		},
-		{
-			target: sessionSwitcher,
-			side: 'right',
-			text: 'Then, once connected:\n\nCreate a session here.'
-		}
-	]}
-/> -->
 
 <Sidebar.Root>
 	<Sidebar.Header>
