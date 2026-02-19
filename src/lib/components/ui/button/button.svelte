@@ -8,7 +8,7 @@
 		variants: {
 			variant: {
 				default:
-					'bg-primary border border-border text-primary-foreground shadow-xs hover:bg-accent hover:text-accent-foreground',
+					'bg-primary/10 border border-border text-primary-foreground shadow-xs hover:bg-accent hover:text-accent-foreground',
 				destructive:
 					'bg-destructive shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 text-white',
 				danger:

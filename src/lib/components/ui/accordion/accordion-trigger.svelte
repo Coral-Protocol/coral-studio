@@ -9,7 +9,7 @@
 			focus-visible:ring-ring/50
 			flex flex-1 items-start justify-between gap-4
 			rounded-md  text-left font-medium
-			transition-all outline-none hover:underline
+			transition-all outline-none
 			focus-visible:ring-[3px] bg-sidebar
 			disabled:pointer-events-none disabled:opacity-50
 			[&[data-state=open]>svg]:rotate-180
@@ -17,8 +17,8 @@
 		`,
 		variants: {
 			variant: {
-				default: 'text-lg',
-				compact: 'text-lg rounded-none'
+				default: 'text-lg hover:underline',
+				compact: 'text-lg rounded-none hover:bg-sidebar-accent hover:text-primary'
 			}
 		},
 		defaultVariants: {

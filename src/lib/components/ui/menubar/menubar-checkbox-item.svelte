@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Menubar as MenubarPrimitive } from "bits-ui";
-	import CheckIcon from "@lucide/svelte/icons/check";
-	import MinusIcon from "@lucide/svelte/icons/minus";
-	import { cn, type WithoutChildrenOrChild } from "$lib/utils.js";
-	import type { Snippet } from "svelte";
+	import { Menubar as MenubarPrimitive } from 'bits-ui';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import MinusIcon from '@lucide/svelte/icons/minus';
+	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+	import type { Snippet } from 'svelte';
 
 	let {
 		ref = $bindable(null),
@@ -30,12 +30,12 @@
 >
 	{#snippet children({ checked, indeterminate })}
 		<span
-			class="pointer-events-none absolute start-2 flex size-3.5 items-center justify-center"
+			class="bg-primary/10 pointer-events-none absolute start-2 flex size-4 items-center justify-center rounded border p-1.5"
 		>
 			{#if indeterminate}
-				<MinusIcon class="size-4" />
+				<MinusIcon class="size-3.5" />
 			{:else}
-				<CheckIcon class={cn("size-4", !checked && "text-transparent")} />
+				<CheckIcon class={cn('size-3.5', !checked && 'text-transparent')} />
 			{/if}
 		</span>
 		{@render childrenProp?.()}
