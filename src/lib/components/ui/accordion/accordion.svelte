@@ -13,5 +13,4 @@
 	bind:value={value as never}
 	data-slot="accordion"
 	{...restProps}
-	class="  font-[Urbanist] "
 />
