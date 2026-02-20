@@ -63,6 +63,7 @@
 	import { makeFormSchema, type CreateSessionRequest } from './schemas/types';
 	import { toPayload } from './schemas';
 	import { importFromPayload } from './schemas';
+	import AgentPicker from './AgentPicker.svelte';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -518,44 +519,12 @@
 										{/if}
 									</Menubar.Trigger>
 									<Menubar.Content>
-										<Command.Root>
-											<Command.Input placeholder="Search agents..." />
-											<Command.List>
-												<Command.Empty>No agents found.</Command.Empty>
-												{#each Object.values(ctx.server.catalogs) as catalog}
-													<Command.Group heading={catalog.identifier.type}>
-														{#each Object.values(catalog.agents) as agent}
-															<HoverCard.Root>
-																<HoverCard.Trigger class="m-0">
-																	<Command.Item
-																		class="w-full cursor-pointer border-b px-4 py-2"
-																		onSelect={() =>
-																			addAgent(
-																				agent.name,
-																				catalog.identifier.type,
-																				agent.versions[0]!
-																			)}
-																	>
-																		<span class="grow">{agent.name}</span>
-																	</Command.Item>
-																</HoverCard.Trigger>
-
-																<HoverCard.Content
-																	side="right"
-																	class="max-w-1/2 min-w-full whitespace-pre-wrap"
-																>
-																	{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																		<span class="text-muted">loading...</span>
-																	{:then details}
-																		{details.registryAgent.info.description}
-																	{/await}
-																</HoverCard.Content>
-															</HoverCard.Root>
-														{/each}
-													</Command.Group>
-												{/each}
-											</Command.List>
-										</Command.Root>
+										<AgentPicker
+											server={ctx.server}
+											onSelect={(agent, catalogId) => {
+												addAgent(agent.name, catalogId.type, agent.versions[0]!);
+											}}
+										/>
 									</Menubar.Content>
 								</Menubar.Menu>
 							</Menubar.Root>
