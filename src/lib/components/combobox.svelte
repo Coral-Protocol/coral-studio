@@ -13,6 +13,7 @@
 
 	let {
 		open = $bindable(false),
+		disabled = false,
 		selected = $bindable(undefined),
 		selectPlaceholder = 'Select an item...',
 		searchPlaceholder = 'Search items...',
@@ -28,6 +29,7 @@
 		class: className
 	}: {
 		open?: boolean;
+		disabled?: boolean;
 		selected?: Entry | undefined;
 		options?: { heading?: string; items: Entry[] }[];
 		selectPlaceholder?: string;
@@ -59,7 +61,7 @@
 </script>
 
 <Popover.Root bind:open>
-	<Popover.Trigger bind:ref={triggerRef}>
+	<Popover.Trigger bind:ref={triggerRef} {disabled}>
 		{#snippet child({ props })}
 			{#if trigger}
 				{@render trigger({ props })}

@@ -2974,7 +2974,7 @@ hasown@^2.0.2:
   dependencies:
     function-bind "^1.1.2"
 
-highlight.js@^11.11.1:
+highlight.js@11.11.1:
   version "11.11.1"
   resolved "https://registry.yarnpkg.com/highlight.js/-/highlight.js-11.11.1.tgz#fca06fa0e5aeecf6c4d437239135fabc15213585"
   integrity sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==
@@ -4250,6 +4250,13 @@ svelte-eslint-parser@^1.2.0:
     postcss "^8.4.49"
     postcss-scss "^4.0.9"
     postcss-selector-parser "^7.0.0"
+
+svelte-highlight@^7.9.0:
+  version "7.9.0"
+  resolved "https://registry.yarnpkg.com/svelte-highlight/-/svelte-highlight-7.9.0.tgz#73dc74c747c0defe1a7e80b7105bcab0816693ee"
+  integrity sha512-226LBTtvTnM2L2JkQq8mZeKEeMfPLYyta7VxZatFT4UPX5zdHEerKeMTvrfbxm7MVTWc7TPThsNoVdhWC177KQ==
+  dependencies:
+    highlight.js "11.11.1"
 
 svelte-sonner@^1.0.5:
   version "1.0.5"

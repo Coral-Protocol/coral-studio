@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as schemas from './schemas';
+	import * as schemas from '../schemas';
 	import type { z } from 'zod';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import * as store from 'svelte/store';
