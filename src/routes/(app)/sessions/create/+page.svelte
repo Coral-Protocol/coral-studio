@@ -725,110 +725,42 @@
 									</Form.ElementField>
 									<Form.ElementField
 										{form}
-										name="agents[{selectedAgent}].id.name"
-										class="flex grow items-center gap-2 truncate"
+										name="agents[{selectedAgent}].id.version"
+										class="flex items-center gap-2"
 									>
 										<Form.Control>
 											{#snippet children({ props })}
-												{@const id = $formData.agents[selectedAgent!]!.id}
+												{@const id = curAgent.id}
+												{@const reg = curCatalog.agents[id.name]!}
+
 												<TooltipLabel
-													tooltip={'Agent type from the server agent registry'}
-													class="w m-0 max-w-1/4 truncate">Registry Type</TooltipLabel
+													tooltip={'Version to use from the server agent registry'}
+													class="w m-0 max-w-1/4 truncate">Version</TooltipLabel
 												>
 												<Combobox
 													{...props}
-													class=" m-0 w-0 grow truncate pr-[2px] "
+													class="w-auto grow pr-[2px] "
 													side="right"
 													align="start"
-													bind:selected={
-														() => ({
-															label: `${id.name}`,
-															key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
-															value: id
-														}),
-														() => {}
-													}
-													options={Object.values(ctx.server.catalogs).map((catalog) => ({
-														heading: catalog.identifier.type,
-														items: Object.values(catalog.agents).map((a) => ({
-															label: `${a.name}`,
-															key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-															value: {
-																registrySourceId: catalog.identifier,
-																name: a.name,
-																version: a.versions.at(-1)! // won't be in registry if 0 versions
-															}
-														}))
-													}))}
-													searchPlaceholder="Search types..."
-													onValueChange={async (value) => {
-														if (value.name === id.name) return; // no change
-														$formData.agents[selectedAgent!]!.id = value;
-
-														await tick();
-
-														// Clean up options that are no longer valid
-														for (const name in $formData.agents[selectedAgent!]!.options) {
-															if (!(name in availableOptions)) {
-																delete $formData.agents[selectedAgent!]!.options[name];
-															}
-														}
-
-														// Refresh the agents object to trigger reactivity
+													disabled={reg.versions.length <= 1}
+													bind:selected={() => id.version, () => {}}
+													options={[{ items: reg.versions }]}
+													searchPlaceholder="Search versions..."
+													onValueChange={(value: string) => {
+														$formData.agents[selectedAgent!]!.id.version = value;
 														$formData.agents = $formData.agents;
-
-														// Fetch detailed info for the new agent
-														const detailed = await getDetailed(value);
-														if (detailed && detailed.registryAgent.runtimes) {
-															// Pick the first available runtime
-															const firstRuntimeKey = Object.keys(
-																detailed.registryAgent.runtimes
-															)[0];
-															if (firstRuntimeKey) {
-																$formData.agents[selectedAgent!]!.provider.runtime =
-																	firstRuntimeKey as any;
+														tick().then(() => {
+															for (const name in $formData.agents[selectedAgent!]!.options) {
+																if (!(name in availableOptions)) {
+																	delete $formData.agents[selectedAgent!]!.options[name];
+																}
 															}
-															$formData.agents[selectedAgent!]!.name =
-																detailed.registryAgent.info.identifier.name ||
-																$formData.agents[selectedAgent!]!.name;
-														}
+															$formData.agents = $formData.agents;
+														});
 													}}
 												/>
 											{/snippet}
-										</Form.Control><Form.ElementField
-											{form}
-											name="agents[{selectedAgent}].id.version"
-											class="flex items-center gap-2"
-										>
-											<Form.Control>
-												{#snippet children({ props })}
-													{@const id = curAgent.id}
-													{@const reg = curCatalog.agents[id.name]!}
-
-													<Combobox
-														{...props}
-														class="w-auto grow pr-[2px] "
-														side="right"
-														align="start"
-														bind:selected={() => id.version, () => {}}
-														options={[{ items: reg.versions }]}
-														searchPlaceholder="Search versions..."
-														onValueChange={(value: string) => {
-															$formData.agents[selectedAgent!]!.id.version = value;
-															$formData.agents = $formData.agents;
-															tick().then(() => {
-																for (const name in $formData.agents[selectedAgent!]!.options) {
-																	if (!(name in availableOptions)) {
-																		delete $formData.agents[selectedAgent!]!.options[name];
-																	}
-																}
-																$formData.agents = $formData.agents;
-															});
-														}}
-													/>
-												{/snippet}
-											</Form.Control>
-										</Form.ElementField>
+										</Form.Control>
 									</Form.ElementField>
 
 									<Form.ElementField
