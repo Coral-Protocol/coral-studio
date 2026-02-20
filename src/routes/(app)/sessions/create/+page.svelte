@@ -771,6 +771,7 @@
 										<Form.Control>
 											{#snippet children({ props })}
 												{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
+												{@const items = Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})}
 												<TooltipLabel
 													tooltip={'Will only show available options for the selected agent type'}
 													class="m-0 max-w-1/4">Runtime</TooltipLabel
@@ -780,9 +781,10 @@
 													class="w-auto grow pr-[2px]"
 													side="right"
 													align="start"
+													disabled={items.length <= 1}
 													options={[
 														{
-															items: Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})
+															items
 														}
 													]}
 													searchPlaceholder="Search runtimes..."
