@@ -1,29 +1,67 @@
+import type { operations } from '$generated/api';
 import type { CoralServer } from '$lib/CoralServer.svelte';
-import type { PublicRegistryAgent } from '$lib/threads';
 import { z } from 'zod/v4';
-// RuntimeId
+
+export type CreateSessionRequest = NonNullable<
+	operations['createSession']['requestBody']
+>['content']['application/json'];
+
+export const makeFormSchema = (server: CoralServer) =>
+	formSchema.superRefine(async (data, ctx) => {
+		Promise.all(
+			data.agents.map(async (agent, i) => {
+				const meta = await server.lookupAgent(agent.id);
+				// TODO: verify restrictions
+
+				// const regAgent = registryAgents[`${agent.id.name}${agent.id.version}`];
+				// if (!regAgent) {
+				// 	ctx.addIssue({
+				// 		code: 'custom',
+				// 		path: ['agent', i, 'agentName'],
+				// 		message: `Agent name ${agent.id.name}@${agent.id.version} not found in registry.`
+				// 	});
+				// 	return;
+				// }
+				const runtime = agent.provider.runtime;
+				if (runtime && !(runtime in meta.registryAgent.runtimes)) {
+					ctx.addIssue({
+						code: 'custom',
+						path: ['agent', i, 'provider', 'runtime'],
+						message: `Runtime ${runtime} not available for this agent.`
+					});
+				}
+				const options = Object.entries(meta.registryAgent.options ?? {});
+				for (const [name, opt] of options) {
+					if (opt.required !== true) continue;
+					const val = agent.options[name];
+					if (val === undefined || (val.type === 'string' && val.value.length === 0)) {
+						ctx.addIssue({
+							code: 'custom',
+							path: ['agents', i, 'options', name, 'value'],
+							message: `Missing required option`
+						});
+					}
+				}
+			})
+		);
+	});
+
 export const RuntimeIdSchema = z.enum(['executable', 'docker', 'function']);
 export type RuntimeId = z.infer<typeof RuntimeIdSchema>;
 
-// GraphAgentServerAttributeType
 export const GraphAgentServerAttributeTypeSchema = z.enum(['geographic_location', 'attested_by']);
 export type GraphAgentServerAttributeType = z.infer<typeof GraphAgentServerAttributeTypeSchema>;
 
-// flat (flat weight)
 export const FlatSchema = z.object({
 	weight: z.number()
 });
 export type Flat = z.infer<typeof FlatSchema>;
 
-// GraphAgentServerScorerEffect
 export const GraphAgentServerScorerEffectSchema = z.object({
 	weight: z.number()
 });
 export type GraphAgentServerScorerEffect = z.infer<typeof GraphAgentServerScorerEffectSchema>;
 
-/* ---------------------------------------------
-   GraphAgentServerAttribute
------------------------------------------------ */
 export const GraphAgentServerAttributeSchema = z
 	.discriminatedUnion('format', [
 		z.object({
@@ -45,9 +83,6 @@ export const GraphAgentServerAttributeSchema = z
 	.default({ format: 'string', type: 'attested_by', value: '' });
 export type GraphAgentServerAttribute = z.infer<typeof GraphAgentServerAttributeSchema>;
 
-/* ---------------------------------------------
-   GraphAgentServer
------------------------------------------------ */
 export const GraphAgentServerSchema = z.object({
 	address: z.string(),
 	port: z.number().int().min(0).max(65535),
@@ -56,41 +91,6 @@ export const GraphAgentServerSchema = z.object({
 });
 export type GraphAgentServer = z.infer<typeof GraphAgentServerSchema>;
 
-/* ---------------------------------------------
-   AgentClaimAmount
------------------------------------------------ */
-// export const AgentClaimAmountSchema = z
-// 	.discriminatedUnion('type', [
-// 		z.object({ type: z.literal('coral'), amount: z.number() }),
-// 		z.object({ type: z.literal('micro_coral'), amount: z.number().int() }),
-// 		z.object({ type: z.literal('usd'), amount: z.number() })
-// 	])
-// 	.default({ type: 'micro_coral', amount: 1000 });
-// export type AgentClaimAmount = z.infer<typeof AgentClaimAmountSchema>;
-
-/* ---------------------------------------------
-   GraphAgentServerSource
------------------------------------------------ */
-// export const GraphAgentServerSourceSchema = z
-// 	.discriminatedUnion('type', [
-// 		z.object({
-// 			type: z.literal(
-// 				'org.coralprotocol.coralserver.agent.graph.server.GraphAgentServerSource.Indexer'
-// 			),
-// 			indexer: z.string()
-// 		}),
-// 		z.object({
-// 			type: z.literal('servers'),
-// 			servers: z.array(GraphAgentServerSchema)
-// 		})
-// 	])
-// 	.default({ type: 'servers', servers: [] });
-// export type GraphAgentServerSource = z.infer<typeof GraphAgentServerSourceSchema>;
-// export type ServerType = 'indexer' | 'servers';
-
-/* ---------------------------------------------
-   GraphAgentServerScoring
------------------------------------------------ */
 export const GraphAgentServerScoringSchema = z
 	.discriminatedUnion('type', [
 		z.object({
@@ -137,10 +137,6 @@ export const GraphAgentServerScoringSchema = z
 	.default({ type: 'default' });
 export type GraphAgentServerScoring = z.infer<typeof GraphAgentServerScoringSchema>;
 
-/* ---------------------------------------------
-   Provider schema
------------------------------------------------ */
-
 const RemoteRequestProvider = z.object({
 	maxCost: z
 		.discriminatedUnion('type', [
@@ -175,9 +171,6 @@ export const ProviderSchema = z.object({
 export type Provider = z.infer<typeof ProviderSchema>;
 export type ProviderType = 'remote_request' | 'local';
 
-/* ---------------------------------------------
-   AgentRegistryIdentifier
------------------------------------------------ */
 export const AgentRegistryIdentifierSchema = z.object({
 	name: z.string(),
 	version: z.string()
@@ -350,45 +343,4 @@ const formSchema = z.object({
 	),
 	groups: z.array(z.array(z.string()))
 });
-
-export const makeFormSchema = (server: CoralServer) =>
-	formSchema.superRefine(async (data, ctx) => {
-		Promise.all(
-			data.agents.map(async (agent, i) => {
-				const meta = await server.lookupAgent(agent.id);
-				// TODO: verify restrictions
-
-				// const regAgent = registryAgents[`${agent.id.name}${agent.id.version}`];
-				// if (!regAgent) {
-				// 	ctx.addIssue({
-				// 		code: 'custom',
-				// 		path: ['agent', i, 'agentName'],
-				// 		message: `Agent name ${agent.id.name}@${agent.id.version} not found in registry.`
-				// 	});
-				// 	return;
-				// }
-				const runtime = agent.provider.runtime;
-				if (runtime && !(runtime in meta.registryAgent.runtimes)) {
-					ctx.addIssue({
-						code: 'custom',
-						path: ['agent', i, 'provider', 'runtime'],
-						message: `Runtime ${runtime} not available for this agent.`
-					});
-				}
-				const options = Object.entries(meta.registryAgent.options ?? {});
-				for (const [name, opt] of options) {
-					if (opt.required !== true) continue;
-					const val = agent.options[name];
-					if (val === undefined || (val.type === 'string' && val.value.length === 0)) {
-						ctx.addIssue({
-							code: 'custom',
-							path: ['agents', i, 'options', name, 'value'],
-							message: `Missing required option`
-						});
-					}
-				}
-			})
-		);
-	});
-
 export type FormSchema = typeof formSchema;

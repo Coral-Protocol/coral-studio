@@ -1,83 +1,68 @@
 <script lang="ts">
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Separator } from '$lib/components/ui/separator';
-	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
-	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
-	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
-	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
-	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Select from '$lib/components/ui/select';
-	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
 	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
 	import * as Command from '$lib/components/ui/command/index.js';
 	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
 	import * as Item from '$lib/components/ui/item/index.js';
-
+	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Form from '$lib/components/ui/form';
 
-	import { PersistedState } from 'runed';
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
+	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
+	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
+	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
 	import Input from '$lib/components/ui/input/input.svelte';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { Separator } from '$lib/components/ui/separator';
 	import { Button, buttonVariants } from '$lib/components/ui/button';
-	import * as Table from '$lib/components/ui/table/index.js';
+	import { ScrollArea } from '$lib/components/ui/scroll-area';
+	import { Toggle } from '$lib/components/ui/toggle';
 
-	import { cn } from '$lib/utils';
-	import { idAsKey, type PublicRegistryAgent, type Registry } from '$lib/threads';
-	import { Session } from '$lib/session.svelte';
-
-	import Combobox from '$lib/components/combobox.svelte';
+	import { Spinner } from '$lib/components/ui/spinner';
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import Combobox from '$lib/components/combobox.svelte';
+	import CopyButton from '$lib/components/copy-button.svelte';
+	import Pip from '$lib/components/pip.svelte';
 
-	import { toast } from 'svelte-sonner';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-
-	import { superForm, defaults } from 'sveltekit-superforms';
-	import { zod4 } from 'sveltekit-superforms/adapters';
-	import * as schemas from './schemas';
-
-	import type { paths, components, operations } from '$generated/api';
-	import { onMount, tick } from 'svelte';
-
+	import OptionField from './OptionField.svelte';
+	import SidebarTab from './SidebarTab.svelte';
+	import CodeSnippet from './CodeSnippet.svelte';
 	import Graph from './Graph.svelte';
-	import type { Provider, ProviderType } from './schemas';
-	import { appContext } from '$lib/context';
-	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
-	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { Spinner } from '$lib/components/ui/spinner';
+	import ToolInput from './ToolInput.svelte';
 
 	import CodeMirror from 'svelte-codemirror-editor';
 	import { json } from '@codemirror/lang-json';
-	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
-	import ToolInput from './ToolInput.svelte';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Toggle } from '$lib/components/ui/toggle';
-	import { randomAdjective, randomAnimal } from '$lib/words';
-	import { fade } from 'svelte/transition';
-	import CopyButton from '$lib/components/copy-button.svelte';
-	import Pip from '$lib/components/pip.svelte';
-	import OptionField from './OptionField.svelte';
-	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import SidebarTab from './SidebarTab.svelte';
+	import { dracula } from '@uiw/codemirror-theme-dracula';
+
+	import { superForm, defaults } from 'sveltekit-superforms';
+	import { zod4 } from 'sveltekit-superforms/adapters';
+
 	import { page } from '$app/state';
-	import hljs from 'highlight.js';
+	import { onMount, tick } from 'svelte';
+	import { fade } from 'svelte/transition';
 
-	import javascript from 'highlight.js/lib/languages/javascript';
-	import python from 'highlight.js/lib/languages/python';
+	import { toast } from 'svelte-sonner';
+	import { PersistedState } from 'runed';
 
-	hljs.registerLanguage('javascript', javascript);
-	hljs.registerLanguage('python', python);
+	import { cn } from '$lib/utils';
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
+	import { Session } from '$lib/session.svelte';
+	import { appContext } from '$lib/context';
+	import { randomAdjective, randomAnimal } from '$lib/words';
+	import { registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
+
+	import { makeFormSchema, type CreateSessionRequest } from './schemas/types';
+	import { toPayload } from './schemas';
+	import { importFromPayload } from './schemas';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -249,26 +234,13 @@
 		lastDeletedAgent = null;
 	};
 
-	type CreateSessionRequest = NonNullable<
-		operations['createSession']['requestBody']
-	>['content']['application/json'];
-
-	/// {a?: number | undefined} -> {a: number | undefined}
-	type Complete<T> = {
-		[P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : T[P] | undefined;
-	};
-
 	let ctx = appContext.get();
 
-	let error: string | null = $state(null);
-
-	let formSchema = $derived(schemas.makeFormSchema(ctx.server));
+	let formSchema = $derived(makeFormSchema(ctx.server));
 
 	let currentTab = $state('agent');
 
 	let sendingForm = $state(false);
-
-	let catalogsLoaded = $derived(Object.keys(ctx.server.catalogs).length > 0);
 
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
@@ -291,7 +263,7 @@
 			}
 			try {
 				sendingForm = true;
-				const body = await asJson;
+				const body = await toPayload(ctx.server, $formData);
 				const res = await ctx.server.api.POST('/api/v1/local/session', {
 					body
 				});
@@ -350,171 +322,6 @@
 	const maxCostEstimate = $derived(
 		(($formData.sessionRuntimeSettings.ttl ?? 0) * $formData.agents.length * 10) / 60000
 	);
-
-	const defaultProvider = {
-		runtime: 'executable',
-		remote_request: {
-			maxCost: { amount: 10, type: 'coral' },
-			serverSource: {
-				type: 'servers',
-				servers: []
-			}
-		}
-	} satisfies Provider;
-
-	const importFromJson = (json: string) => {
-		try {
-			const data: CreateSessionRequest = JSON.parse(json);
-			const toolMap = Object.fromEntries(
-				Object.keys(data.agentGraphRequest.customTools ?? {}).map((k) => [
-					k,
-					crypto.randomUUID() as string
-				])
-			);
-			const tools = Object.fromEntries(
-				Object.entries(data.agentGraphRequest.customTools ?? {}).map(([k, v]) => {
-					const id = toolMap[k]!; // Safety: toolMap is built from custom tool keys
-					return [
-						id,
-						{
-							id,
-							name: k,
-							schema: v.schema,
-							transport: v.transport
-						} satisfies schemas.CustomTool
-					];
-				})
-			);
-			const defaultRuntimeSettings = {
-				ttl: 50000
-			};
-			$formData = {
-				tools,
-				groups: data.agentGraphRequest.groups ?? [],
-				sessionRuntimeSettings: {
-					...defaultRuntimeSettings,
-					...(data.execution && data.execution.mode === 'immediate'
-						? data.execution.runtimeSettings
-						: {})
-				},
-				agents: data.agentGraphRequest.agents.map((agent) => ({
-					id: agent.id,
-					name: agent.name,
-					description: agent.description ?? '',
-					provider: {
-						runtime: agent.provider.runtime,
-						remote_request:
-							agent.provider.type === 'remote_request'
-								? {
-										maxCost: agent.provider.maxCost,
-										// ensure serverSource is the "servers" variant expected by the form model
-										serverSource:
-											agent.provider.serverSource &&
-											typeof (agent.provider.serverSource as any).type === 'string' &&
-											(agent.provider.serverSource as any).type === 'servers'
-												? (agent.provider.serverSource as any)
-												: { type: 'servers', servers: [] },
-										serverScoring: agent.provider.serverScoring
-									}
-								: defaultProvider.remote_request
-					},
-					providerType: agent.provider.type,
-					blocking: agent.blocking ?? true,
-					options: agent.options as any,
-					customToolAccess: new Set(
-						(agent.customToolAccess ?? []).map((t) => toolMap[t]).filter(Boolean) as string[] // typescript is stupid this is safe because .filter(Boolean)
-					)
-				}))
-			};
-			selectedAgent = $formData.agents.length > 0 ? 0 : null;
-			toast.success('Session JSON updated successfully');
-			jsonDirty = false;
-		} catch (error) {
-			toast.error('Failed to update session from JSON: ' + error);
-			console.error(error);
-		}
-	};
-
-	let asJson: Promise<CreateSessionRequest> = $derived.by(async () => {
-		const detailed = await Promise.all($formData.agents.map((a) => getDetailed(a.id)));
-		const agents = $formData.agents.map((agent, idx) => {
-			const reg = detailed[idx];
-			if (!reg) throw new Error('something bad happened');
-
-			return {
-				id: agent.id,
-				name: agent.name,
-				description: agent.description,
-				provider: {
-					type: agent.providerType as ProviderType,
-					runtime: agent.provider.runtime,
-					...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
-				} as any,
-
-				blocking: agent.blocking,
-				systemPrompt: agent.systemPrompt,
-				customToolAccess: Array.from(agent.customToolAccess)
-					.map((id) => $formData.tools[id]?.name)
-					.filter(Boolean) as string[], // safe assertion because .filter(Boolean) removes null/undefined
-				plugins: [],
-				x402Budgets: [],
-				options: Object.fromEntries(
-					Object.entries(agent.options ?? {})
-						.filter(([name]) => name in reg.registryAgent.options)
-						.filter(([name, opt]: [string, any]) => {
-							const schemaOpt = reg.registryAgent.options[name];
-							if (!schemaOpt) return false;
-
-							const defaultVal = schemaOpt.default;
-							if (!opt || opt.value === undefined) return false;
-
-							try {
-								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
-							} catch {
-								return true;
-							}
-						})
-						.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
-				) as any
-			} satisfies components['schemas']['GraphAgentRequest'];
-		});
-
-		const customTools = Object.fromEntries(
-			Object.values($formData.tools).map((tool) => {
-				const value = {
-					transport: structuredClone(tool.transport),
-					schema: structuredClone(tool.schema)
-				};
-				if (!value.schema.name) {
-					value.schema.name = tool.name;
-				}
-				return [tool.name, value];
-			})
-		) as any;
-
-		return {
-			agentGraphRequest: {
-				agents,
-				groups: $formData.groups,
-				customTools
-			},
-			namespaceProvider: {
-				type: 'create_if_not_exists',
-				namespaceRequest: {
-					name: ctx.server.namespace,
-					annotations: {},
-					deleteOnLastSessionExit: false
-				}
-			},
-			execution: {
-				mode: 'immediate',
-				runtimeSettings: {
-					extendedEndReport: false,
-					ttl: $formData.sessionRuntimeSettings.ttl
-				}
-			}
-		} satisfies CreateSessionRequest;
-	});
 
 	let selectedTool: string | null = $state(null);
 
@@ -586,70 +393,35 @@
 		}
 	});
 
-	function toJsObjectLiteral(value: unknown, indent = 2): string {
-		return (
-			JSON.stringify(value, null, indent)
-				// unquote valid JS identifiers
-				.replace(/"([a-zA-Z_$][\w$]*)":/g, '$1:')
-				// single quotes for strings (optional, stylistic)
-				.replace(/"/g, "'")
-		);
-	}
-
 	const editorTab = new PersistedState('sessionEditorTab', 'json');
 
-	let jsonExample = $state<string>('');
-	let jsonDirty = $state(false);
-	let jsExample = $state<string>('');
-	let pyExample = $state<string>('');
+	let payload: CreateSessionRequest | null = $state(null);
 	$effect(() => {
-		let cancelled = false;
-
-		(async () => {
-			try {
-				const body = await asJson;
-				if (cancelled) return;
-
-				jsonExample = JSON.stringify(body, null, 2);
-
-				const jsBody = toJsObjectLiteral(body, 4);
-
-				jsExample = [
-					"fetch('http://localhost:5555/api/v1/local/session', {",
-					"  method: 'POST',",
-					'  headers: {',
-					"    'Content-Type': 'application/json',",
-					"    Authorization: 'Bearer YOUR_SECRET_TOKEN'",
-					'  },',
-					'  body: JSON.stringify(',
-					jsBody.replace(/^/gm, '    '),
-					'  )',
-					'});'
-				].join('\n');
-
-				pyExample = [
-					'import requests',
-					'',
-					'headers = {',
-					"    'Content-Type': 'application/json',",
-					"    'Authorization': 'Bearer YOUR_SECRET_TOKEN'",
-					'}',
-					'',
-					'json_data = ' + jsBody,
-					'',
-					"response = requests.post('http://localhost:5555/api/v1/sessions/{namespace}', headers=headers, json=json_data)"
-				].join('\n');
-			} catch (e) {
-				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
-				jsExample = '// Failed to generate JavaScript, does your session contain invalid data?';
-				console.error(e);
-			}
-		})();
-
-		return () => {
-			cancelled = true;
-		};
+		toPayload(ctx.server, $formData)
+			.then((val) => (payload = val))
+			.catch(console.error);
 	});
+
+	let payloadJson = $derived(payload ? JSON.stringify(payload, null, 4) : '');
+	let jsonDirty = $state(false);
+
+	const importSession = ({
+		success = 'Session JSON updated successfully',
+		from
+	}: {
+		success?: string;
+		from: string;
+	}) => {
+		try {
+			$formData = importFromPayload(from);
+			selectedAgent = $formData.agents.length > 0 ? 0 : null;
+			toast.success(success);
+			jsonDirty = false;
+		} catch (e) {
+			console.error(e);
+			toast.error('Failed to update session from JSON: ' + e);
+		}
+	};
 
 	function clearSession() {
 		$formData = {
@@ -705,14 +477,16 @@
 										<Menubar.Item onSelect={clearSession}>Clear session</Menubar.Item>
 										<Menubar.Separator />
 										<Menubar.Item
-											onSelect={async () => (
-												importFromJson(await navigator.clipboard.readText()),
-												toast.success('Session JSON imported from clipboard')
-											)}>Import JSON from clipboard</Menubar.Item
+											onSelect={async () => {
+												importSession({
+													from: await navigator.clipboard.readText(),
+													success: 'Session updated from clipboard'
+												});
+											}}>Import JSON from clipboard</Menubar.Item
 										>
 										<Menubar.Item
 											onSelect={() => (
-												navigator.clipboard.writeText(jsonExample),
+												navigator.clipboard.writeText(payloadJson),
 												toast.success('Session JSON copied to clipboard')
 											)}>Export JSON to clipboard</Menubar.Item
 										>
@@ -782,43 +556,6 @@
 												{/each}
 											</Command.List>
 										</Command.Root>
-										<!-- <Menubar.Sub>
-											<Menubar.SubTrigger>Marketplace</Menubar.SubTrigger>
-											<Menubar.SubContent>
-												<Command.Root>
-													<Command.Input placeholder="Search agents..." />
-													<Command.List>
-														{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
-															<Command.Group heading={`${catalog.identifier.type}`}>
-																{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
-																	<HoverCard.Root>
-																		<HoverCard.Trigger class="m-0"
-																			><Command.Item
-																				class=" w-full cursor-pointer  border-b px-4 py-2"
-																				onSelect={() => addAgent(agent)}
-																			>
-																				<span class="grow">{agent.name}</span>
-																				<IconHeartRegular />
-																			</Command.Item></HoverCard.Trigger
-																		>
-																		<HoverCard.Content
-																			side="right"
-																			class="w-1/2 whitespace-pre-wrap"
-																		>
-																			{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																				<Skeleton class="h-4 w-full" />
-																			{:then details}
-																				{details.registryAgent.info.description}
-																			{/await}
-																		</HoverCard.Content>
-																	</HoverCard.Root>
-																{/each}
-															</Command.Group>
-														{/each}
-													</Command.List>
-												</Command.Root>
-											</Menubar.SubContent>
-										</Menubar.Sub> -->
 									</Menubar.Content>
 								</Menubar.Menu>
 							</Menubar.Root>
@@ -902,14 +639,14 @@
 						</Tabs.List>
 						<Tabs.Content value="json" class="relative overflow-y-auto">
 							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={jsonExample} />
+								<CopyButton value={payloadJson} />
 								{#if jsonDirty}
 									<span transition:fade={{ duration: 100 }}>
 										<Tooltip.Provider>
 											<Tooltip.Root>
 												<Tooltip.Trigger
 													class={cn(buttonVariants({ size: 'icon' }), '')}
-													onclick={() => importFromJson(jsonExample)}
+													onclick={() => importSession({ from: payloadJson })}
 												>
 													<IconArrowsClockwise /></Tooltip.Trigger
 												>
@@ -920,51 +657,27 @@
 								{/if}
 							</section>
 							<CodeMirror
-								bind:value={jsonExample}
+								bind:value={payloadJson}
 								onchange={() => {
 									jsonDirty = true;
 								}}
 								lang={json()}
+								tabSize={4}
 								theme={dracula}
+								lineWrapping={true}
 								class="absolute inset-0 [&_.cm-content]:p-0! [&>*]:size-full "
 							/>
 						</Tabs.Content>
 						<Tabs.Content value="js" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={jsExample} />
-							</section>
-							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
-									jsExample.trim(),
-									{
-										language: 'javascript',
-										ignoreIllegals: true
-									}
-								).value}</pre>
+							{#if payload}
+								<CodeSnippet snippet="javascript" body={payload} />
+							{/if}
 						</Tabs.Content>
 						<Tabs.Content value="py" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={pyExample} />
-							</section>
-							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
-									pyExample.trim(),
-									{
-										language: 'python',
-										ignoreIllegals: true
-									}
-								).value}</pre>
+							{#if payload}
+								<CodeSnippet snippet="python" body={payload} />
+							{/if}
 						</Tabs.Content>
-						<!-- <Tabs.Content value="curl" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={jsExample} />
-							</section>
-							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
-									jsExample.trim(),
-									{
-										language: 'plaintext',
-										ignoreIllegals: true
-									}
-								).value}</pre>
-						</Tabs.Content> -->
 					</Tabs.Root>
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
 						<Form.Button
@@ -1452,170 +1165,6 @@
 						{/each}
 					</ul>
 				</Tabs.Content>
-				<!-- <Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
-						{#if !detailedAgent}
-							<Skeleton />
-						{:else}
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].providerType"
-								class="flex items-center gap-2"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										Provider Type
-										<Select.Root
-											type="single"
-											bind:value={$formData.agents[selectedAgent!]!.providerType}
-										>
-											<Select.Trigger class="w-full"
-												>{$formData.agents[selectedAgent!]!.providerType === 'local'
-													? 'Local'
-													: 'Remote'}</Select.Trigger
-											>
-											<Select.Content>
-												<Select.Item value="local">Local</Select.Item>
-												<Select.Item value="remote_request">Remote</Select.Item>
-											</Select.Content>
-										</Select.Root>
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
-							
-							{#if selectedAgent !== null && $formData.agents.length > selectedAgent && agent.providerType === 'remote_request'}
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].provider.remote_request.maxCost.amount"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'The agents max cost'}>Agent budget</TooltipLabel>
-											{#if $formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type === 'micro_coral'}
-												<Input
-													type="number"
-													placeholder="0"
-													min="0"
-													pattern="[0-9]"
-													class="grow"
-													{...props}
-													bind:value={
-														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
-													}
-												/>
-											{:else}
-												<Input
-													type="number"
-													placeholder="0.00"
-													min="0"
-													class="grow"
-													{...props}
-													bind:value={
-														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
-													}
-												/>
-											{/if}
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].provider.remote_request.maxCost.type"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'The currency of the agents max cost'}
-												>Budget Currency</TooltipLabel
-											>
-
-											<Select.Root
-												{...props}
-												type="single"
-												bind:value={
-													$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type
-												}
-											>
-												<Select.Trigger class="w-full"
-													>{$formData.agents[
-														selectedAgent!
-													]!.provider.remote_request.maxCost.type.charAt(0).toLocaleUpperCase() +
-														$formData.agents[
-															selectedAgent!
-														]!.provider.remote_request.maxCost.type.replace('_', ' ').slice(
-															1
-														)}</Select.Trigger
-												>
-
-												<Select.Content>
-													<Select.Item value="usd">USD</Select.Item>
-													<Select.Item value="micro_coral">Micro coral</Select.Item>
-													<Select.Item value="coral">Coral</Select.Item>
-												</Select.Content>
-											</Select.Root>
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-								<TooltipLabel tooltip={'Servers to use for remote requests'} class="m-0"
-									>Servers</TooltipLabel
-								>
-								{@const serverSource =
-									$formData.agents[selectedAgent!]!.provider.remote_request.serverSource}
-								{#if serverSource.type === 'servers'}
-									{#each serverSource.servers as server, i}
-										<p>
-											{server.address}{server.port ? `:${server.port}` : ''}{server.secure
-												? ' (secure)'
-												: ''}
-										</p>
-										<div class="flex flex-col gap-1 text-sm">
-											{#if server.attributes?.length}
-												<div class="text-muted-foreground text-xs">
-													Attributes: {JSON.stringify(server.attributes)}
-												</div>
-											{/if}
-										</div>
-									{/each}
-								{/if}
-								<div class="flex w-full max-w-sm items-center space-x-2">
-									<Input class="grow" placeholder="127.0.0.1" bind:value={newServerAddress} />
-									<Input class="w-24" placeholder="port" bind:value={newServerPort} />
-									<Button
-										onclick={() => {
-											if (selectedAgent === null) return;
-											const agentReq = $formData.agents[selectedAgent!]!.provider.remote_request;
-											const addr = (newServerAddress ?? '').trim();
-											const portRaw = newServerPort;
-											if (!addr) {
-												toast.error('Please enter an address');
-												return;
-											}
-											const port = portRaw === '' || portRaw === undefined ? 0 : Number(portRaw);
-											if (port !== undefined && Number.isNaN(port)) {
-												toast.error('Invalid port');
-												return;
-											}
-
-											agentReq.serverSource.servers = agentReq.serverSource.servers ?? [];
-											agentReq.serverSource.servers.push({
-												address: addr,
-												port,
-												secure: false,
-												attributes: []
-											});
-
-											// trigger reactivity
-											$formData.agents = $formData.agents;
-
-											// clear inputs
-											newServerAddress = '';
-											newServerPort = '';
-										}}
-									>
-										Add
-									</Button>
-								</div>
-							{/if}
-						{/if}
-					</Tabs.Content> -->
 			</Tabs.Root>
 		</Resizable.Pane>
 	</Resizable.PaneGroup>
