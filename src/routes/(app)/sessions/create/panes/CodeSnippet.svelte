@@ -55,7 +55,7 @@ requests.post(
 <script lang="ts">
 	import CopyButton from '$lib/components/copy-button.svelte';
 	import { Highlight } from 'svelte-highlight';
-	import type { CreateSessionRequest } from './schemas/types';
+	import type { CreateSessionRequest } from '../schemas/types';
 	let {
 		snippet: snippetName,
 		body

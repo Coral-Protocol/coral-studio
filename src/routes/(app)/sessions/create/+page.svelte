@@ -1,3 +1,18 @@
+<script lang="ts" module>
+	import { Context } from 'runed';
+	import type { SuperFormData } from 'sveltekit-superforms/client';
+	import type { FormSchema } from './schemas';
+	import type z from 'zod';
+
+	export type SessionCreatorContext = {
+		payload: CreateSessionRequest | null;
+		importSession: (options: { success?: string; from: string }) => boolean;
+		formData: SuperFormData<z.output<FormSchema>>;
+	};
+
+	export const createSessionContext = new Context<SessionCreatorContext>('sessionCreator');
+</script>
+
 <script lang="ts">
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
@@ -5,17 +20,13 @@
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
 	import * as Select from '$lib/components/ui/select';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
 	import * as Item from '$lib/components/ui/item/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Form from '$lib/components/ui/form';
 
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
-	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
 	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
@@ -30,25 +41,18 @@
 	import TooltipLabel from '$lib/components/tooltip-label.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import Combobox from '$lib/components/combobox.svelte';
-	import CopyButton from '$lib/components/copy-button.svelte';
 	import Pip from '$lib/components/pip.svelte';
 
 	import OptionField from './OptionField.svelte';
 	import SidebarTab from './SidebarTab.svelte';
-	import CodeSnippet from './CodeSnippet.svelte';
 	import Graph from './Graph.svelte';
 	import ToolInput from './ToolInput.svelte';
-
-	import CodeMirror from 'svelte-codemirror-editor';
-	import { json } from '@codemirror/lang-json';
-	import { dracula } from '@uiw/codemirror-theme-dracula';
 
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
 
 	import { page } from '$app/state';
 	import { onMount, tick } from 'svelte';
-	import { fade } from 'svelte/transition';
 
 	import { toast } from 'svelte-sonner';
 	import { PersistedState } from 'runed';
@@ -64,6 +68,8 @@
 	import { toPayload } from './schemas';
 	import { importFromPayload } from './schemas';
 	import AgentPicker from './AgentPicker.svelte';
+	import CodePane from './panes/CodePane.svelte';
+	import GroupsPane from './panes/GroupsPane.svelte';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -304,6 +310,39 @@
 
 	let { form: formData, errors, allErrors, enhance } = $derived(form);
 
+	let sessCtx = $state({
+		// svelte-ignore state_referenced_locally
+		formData,
+		payload: null,
+		importSession: ({
+			success = 'Session JSON updated successfully',
+			from
+		}: {
+			success?: string;
+			from: string;
+		}): boolean => {
+			try {
+				$formData = importFromPayload(from);
+				selectedAgent = $formData.agents.length > 0 ? 0 : null;
+				toast.success(success);
+				return true;
+			} catch (e) {
+				console.error(e);
+				toast.error('Failed to update session from JSON: ' + e);
+				return false;
+			}
+		}
+	}) as SessionCreatorContext;
+	createSessionContext.set(sessCtx);
+	$effect(() => {
+		toPayload(ctx.server, $formData)
+			.then((val) => (sessCtx.payload = val))
+			.catch(console.error);
+	});
+	$effect(() => {
+		sessCtx.formData = formData;
+	});
+
 	function formatMsToHHMMSS(ms: number): string {
 		const totalSeconds = Math.floor(ms / 1000);
 		const hours = Math.floor(totalSeconds / 3600);
@@ -394,36 +433,6 @@
 		}
 	});
 
-	const editorTab = new PersistedState('sessionEditorTab', 'json');
-
-	let payload: CreateSessionRequest | null = $state(null);
-	$effect(() => {
-		toPayload(ctx.server, $formData)
-			.then((val) => (payload = val))
-			.catch(console.error);
-	});
-
-	let payloadJson = $derived(payload ? JSON.stringify(payload, null, 4) : '');
-	let jsonDirty = $state(false);
-
-	const importSession = ({
-		success = 'Session JSON updated successfully',
-		from
-	}: {
-		success?: string;
-		from: string;
-	}) => {
-		try {
-			$formData = importFromPayload(from);
-			selectedAgent = $formData.agents.length > 0 ? 0 : null;
-			toast.success(success);
-			jsonDirty = false;
-		} catch (e) {
-			console.error(e);
-			toast.error('Failed to update session from JSON: ' + e);
-		}
-	};
-
 	function clearSession() {
 		$formData = {
 			groups: [],
@@ -479,15 +488,18 @@
 										<Menubar.Separator />
 										<Menubar.Item
 											onSelect={async () => {
-												importSession({
+												sessCtx.importSession({
 													from: await navigator.clipboard.readText(),
 													success: 'Session updated from clipboard'
 												});
 											}}>Import JSON from clipboard</Menubar.Item
 										>
 										<Menubar.Item
+											disabled={!sessCtx.payload}
 											onSelect={() => (
-												navigator.clipboard.writeText(payloadJson),
+												navigator.clipboard.writeText(
+													sessCtx.payload ? JSON.stringify(sessCtx.payload, null, 4) : ''
+												),
 												toast.success('Session JSON copied to clipboard')
 											)}>Export JSON to clipboard</Menubar.Item
 										>
@@ -594,60 +606,7 @@
 					minSize={25}
 					defaultSize={50}
 				>
-					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
-						<Tabs.List
-							class="bg-sidebar  flex w-full justify-start rounded-none border-b *:rounded-none"
-						>
-							<Tabs.Trigger value="json" class="grow-0"
-								>Session editor{jsonDirty ? '*' : ''}</Tabs.Trigger
-							>
-							<Separator orientation="vertical" class="" />
-							<Tabs.Trigger value="js" class="grow-0">JavaScript</Tabs.Trigger>
-							<Tabs.Trigger value="py" class="grow-0">Python</Tabs.Trigger>
-							<!-- <Tabs.Trigger value="curl" class="grow-0">cURL</Tabs.Trigger> -->
-						</Tabs.List>
-						<Tabs.Content value="json" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={payloadJson} />
-								{#if jsonDirty}
-									<span transition:fade={{ duration: 100 }}>
-										<Tooltip.Provider>
-											<Tooltip.Root>
-												<Tooltip.Trigger
-													class={cn(buttonVariants({ size: 'icon' }), '')}
-													onclick={() => importSession({ from: payloadJson })}
-												>
-													<IconArrowsClockwise /></Tooltip.Trigger
-												>
-												<Tooltip.Content>Update session graph from JSON</Tooltip.Content>
-											</Tooltip.Root>
-										</Tooltip.Provider>
-									</span>
-								{/if}
-							</section>
-							<CodeMirror
-								bind:value={payloadJson}
-								onchange={() => {
-									jsonDirty = true;
-								}}
-								lang={json()}
-								tabSize={4}
-								theme={dracula}
-								lineWrapping={true}
-								class="absolute inset-0 [&_.cm-content]:p-0! [&>*]:size-full "
-							/>
-						</Tabs.Content>
-						<Tabs.Content value="js" class="relative overflow-y-auto">
-							{#if payload}
-								<CodeSnippet snippet="javascript" body={payload} />
-							{/if}
-						</Tabs.Content>
-						<Tabs.Content value="py" class="relative overflow-y-auto">
-							{#if payload}
-								<CodeSnippet snippet="python" body={payload} />
-							{/if}
-						</Tabs.Content>
-					</Tabs.Root>
+					<CodePane />
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
 						<Form.Button
 							disabled={sendingForm || $formData.agents.length === 0}
@@ -993,80 +952,8 @@
 						{/if}
 					</section>
 				</Tabs.Content>
-				<Tabs.Content value="groups" class="flex flex-col ">
-					<header class="flex w-full flex-col gap-4 border-b p-4">
-						<p class="text-sm">
-							Agents can only communicate with other agents in their group, agents with no group
-							cannot collaborate.
-						</p>
-						{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
-							<Tooltip.Provider>
-								<Tooltip.Root delayDuration={100}>
-									<Tooltip.Trigger class="w-fit"
-										><Button
-											class="gap-1 px-3"
-											disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
-											onclick={() => {
-												$formData.groups = [...$formData.groups, []];
-											}}>Create a new group</Button
-										></Tooltip.Trigger
-									>
-									<Tooltip.Content>
-										Empty group already exists, please add agents to it before creating another.
-									</Tooltip.Content>
-								</Tooltip.Root>
-							</Tooltip.Provider>
-						{:else}
-							<Button
-								class="w-fit gap-1 px-3"
-								onclick={() => {
-									$formData.groups = [...$formData.groups, []];
-								}}>Create a new group</Button
-							>
-						{/if}
-					</header>
-					<ul class=" flex flex-col">
-						{#each $formData.groups as link, i}
-							<Accordion.Root type="single">
-								<Accordion.Item value="item-1">
-									<Accordion.Trigger variant="compact" class="border-b">
-										<span
-											>Group {i + 1}
-											<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
-											></span
-										>
-									</Accordion.Trigger>
-									<Accordion.Content class="border-b">
-										<Select.Root
-											type="multiple"
-											value={link}
-											onValueChange={(value) => {
-												$formData.groups[i] = value;
-												$formData.groups = $formData.groups;
-											}}
-										>
-											<Select.Trigger class="mt-4">
-												<span>Add agents </span>
-											</Select.Trigger>
-											<Select.Content>
-												{#if $formData.agents.length == 0}
-													<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
-												{/if}
-												{#each new Set($formData.agents.map((agent) => agent.name)) as id}
-													<Select.Item value={id}>{id}</Select.Item>
-												{/each}
-											</Select.Content>
-										</Select.Root>
-										<ol class="list-decimal pl-4">
-											{#each link as agentName, j}
-												<li>{agentName}</li>
-											{/each}
-										</ol>
-									</Accordion.Content>
-								</Accordion.Item>
-							</Accordion.Root>
-						{/each}
-					</ul>
+				<Tabs.Content value="groups" class="flex flex-col">
+					<GroupsPane />
 				</Tabs.Content>
 			</Tabs.Root>
 		</Resizable.Pane>
