@@ -926,7 +926,7 @@
 								}}
 								lang={json()}
 								theme={dracula}
-								class="ͼo h-full [&_.cm-content]:p-0! "
+								class="absolute inset-0 [&_.cm-content]:p-0! [&>*]:size-full "
 							/>
 						</Tabs.Content>
 						<Tabs.Content value="js" class="relative overflow-y-auto">
