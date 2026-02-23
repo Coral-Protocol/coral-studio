@@ -103,7 +103,7 @@
 				id,
 				name: `${randomAdjective()}-${randomAnimal()}`,
 				transport: { type: 'http', url: '' },
-				schema: { inputSchema: {}, outputSchema: undefined, name: undefined }
+				schema: {}
 			}),
 				(selectedTool = id);
 		}}>+</Button
