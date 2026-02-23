@@ -12,7 +12,6 @@
 
 	type Props = HTMLInputAttributes & {
 		superform: SuperForm<T>;
-		// field: FormPath<T>;
 		id: string;
 	};
 

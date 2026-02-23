@@ -74,7 +74,7 @@
 						</Select.Content>
 					</Select.Root>
 					<ol class="list-decimal pl-4">
-						{#each link as agentName, j}
+						{#each link as agentName}
 							<li>{agentName}</li>
 						{/each}
 					</ol>

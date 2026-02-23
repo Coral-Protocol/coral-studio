@@ -46,16 +46,15 @@
 	import { zod4 } from 'sveltekit-superforms/adapters';
 
 	import { page } from '$app/state';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 
 	import { toast } from 'svelte-sonner';
 	import { PersistedState } from 'runed';
 
-	import { cn } from '$lib/utils';
 	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
 	import { Session } from '$lib/session.svelte';
 	import { appContext } from '$lib/context';
-	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
+	import { CoralServer, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
 
 	import { makeFormSchema, type CreateSessionRequest } from './schemas/types';
 	import { toPayload } from './schemas';
@@ -303,7 +302,7 @@
 		form.options.validators = zod4(formSchema);
 	});
 
-	let { form: formData, errors, allErrors, enhance } = $derived(form);
+	let { form: formData, errors, enhance } = $derived(form);
 
 	let sessCtx = $state({
 		// svelte-ignore state_referenced_locally
@@ -351,9 +350,6 @@
 
 	let curAgent = $derived(
 		sessCtx.selectedAgent !== null ? $formData.agents[sessCtx.selectedAgent] : undefined
-	);
-	let curCatalog = $derived(
-		curAgent && ctx.server.catalogs[registryIdOf(curAgent.id.registrySourceId)]
 	);
 
 	$effect(() => {
