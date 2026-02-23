@@ -1,83 +1,69 @@
+<script lang="ts" module>
+	import { Context } from 'runed';
+	import type { SuperForm, SuperFormData, SuperFormErrors } from 'sveltekit-superforms/client';
+	import type { FormSchema } from './schemas';
+	import type z from 'zod';
+
+	export type SessionCreatorContext = {
+		payload: CreateSessionRequest | null;
+		importSession: (options: { success?: string; from: string }) => boolean;
+
+		selectedAgent: number | null;
+		detailedAgent: Awaited<ReturnType<CoralServer['lookupAgent']>> | null;
+
+		form: SuperForm<z.output<FormSchema>>;
+		formData: SuperFormData<z.output<FormSchema>>;
+		errors: SuperFormErrors<z.output<FormSchema>>;
+	};
+
+	export const createSessionContext = new Context<SessionCreatorContext>('sessionCreator');
+</script>
+
 <script lang="ts">
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
 	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Separator } from '$lib/components/ui/separator';
-	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
-	import IconMenu from 'phosphor-icons-svelte/IconListRegular.svelte';
-	import IconXRegular from 'phosphor-icons-svelte/IconXRegular.svelte';
-	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
-	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
-	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
-	import IconHeartRegular from 'phosphor-icons-svelte/IconHeartBold.svelte';
 	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import * as Select from '$lib/components/ui/select';
-	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
-	import * as Item from '$lib/components/ui/item/index.js';
-
+	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Form from '$lib/components/ui/form';
 
-	import { PersistedState } from 'runed';
+	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
+	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
+	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	import Input from '$lib/components/ui/input/input.svelte';
-	import { Button, buttonVariants } from '$lib/components/ui/button';
-	import * as Table from '$lib/components/ui/table/index.js';
+	import { Checkbox } from '$lib/components/ui/checkbox';
+	import { Separator } from '$lib/components/ui/separator';
 
-	import { cn } from '$lib/utils';
-	import { idAsKey, type PublicRegistryAgent, type Registry } from '$lib/threads';
-	import { Session } from '$lib/session.svelte';
-
-	import Combobox from '$lib/components/combobox.svelte';
-	import TooltipLabel from '$lib/components/tooltip-label.svelte';
+	import { Spinner } from '$lib/components/ui/spinner';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import Pip from '$lib/components/pip.svelte';
 
-	import { toast } from 'svelte-sonner';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import SidebarTab from './SidebarTab.svelte';
+	import Graph from './Graph.svelte';
 
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
-	import * as schemas from './schemas';
 
-	import type { paths, components, operations } from '$generated/api';
-	import { onMount, tick } from 'svelte';
-
-	import Graph from './Graph.svelte';
-	import type { Provider, ProviderType } from './schemas';
-	import { appContext } from '$lib/context';
-	import { CoralServer, registryIdOf, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
-	import { Skeleton } from '$lib/components/ui/skeleton';
-	import { Spinner } from '$lib/components/ui/spinner';
-
-	import CodeMirror from 'svelte-codemirror-editor';
-	import { json } from '@codemirror/lang-json';
-	import { dracula, draculaInit } from '@uiw/codemirror-theme-dracula';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
-	import ToolInput from './ToolInput.svelte';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Toggle } from '$lib/components/ui/toggle';
-	import { randomAdjective, randomAnimal } from '$lib/words';
-	import { fade } from 'svelte/transition';
-	import CopyButton from '$lib/components/copy-button.svelte';
-	import Pip from '$lib/components/pip.svelte';
-	import OptionField from './OptionField.svelte';
-	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import SidebarTab from './SidebarTab.svelte';
 	import { page } from '$app/state';
-	import hljs from 'highlight.js';
+	import { onMount } from 'svelte';
 
-	import javascript from 'highlight.js/lib/languages/javascript';
-	import python from 'highlight.js/lib/languages/python';
+	import { toast } from 'svelte-sonner';
+	import { PersistedState } from 'runed';
 
-	hljs.registerLanguage('javascript', javascript);
-	hljs.registerLanguage('python', python);
+	import { IsMobile } from '$lib/hooks/is-mobile.svelte';
+	import { Session } from '$lib/session.svelte';
+	import { appContext } from '$lib/context';
+	import { CoralServer, type RegistryAgentIdentifier } from '$lib/CoralServer.svelte';
+
+	import { makeFormSchema, type CreateSessionRequest } from './schemas/types';
+	import { toPayload } from './schemas';
+	import { importFromPayload } from './schemas';
+	import AgentPicker from './AgentPicker.svelte';
+	import CodePane from './panes/CodePane.svelte';
+	import GroupsPane from './panes/GroupsPane.svelte';
+	import SessionPane from './panes/SessionPane.svelte';
+	import AgentPane from './panes/AgentPane.svelte';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -125,9 +111,9 @@
 						blocking: false,
 						options: {}
 					});
-					detailedAgent = null;
+					sessCtx.detailedAgent = null;
 					$formData.agents = $formData.agents;
-					selectedAgent = $formData.agents.length - 1;
+					sessCtx.selectedAgent = $formData.agents.length - 1;
 				} catch (error) {
 					console.error('Failed to add agent:', error);
 				}
@@ -220,11 +206,11 @@
 		$formData.agents = $formData.agents;
 
 		// Maintain selection invariants
-		if (selectedAgent !== null) {
-			if (selectedAgent === index) {
-				selectedAgent = 0;
-			} else if (selectedAgent > index) {
-				selectedAgent--;
+		if (sessCtx.selectedAgent !== null) {
+			if (sessCtx.selectedAgent === index) {
+				sessCtx.selectedAgent = 0;
+			} else if (sessCtx.selectedAgent > index) {
+				sessCtx.selectedAgent--;
 			}
 		}
 
@@ -244,31 +230,18 @@
 		$formData.agents = $formData.agents;
 		toast.success('Agent "' + lastDeletedAgent.agent.name + '" restored');
 
-		selectedAgent = lastDeletedAgent.index;
+		sessCtx.selectedAgent = lastDeletedAgent.index;
 
 		lastDeletedAgent = null;
 	};
 
-	type CreateSessionRequest = NonNullable<
-		operations['createSession']['requestBody']
-	>['content']['application/json'];
-
-	/// {a?: number | undefined} -> {a: number | undefined}
-	type Complete<T> = {
-		[P in keyof Required<T>]: Pick<T, P> extends Required<Pick<T, P>> ? T[P] : T[P] | undefined;
-	};
-
 	let ctx = appContext.get();
 
-	let error: string | null = $state(null);
-
-	let formSchema = $derived(schemas.makeFormSchema(ctx.server));
+	let formSchema = $derived(makeFormSchema(ctx.server));
 
 	let currentTab = $state('agent');
 
 	let sendingForm = $state(false);
-
-	let catalogsLoaded = $derived(Object.keys(ctx.server.catalogs).length > 0);
 
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
@@ -291,7 +264,7 @@
 			}
 			try {
 				sendingForm = true;
-				const body = await asJson;
+				const body = await toPayload(ctx.server, $formData);
 				const res = await ctx.server.api.POST('/api/v1/local/session', {
 					body
 				});
@@ -329,206 +302,61 @@
 		form.options.validators = zod4(formSchema);
 	});
 
-	let { form: formData, errors, allErrors, enhance } = $derived(form);
+	let { form: formData, errors, enhance } = $derived(form);
 
-	function formatMsToHHMMSS(ms: number): string {
-		const totalSeconds = Math.floor(ms / 1000);
-		const hours = Math.floor(totalSeconds / 3600);
-		const minutes = Math.floor((totalSeconds % 3600) / 60);
-		const seconds = totalSeconds % 60;
+	let sessCtx = $state({
+		// svelte-ignore state_referenced_locally
+		formData,
+		// svelte-ignore state_referenced_locally
+		errors,
+		form,
 
-		return [hours, minutes, seconds].map((v) => String(v).padStart(2, '0')).join(':');
-	}
+		payload: null,
+		selectedAgent: null,
+		detailedAgent: null,
 
-	const usdFormatter = new Intl.NumberFormat('en-US', {
-		style: 'currency',
-		currency: 'USD',
-		minimumFractionDigits: 2,
-		maximumFractionDigits: 2
-	});
-
-	const maxCostEstimate = $derived(
-		(($formData.sessionRuntimeSettings.ttl ?? 0) * $formData.agents.length * 10) / 60000
-	);
-
-	const defaultProvider = {
-		runtime: 'executable',
-		remote_request: {
-			maxCost: { amount: 10, type: 'coral' },
-			serverSource: {
-				type: 'servers',
-				servers: []
+		importSession: ({
+			success = 'Session JSON updated successfully',
+			from
+		}: {
+			success?: string;
+			from: string;
+		}): boolean => {
+			try {
+				$formData = importFromPayload(from);
+				sessCtx.selectedAgent = $formData.agents.length > 0 ? 0 : null;
+				toast.success(success);
+				return true;
+			} catch (e) {
+				console.error(e);
+				toast.error('Failed to update session from JSON: ' + e);
+				return false;
 			}
 		}
-	} satisfies Provider;
-
-	const importFromJson = (json: string) => {
-		try {
-			const data: CreateSessionRequest = JSON.parse(json);
-			const toolMap = Object.fromEntries(
-				Object.keys(data.agentGraphRequest.customTools ?? {}).map((k) => [
-					k,
-					crypto.randomUUID() as string
-				])
-			);
-			const tools = Object.fromEntries(
-				Object.entries(data.agentGraphRequest.customTools ?? {}).map(([k, v]) => {
-					const id = toolMap[k]!; // Safety: toolMap is built from custom tool keys
-					return [
-						id,
-						{
-							id,
-							name: k,
-							schema: v.schema,
-							transport: v.transport
-						} satisfies schemas.CustomTool
-					];
-				})
-			);
-			const defaultRuntimeSettings = {
-				ttl: 50000
-			};
-			$formData = {
-				tools,
-				groups: data.agentGraphRequest.groups ?? [],
-				sessionRuntimeSettings: {
-					...defaultRuntimeSettings,
-					...(data.execution && data.execution.mode === 'immediate'
-						? data.execution.runtimeSettings
-						: {})
-				},
-				agents: data.agentGraphRequest.agents.map((agent) => ({
-					id: agent.id,
-					name: agent.name,
-					description: agent.description ?? '',
-					provider: {
-						runtime: agent.provider.runtime,
-						remote_request:
-							agent.provider.type === 'remote_request'
-								? {
-										maxCost: agent.provider.maxCost,
-										// ensure serverSource is the "servers" variant expected by the form model
-										serverSource:
-											agent.provider.serverSource &&
-											typeof (agent.provider.serverSource as any).type === 'string' &&
-											(agent.provider.serverSource as any).type === 'servers'
-												? (agent.provider.serverSource as any)
-												: { type: 'servers', servers: [] },
-										serverScoring: agent.provider.serverScoring
-									}
-								: defaultProvider.remote_request
-					},
-					providerType: agent.provider.type,
-					blocking: agent.blocking ?? true,
-					options: agent.options as any,
-					customToolAccess: new Set(
-						(agent.customToolAccess ?? []).map((t) => toolMap[t]).filter(Boolean) as string[] // typescript is stupid this is safe because .filter(Boolean)
-					)
-				}))
-			};
-			selectedAgent = $formData.agents.length > 0 ? 0 : null;
-			toast.success('Session JSON updated successfully');
-			jsonDirty = false;
-		} catch (error) {
-			toast.error('Failed to update session from JSON: ' + error);
-			console.error(error);
-		}
-	};
-
-	let asJson: Promise<CreateSessionRequest> = $derived.by(async () => {
-		const detailed = await Promise.all($formData.agents.map((a) => getDetailed(a.id)));
-		const agents = $formData.agents.map((agent, idx) => {
-			const reg = detailed[idx];
-			if (!reg) throw new Error('something bad happened');
-
-			return {
-				id: agent.id,
-				name: agent.name,
-				description: agent.description,
-				provider: {
-					type: agent.providerType as ProviderType,
-					runtime: agent.provider.runtime,
-					...(agent.providerType == 'remote_request' ? agent.provider.remote_request : {})
-				} as any,
-
-				blocking: agent.blocking,
-				systemPrompt: agent.systemPrompt,
-				customToolAccess: Array.from(agent.customToolAccess)
-					.map((id) => $formData.tools[id]?.name)
-					.filter(Boolean) as string[], // safe assertion because .filter(Boolean) removes null/undefined
-				plugins: [],
-				x402Budgets: [],
-				options: Object.fromEntries(
-					Object.entries(agent.options ?? {})
-						.filter(([name]) => name in reg.registryAgent.options)
-						.filter(([name, opt]: [string, any]) => {
-							const schemaOpt = reg.registryAgent.options[name];
-							if (!schemaOpt) return false;
-
-							const defaultVal = schemaOpt.default;
-							if (!opt || opt.value === undefined) return false;
-
-							try {
-								return JSON.stringify(opt.value) !== JSON.stringify(defaultVal);
-							} catch {
-								return true;
-							}
-						})
-						.map(([name, opt]) => [name, { type: opt.type, value: opt.value }])
-				) as any
-			} satisfies components['schemas']['GraphAgentRequest'];
-		});
-
-		const customTools = Object.fromEntries(
-			Object.values($formData.tools).map((tool) => {
-				const value = {
-					transport: structuredClone(tool.transport),
-					schema: structuredClone(tool.schema)
-				};
-				if (!value.schema.name) {
-					value.schema.name = tool.name;
-				}
-				return [tool.name, value];
+	}) as SessionCreatorContext;
+	createSessionContext.set(sessCtx);
+	$effect(() => {
+		toPayload(ctx.server, $formData)
+			.then((val) => {
+				sessCtx.payload = val;
 			})
-		) as any;
-
-		return {
-			agentGraphRequest: {
-				agents,
-				groups: $formData.groups,
-				customTools
-			},
-			namespaceProvider: {
-				type: 'create_if_not_exists',
-				namespaceRequest: {
-					name: ctx.server.namespace,
-					annotations: {},
-					deleteOnLastSessionExit: false
-				}
-			},
-			execution: {
-				mode: 'immediate',
-				runtimeSettings: {
-					extendedEndReport: false,
-					ttl: $formData.sessionRuntimeSettings.ttl
-				}
-			}
-		} satisfies CreateSessionRequest;
+			.catch(console.error);
+	});
+	$effect(() => {
+		sessCtx.formData = formData;
+		sessCtx.errors = errors;
+		sessCtx.form = form;
 	});
 
-	let selectedTool: string | null = $state(null);
-
-	let selectedAgent: number | null = $state(null);
-	let curAgent = $derived(selectedAgent !== null ? $formData.agents[selectedAgent] : undefined);
-	let curCatalog = $derived(
-		curAgent && ctx.server.catalogs[registryIdOf(curAgent.id.registrySourceId)]
+	let curAgent = $derived(
+		sessCtx.selectedAgent !== null ? $formData.agents[sessCtx.selectedAgent] : undefined
 	);
-
-	let detailedAgent = $state<Awaited<ReturnType<typeof getDetailed>> | null>(null);
 
 	$effect(() => {
 		if (curAgent) {
-			getDetailed(curAgent.id).then((d) => (detailedAgent = d));
+			getDetailed(curAgent.id).then((d) => {
+				sessCtx.detailedAgent = d;
+			});
 		}
 	});
 
@@ -541,18 +369,6 @@
 	};
 
 	const isMobile = new IsMobile();
-
-	const UNGROUPED = '__ungrouped';
-
-	let groupedOptions = $derived(
-		Object.entries(detailedAgent?.registryAgent?.options ?? {}).reduce<
-			Record<string, [string, any][]>
-		>((acc, [name, opt]) => {
-			const group = opt?.display?.group ?? UNGROUPED;
-			(acc[group] ??= []).push([name, opt]);
-			return acc;
-		}, {})
-	);
 
 	let agentsListTabs: string = $state('table');
 
@@ -586,71 +402,6 @@
 		}
 	});
 
-	function toJsObjectLiteral(value: unknown, indent = 2): string {
-		return (
-			JSON.stringify(value, null, indent)
-				// unquote valid JS identifiers
-				.replace(/"([a-zA-Z_$][\w$]*)":/g, '$1:')
-				// single quotes for strings (optional, stylistic)
-				.replace(/"/g, "'")
-		);
-	}
-
-	const editorTab = new PersistedState('sessionEditorTab', 'json');
-
-	let jsonExample = $state<string>('');
-	let jsonDirty = $state(false);
-	let jsExample = $state<string>('');
-	let pyExample = $state<string>('');
-	$effect(() => {
-		let cancelled = false;
-
-		(async () => {
-			try {
-				const body = await asJson;
-				if (cancelled) return;
-
-				jsonExample = JSON.stringify(body, null, 2);
-
-				const jsBody = toJsObjectLiteral(body, 4);
-
-				jsExample = [
-					"fetch('http://localhost:5555/api/v1/local/session', {",
-					"  method: 'POST',",
-					'  headers: {',
-					"    'Content-Type': 'application/json',",
-					"    Authorization: 'Bearer YOUR_SECRET_TOKEN'",
-					'  },',
-					'  body: JSON.stringify(',
-					jsBody.replace(/^/gm, '    '),
-					'  )',
-					'});'
-				].join('\n');
-
-				pyExample = [
-					'import requests',
-					'',
-					'headers = {',
-					"    'Content-Type': 'application/json',",
-					"    'Authorization': 'Bearer YOUR_SECRET_TOKEN'",
-					'}',
-					'',
-					'json_data = ' + jsBody,
-					'',
-					"response = requests.post('http://localhost:5555/api/v1/sessions/{namespace}', headers=headers, json=json_data)"
-				].join('\n');
-			} catch (e) {
-				jsonExample = '// Failed to generate JSON, does your session contain invalid data?';
-				jsExample = '// Failed to generate JavaScript, does your session contain invalid data?';
-				console.error(e);
-			}
-		})();
-
-		return () => {
-			cancelled = true;
-		};
-	});
-
 	function clearSession() {
 		$formData = {
 			groups: [],
@@ -660,7 +411,7 @@
 			},
 			agents: []
 		};
-		selectedAgent = null;
+		sessCtx.selectedAgent = null;
 	}
 </script>
 
@@ -705,14 +456,19 @@
 										<Menubar.Item onSelect={clearSession}>Clear session</Menubar.Item>
 										<Menubar.Separator />
 										<Menubar.Item
-											onSelect={async () => (
-												importFromJson(await navigator.clipboard.readText()),
-												toast.success('Session JSON imported from clipboard')
-											)}>Import JSON from clipboard</Menubar.Item
+											onSelect={async () => {
+												sessCtx.importSession({
+													from: await navigator.clipboard.readText(),
+													success: 'Session updated from clipboard'
+												});
+											}}>Import JSON from clipboard</Menubar.Item
 										>
 										<Menubar.Item
+											disabled={!sessCtx.payload}
 											onSelect={() => (
-												navigator.clipboard.writeText(jsonExample),
+												navigator.clipboard.writeText(
+													sessCtx.payload ? JSON.stringify(sessCtx.payload, null, 4) : ''
+												),
 												toast.success('Session JSON copied to clipboard')
 											)}>Export JSON to clipboard</Menubar.Item
 										>
@@ -744,81 +500,12 @@
 										{/if}
 									</Menubar.Trigger>
 									<Menubar.Content>
-										<Command.Root>
-											<Command.Input placeholder="Search agents..." />
-											<Command.List>
-												<Command.Empty>No agents found.</Command.Empty>
-												{#each Object.values(ctx.server.catalogs) as catalog}
-													<Command.Group heading={catalog.identifier.type}>
-														{#each Object.values(catalog.agents) as agent}
-															<HoverCard.Root>
-																<HoverCard.Trigger class="m-0">
-																	<Command.Item
-																		class="w-full cursor-pointer border-b px-4 py-2"
-																		onSelect={() =>
-																			addAgent(
-																				agent.name,
-																				catalog.identifier.type,
-																				agent.versions[0]!
-																			)}
-																	>
-																		<span class="grow">{agent.name}</span>
-																	</Command.Item>
-																</HoverCard.Trigger>
-
-																<HoverCard.Content
-																	side="right"
-																	class="max-w-1/2 min-w-full whitespace-pre-wrap"
-																>
-																	{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																		<span class="text-muted">loading...</span>
-																	{:then details}
-																		{details.registryAgent.info.description}
-																	{/await}
-																</HoverCard.Content>
-															</HoverCard.Root>
-														{/each}
-													</Command.Group>
-												{/each}
-											</Command.List>
-										</Command.Root>
-										<!-- <Menubar.Sub>
-											<Menubar.SubTrigger>Marketplace</Menubar.SubTrigger>
-											<Menubar.SubContent>
-												<Command.Root>
-													<Command.Input placeholder="Search agents..." />
-													<Command.List>
-														{#each Object.values(ctx.server.catalogs).map((catalog) => catalog) as catalog}
-															<Command.Group heading={`${catalog.identifier.type}`}>
-																{#each Object.values(ctx.server.catalogs).flatMap( (catalog) => Object.values(catalog.agents) ) as agent}
-																	<HoverCard.Root>
-																		<HoverCard.Trigger class="m-0"
-																			><Command.Item
-																				class=" w-full cursor-pointer  border-b px-4 py-2"
-																				onSelect={() => addAgent(agent)}
-																			>
-																				<span class="grow">{agent.name}</span>
-																				<IconHeartRegular />
-																			</Command.Item></HoverCard.Trigger
-																		>
-																		<HoverCard.Content
-																			side="right"
-																			class="w-1/2 whitespace-pre-wrap"
-																		>
-																			{#await ctx.server.lookupAgent( { name: agent.name, version: agent.versions[0]!, registrySourceId: catalog.identifier } )}
-																				<Skeleton class="h-4 w-full" />
-																			{:then details}
-																				{details.registryAgent.info.description}
-																			{/await}
-																		</HoverCard.Content>
-																	</HoverCard.Root>
-																{/each}
-															</Command.Group>
-														{/each}
-													</Command.List>
-												</Command.Root>
-											</Menubar.SubContent>
-										</Menubar.Sub> -->
+										<AgentPicker
+											server={ctx.server}
+											onSelect={(agent, catalogId) => {
+												addAgent(agent.name, catalogId.type, agent.versions[0]!);
+											}}
+										/>
 									</Menubar.Content>
 								</Menubar.Menu>
 							</Menubar.Root>
@@ -837,29 +524,31 @@
 										</Table.Header>
 										<Table.Body>
 											{#each $formData.agents as agent, i}
-												<Table.Row class="cursor-pointer {i === selectedAgent ? 'bg-muted' : ''}">
+												<Table.Row
+													class="cursor-pointer {i === sessCtx.selectedAgent ? 'bg-muted' : ''}"
+												>
 													<Table.Cell>
 														<p class="truncate font-medium"><Checkbox /></p>
 													</Table.Cell>
-													<Table.Cell onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (sessCtx.selectedAgent = i)}>
 														<p class="truncate font-medium">{agent.name}</p>
 													</Table.Cell>
 
-													<Table.Cell onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (sessCtx.selectedAgent = i)}>
 														<p class="truncate">{agent.id.version}</p>
 													</Table.Cell>
 
-													<Table.Cell onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (sessCtx.selectedAgent = i)}>
 														<p class="truncate">{agent.id.registrySourceId.type}</p>
 													</Table.Cell>
 
-													<Table.Cell onclick={() => (selectedAgent = i)}>
+													<Table.Cell onclick={() => (sessCtx.selectedAgent = i)}>
 														<p class="truncate">{agent.id.name}</p>
 													</Table.Cell>
 
 													<Table.Cell class="flex gap-2">
 														<TwostepButton
-															disabled={selectedAgent === null}
+															disabled={sessCtx.selectedAgent === null}
 															class="hover:bg-destructive/50 my-2 grow truncate"
 															onclick={() => removeAgent(i)}>Remove</TwostepButton
 														>
@@ -871,7 +560,11 @@
 								</Tabs.Content>
 								<Tabs.Content value="graph" class="flex min-h-0 flex-1 overflow-hidden ">
 									{#if $formData.agents.length !== 0}
-										<Graph agents={$formData.agents} groups={$formData.groups} bind:selectedAgent />
+										<Graph
+											agents={$formData.agents}
+											groups={$formData.groups}
+											bind:selectedAgent={sessCtx.selectedAgent}
+										/>
 									{:else}
 										<p>
 											No agents added yet. Use the "Add agents" menu to add agents to your session.
@@ -888,84 +581,7 @@
 					minSize={25}
 					defaultSize={50}
 				>
-					<Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
-						<Tabs.List
-							class="bg-sidebar  flex w-full justify-start rounded-none border-b *:rounded-none"
-						>
-							<Tabs.Trigger value="json" class="grow-0"
-								>Session editor{jsonDirty ? '*' : ''}</Tabs.Trigger
-							>
-							<Separator orientation="vertical" class="" />
-							<Tabs.Trigger value="js" class="grow-0">JavaScript</Tabs.Trigger>
-							<Tabs.Trigger value="py" class="grow-0">Python</Tabs.Trigger>
-							<!-- <Tabs.Trigger value="curl" class="grow-0">cURL</Tabs.Trigger> -->
-						</Tabs.List>
-						<Tabs.Content value="json" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={jsonExample} />
-								{#if jsonDirty}
-									<span transition:fade={{ duration: 100 }}>
-										<Tooltip.Provider>
-											<Tooltip.Root>
-												<Tooltip.Trigger
-													class={cn(buttonVariants({ size: 'icon' }), '')}
-													onclick={() => importFromJson(jsonExample)}
-												>
-													<IconArrowsClockwise /></Tooltip.Trigger
-												>
-												<Tooltip.Content>Update session graph from JSON</Tooltip.Content>
-											</Tooltip.Root>
-										</Tooltip.Provider>
-									</span>
-								{/if}
-							</section>
-							<CodeMirror
-								bind:value={jsonExample}
-								onchange={() => {
-									jsonDirty = true;
-								}}
-								lang={json()}
-								theme={dracula}
-								class="ͼo h-full [&_.cm-content]:p-0! "
-							/>
-						</Tabs.Content>
-						<Tabs.Content value="js" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={jsExample} />
-							</section>
-							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
-									jsExample.trim(),
-									{
-										language: 'javascript',
-										ignoreIllegals: true
-									}
-								).value}</pre>
-						</Tabs.Content>
-						<Tabs.Content value="py" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={pyExample} />
-							</section>
-							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
-									pyExample.trim(),
-									{
-										language: 'python',
-										ignoreIllegals: true
-									}
-								).value}</pre>
-						</Tabs.Content>
-						<!-- <Tabs.Content value="curl" class="relative overflow-y-auto">
-							<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
-								<CopyButton value={jsExample} />
-							</section>
-							<pre class="hljs h-full w-full text-xs leading-relaxed">{@html hljs.highlight(
-									jsExample.trim(),
-									{
-										language: 'plaintext',
-										ignoreIllegals: true
-									}
-								).value}</pre>
-						</Tabs.Content> -->
-					</Tabs.Root>
+					<CodePane />
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
 						<Form.Button
 							disabled={sendingForm || $formData.agents.length === 0}
@@ -1000,622 +616,17 @@
 						>Session</SidebarTab
 					>
 				</Tabs.List>
-				{@const availableOptions = {}}
-				{#key selectedAgent}
+				{#key sessCtx.selectedAgent}
 					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-2 overflow-y-scroll ">
-						{#if selectedAgent !== null && curAgent && curCatalog}
-							{#if !detailedAgent}
-								<Spinner class="m-auto my-8" />
-							{:else}
-								<header class="flex flex-col gap-2 px-4">
-									<Form.ElementField
-										{form}
-										name="agents[{selectedAgent}].name"
-										class="flex items-center gap-2"
-									>
-										<Form.Control>
-											{#snippet children({ props })}
-												<TooltipLabel
-													tooltip={'Name of the agent in this session'}
-													class="m-0 max-w-1/4"
-													>Name
-												</TooltipLabel>
-												<Input {...props} bind:value={$formData.agents[selectedAgent!]!.name} />
-											{/snippet}
-										</Form.Control>
-									</Form.ElementField>
-									<Form.ElementField
-										{form}
-										name="agents[{selectedAgent}].description"
-										class="flex items-center gap-2"
-									>
-										<Form.Control>
-											{#snippet children({ props })}
-												<TooltipLabel tooltip={'Optional agent description'} class="m-0 max-w-1/4"
-													>Description
-												</TooltipLabel>
-												<Input
-													{...props}
-													bind:value={$formData.agents[selectedAgent!]!.description}
-												/>
-											{/snippet}
-										</Form.Control>
-									</Form.ElementField>
-									<Form.ElementField
-										{form}
-										name="agents[{selectedAgent}].id.name"
-										class="flex grow items-center gap-2 truncate"
-									>
-										<Form.Control>
-											{#snippet children({ props })}
-												{@const id = $formData.agents[selectedAgent!]!.id}
-												<TooltipLabel
-													tooltip={'Agent type from the server agent registry'}
-													class="w m-0 max-w-1/4 truncate">Registry Type</TooltipLabel
-												>
-												<Combobox
-													{...props}
-													class=" m-0 w-0 grow truncate pr-[2px] "
-													side="right"
-													align="start"
-													bind:selected={
-														() => ({
-															label: `${id.name}`,
-															key: `${registryIdOf(id.registrySourceId)}/${id.name}`,
-															value: id
-														}),
-														() => {}
-													}
-													options={Object.values(ctx.server.catalogs).map((catalog) => ({
-														heading: catalog.identifier.type,
-														items: Object.values(catalog.agents).map((a) => ({
-															label: `${a.name}`,
-															key: `${registryIdOf(catalog.identifier)}/${a.name}`,
-															value: {
-																registrySourceId: catalog.identifier,
-																name: a.name,
-																version: a.versions.at(-1)! // won't be in registry if 0 versions
-															}
-														}))
-													}))}
-													searchPlaceholder="Search types..."
-													onValueChange={async (value) => {
-														if (value.name === id.name) return; // no change
-														$formData.agents[selectedAgent!]!.id = value;
-
-														await tick();
-
-														// Clean up options that are no longer valid
-														for (const name in $formData.agents[selectedAgent!]!.options) {
-															if (!(name in availableOptions)) {
-																delete $formData.agents[selectedAgent!]!.options[name];
-															}
-														}
-
-														// Refresh the agents object to trigger reactivity
-														$formData.agents = $formData.agents;
-
-														// Fetch detailed info for the new agent
-														const detailed = await getDetailed(value);
-														if (detailed && detailed.registryAgent.runtimes) {
-															// Pick the first available runtime
-															const firstRuntimeKey = Object.keys(
-																detailed.registryAgent.runtimes
-															)[0];
-															if (firstRuntimeKey) {
-																$formData.agents[selectedAgent!]!.provider.runtime =
-																	firstRuntimeKey as any;
-															}
-															$formData.agents[selectedAgent!]!.name =
-																detailed.registryAgent.info.identifier.name ||
-																$formData.agents[selectedAgent!]!.name;
-														}
-													}}
-												/>
-											{/snippet}
-										</Form.Control><Form.ElementField
-											{form}
-											name="agents[{selectedAgent}].id.version"
-											class="flex items-center gap-2"
-										>
-											<Form.Control>
-												{#snippet children({ props })}
-													{@const id = curAgent.id}
-													{@const reg = curCatalog.agents[id.name]!}
-
-													<Combobox
-														{...props}
-														class="w-auto grow pr-[2px] "
-														side="right"
-														align="start"
-														bind:selected={() => id.version, () => {}}
-														options={[{ items: reg.versions }]}
-														searchPlaceholder="Search versions..."
-														onValueChange={(value: string) => {
-															$formData.agents[selectedAgent!]!.id.version = value;
-															$formData.agents = $formData.agents;
-															tick().then(() => {
-																for (const name in $formData.agents[selectedAgent!]!.options) {
-																	if (!(name in availableOptions)) {
-																		delete $formData.agents[selectedAgent!]!.options[name];
-																	}
-																}
-																$formData.agents = $formData.agents;
-															});
-														}}
-													/>
-												{/snippet}
-											</Form.Control>
-										</Form.ElementField>
-									</Form.ElementField>
-
-									<Form.ElementField
-										{form}
-										name="agents[{selectedAgent}].provider.runtime"
-										class="flex items-center gap-2"
-									>
-										<Form.Control>
-											{#snippet children({ props })}
-												{@const runtime = $formData.agents[selectedAgent!]!.provider.runtime}
-												<TooltipLabel
-													tooltip={'Will only show available options for the selected agent type'}
-													class="m-0 max-w-1/4">Runtime</TooltipLabel
-												>
-												<Combobox
-													{...props}
-													class="w-auto grow pr-[2px]"
-													side="right"
-													align="start"
-													options={[
-														{
-															items: Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})
-														}
-													]}
-													searchPlaceholder="Search runtimes..."
-													bind:selected={
-														() =>
-															runtime ||
-															Object.keys(detailedAgent?.registryAgent?.runtimes ?? {})[0],
-														() => {}
-													}
-													onValueChange={(selected: string) => {
-														$formData.agents[selectedAgent!]!.provider.runtime = selected as any;
-													}}
-												/>
-											{/snippet}
-										</Form.Control>
-									</Form.ElementField>
-									<Form.ElementField
-										{form}
-										name="agents[{selectedAgent}].provider.runtime"
-										class="flex items-center gap-2"
-									>
-										<Form.Control>
-											{#snippet children({ props })}
-												{@const tools = $formData.agents[selectedAgent!]!.customToolAccess}
-												<TooltipLabel
-													tooltip={'What custom tools this agent has access to.'}
-													class="m-0 max-w-1/4">Custom Tools</TooltipLabel
-												>
-												<Select.Root
-													{...props}
-													type="multiple"
-													value={Array.from(tools.keys())}
-													onValueChange={(value) => {
-														if (selectedAgent === null || !$formData.agents[selectedAgent]) return;
-														$formData.agents[selectedAgent!]!.customToolAccess = new Set(value);
-														$formData.agents = $formData.agents;
-													}}
-												>
-													<Select.Trigger class="m-0">
-														<span>{tools.size} tools</span>
-													</Select.Trigger>
-													<Select.Content>
-														{#if Object.keys($formData.tools).length == 0}
-															<span class="text-muted-foreground h-9 px-2 text-sm italic"
-																>No tools</span
-															>
-														{/if}
-														{#each Object.values($formData.tools) as tool}
-															<Select.Item value={tool.id}>{tool.name}</Select.Item>
-														{/each}
-													</Select.Content>
-												</Select.Root>
-											{/snippet}
-										</Form.Control>
-									</Form.ElementField>
-								</header>
-								<ol class="border-t">
-									{#each Object.entries(groupedOptions) as [group, entries]}
-										<li>
-											{#if group !== '__ungrouped'}
-												<Accordion.Root type="multiple" value={[group]}>
-													<Accordion.Item value={group}>
-														<Accordion.Trigger variant="compact">
-															{group}
-														</Accordion.Trigger>
-
-														<Accordion.Content class="!p-0">
-															<ol>
-																{#each entries as [name, opt] (name)}
-																	<OptionField
-																		superform={form}
-																		agent={selectedAgent!}
-																		{name}
-																		meta={opt}
-																	/>
-																{/each}
-															</ol>
-														</Accordion.Content>
-													</Accordion.Item>
-												</Accordion.Root>
-											{:else}
-												<ol>
-													{#each entries as [name, opt] (name)}
-														<OptionField
-															superform={form}
-															agent={selectedAgent!}
-															{name}
-															meta={opt}
-														/>
-													{/each}
-												</ol>
-											{/if}
-										</li>
-									{/each}
-								</ol>
-							{/if}
-						{:else}
-							<div class="text-muted-foreground m-auto h-full w-full content-center text-center">
-								Add an agent to begin.
-							</div>
-						{/if}
+						<AgentPane />
 					</Tabs.Content>
 				{/key}
 				<Tabs.Content value="session" class="flex flex-col gap-4 ">
-					<section class="flex flex-col gap-4 px-4">
-						<h1 class="font-semibold">Session settings</h1>
-
-						<Form.ElementField
-							{form}
-							name="sessionRuntimeSettings.ttl"
-							class="flex items-center gap-2 "
-						>
-							<Form.Control>
-								{#snippet children({ props })}
-									<TooltipLabel
-										title="Time to live (TTL)"
-										tooltip="Measured in milliseconds, the time to live is the maximum duration a session can last"
-										extra={{
-											required: true,
-											type: 'number'
-										}}
-										class="max-w-1/4 min-w-1/4"
-									>
-										Time to live
-									</TooltipLabel>
-									<Input
-										{...props}
-										bind:value={$formData.sessionRuntimeSettings.ttl}
-										placeholder="time in milliseconds"
-										maxlength={15778476000}
-										type="number"
-										class="grow"
-									/>
-								{/snippet}
-							</Form.Control>
-						</Form.ElementField>
-						<span class="text-muted-foreground flex flex-col justify-between">
-							<TooltipLabel tooltip="Based off Session time to live settings" class=" max-w-fit">
-								Maximum session duration: {formatMsToHHMMSS(
-									$formData.sessionRuntimeSettings.ttl ?? 0
-								) ?? 'HH:MM:SS'}
-							</TooltipLabel>
-
-							<TooltipLabel
-								tooltip="Maximum cost of the session, calculated by number of agents, per minute."
-								class="max-w-fit"
-							>
-								Maximum cost of session: {usdFormatter.format((maxCostEstimate ?? 0) / 100)}
-							</TooltipLabel>
-						</span>
-						{#if $errors?.sessionRuntimeSettings?.ttl && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}' && JSON.stringify($errors.sessionRuntimeSettings?.ttl) !== '{}'}
-							<span class="text-xs">
-								{$errors?.sessionRuntimeSettings?.ttl}
-							</span>
-						{/if}
-					</section>
-					<Separator />
-					<section class="flex flex-col gap-4 px-4">
-						<h1 class="font-semibold">Custom Tools</h1>
-						<Button
-							onclick={() => {
-								const id = crypto.randomUUID() as string;
-								($formData.tools[id] = {
-									id,
-									name: `${randomAdjective()}-${randomAnimal()}`,
-									transport: { type: 'http', url: '' },
-									schema: { inputSchema: {}, outputSchema: undefined, name: undefined }
-								}),
-									(selectedTool = id);
-							}}>+</Button
-						>
-						<Item.Root variant="outline" class="p-2">
-							<Item.Content>
-								<ScrollArea>
-									{#if Object.keys($formData.tools).length == 0}
-										<p
-											class="text-muted-foreground flex h-9 w-full place-items-center justify-center"
-										>
-											No tools.
-										</p>
-									{/if}
-									{#each Object.values($formData.tools) as tool (tool.id)}
-										<Toggle
-											class="flex w-full justify-start pr-0"
-											bind:pressed={() => selectedTool === tool.id, () => (selectedTool = tool.id)}
-										>
-											<p class="grow text-left">{tool.name}</p>
-											<TwostepButton
-												class="size-9"
-												variant="ghostDestructive"
-												onclick={() => {
-													delete $formData.tools[tool.id];
-													$formData.tools = $formData.tools;
-													selectedAgent =
-														selectedAgent && Math.min(selectedAgent, $formData.agents.length - 1);
-												}}><IconTrash /></TwostepButton
-											>
-										</Toggle>
-									{/each}
-								</ScrollArea>
-							</Item.Content>
-						</Item.Root>
-
-						{#if selectedTool !== null}
-							<ToolInput superform={form} id={selectedTool} />
-						{/if}
-					</section>
+					<SessionPane />
 				</Tabs.Content>
-				<Tabs.Content value="groups" class="flex flex-col ">
-					<header class="flex w-full flex-col gap-4 border-b p-4">
-						<p class="text-sm">
-							Agents can only communicate with other agents in their group, agents with no group
-							cannot collaborate.
-						</p>
-						{#if ($formData.groups.at(-1)?.length ?? 1) == 0}
-							<Tooltip.Provider>
-								<Tooltip.Root delayDuration={100}>
-									<Tooltip.Trigger class="w-fit"
-										><Button
-											class="gap-1 px-3"
-											disabled={($formData.groups.at(-1)?.length ?? 1) == 0}
-											onclick={() => {
-												$formData.groups = [...$formData.groups, []];
-											}}>Create a new group</Button
-										></Tooltip.Trigger
-									>
-									<Tooltip.Content>
-										Empty group already exists, please add agents to it before creating another.
-									</Tooltip.Content>
-								</Tooltip.Root>
-							</Tooltip.Provider>
-						{:else}
-							<Button
-								class="w-fit gap-1 px-3"
-								onclick={() => {
-									$formData.groups = [...$formData.groups, []];
-								}}>Create a new group</Button
-							>
-						{/if}
-					</header>
-					<ul class=" flex flex-col">
-						{#each $formData.groups as link, i}
-							<Accordion.Root type="single">
-								<Accordion.Item value="item-1">
-									<Accordion.Trigger variant="compact" class="border-b">
-										<span
-											>Group {i + 1}
-											<span class="text-muted-foreground pl-2 text-sm">{link.length} members</span
-											></span
-										>
-									</Accordion.Trigger>
-									<Accordion.Content class="border-b">
-										<Select.Root
-											type="multiple"
-											value={link}
-											onValueChange={(value) => {
-												$formData.groups[i] = value;
-												$formData.groups = $formData.groups;
-											}}
-										>
-											<Select.Trigger class="mt-4">
-												<span>Add agents </span>
-											</Select.Trigger>
-											<Select.Content>
-												{#if $formData.agents.length == 0}
-													<span class="text-muted-foreground px-2 text-sm italic">No agents</span>
-												{/if}
-												{#each new Set($formData.agents.map((agent) => agent.name)) as id}
-													<Select.Item value={id}>{id}</Select.Item>
-												{/each}
-											</Select.Content>
-										</Select.Root>
-										<ol class="list-decimal pl-4">
-											{#each link as agentName, j}
-												<li>{agentName}</li>
-											{/each}
-										</ol>
-									</Accordion.Content>
-								</Accordion.Item>
-							</Accordion.Root>
-						{/each}
-					</ul>
+				<Tabs.Content value="groups" class="flex flex-col">
+					<GroupsPane />
 				</Tabs.Content>
-				<!-- <Tabs.Content value="provider" class="flex flex-col gap-4 p-4">
-						{#if !detailedAgent}
-							<Skeleton />
-						{:else}
-							<Form.ElementField
-								{form}
-								name="agents[{selectedAgent}].providerType"
-								class="flex items-center gap-2"
-							>
-								<Form.Control>
-									{#snippet children({ props })}
-										Provider Type
-										<Select.Root
-											type="single"
-											bind:value={$formData.agents[selectedAgent!]!.providerType}
-										>
-											<Select.Trigger class="w-full"
-												>{$formData.agents[selectedAgent!]!.providerType === 'local'
-													? 'Local'
-													: 'Remote'}</Select.Trigger
-											>
-											<Select.Content>
-												<Select.Item value="local">Local</Select.Item>
-												<Select.Item value="remote_request">Remote</Select.Item>
-											</Select.Content>
-										</Select.Root>
-									{/snippet}
-								</Form.Control>
-							</Form.ElementField>
-							
-							{#if selectedAgent !== null && $formData.agents.length > selectedAgent && agent.providerType === 'remote_request'}
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].provider.remote_request.maxCost.amount"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'The agents max cost'}>Agent budget</TooltipLabel>
-											{#if $formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type === 'micro_coral'}
-												<Input
-													type="number"
-													placeholder="0"
-													min="0"
-													pattern="[0-9]"
-													class="grow"
-													{...props}
-													bind:value={
-														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
-													}
-												/>
-											{:else}
-												<Input
-													type="number"
-													placeholder="0.00"
-													min="0"
-													class="grow"
-													{...props}
-													bind:value={
-														$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.amount
-													}
-												/>
-											{/if}
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-								<Form.ElementField
-									{form}
-									name="agents[{selectedAgent}].provider.remote_request.maxCost.type"
-								>
-									<Form.Control>
-										{#snippet children({ props })}
-											<TooltipLabel tooltip={'The currency of the agents max cost'}
-												>Budget Currency</TooltipLabel
-											>
-
-											<Select.Root
-												{...props}
-												type="single"
-												bind:value={
-													$formData.agents[selectedAgent!]!.provider.remote_request.maxCost.type
-												}
-											>
-												<Select.Trigger class="w-full"
-													>{$formData.agents[
-														selectedAgent!
-													]!.provider.remote_request.maxCost.type.charAt(0).toLocaleUpperCase() +
-														$formData.agents[
-															selectedAgent!
-														]!.provider.remote_request.maxCost.type.replace('_', ' ').slice(
-															1
-														)}</Select.Trigger
-												>
-
-												<Select.Content>
-													<Select.Item value="usd">USD</Select.Item>
-													<Select.Item value="micro_coral">Micro coral</Select.Item>
-													<Select.Item value="coral">Coral</Select.Item>
-												</Select.Content>
-											</Select.Root>
-										{/snippet}
-									</Form.Control>
-								</Form.ElementField>
-								<TooltipLabel tooltip={'Servers to use for remote requests'} class="m-0"
-									>Servers</TooltipLabel
-								>
-								{@const serverSource =
-									$formData.agents[selectedAgent!]!.provider.remote_request.serverSource}
-								{#if serverSource.type === 'servers'}
-									{#each serverSource.servers as server, i}
-										<p>
-											{server.address}{server.port ? `:${server.port}` : ''}{server.secure
-												? ' (secure)'
-												: ''}
-										</p>
-										<div class="flex flex-col gap-1 text-sm">
-											{#if server.attributes?.length}
-												<div class="text-muted-foreground text-xs">
-													Attributes: {JSON.stringify(server.attributes)}
-												</div>
-											{/if}
-										</div>
-									{/each}
-								{/if}
-								<div class="flex w-full max-w-sm items-center space-x-2">
-									<Input class="grow" placeholder="127.0.0.1" bind:value={newServerAddress} />
-									<Input class="w-24" placeholder="port" bind:value={newServerPort} />
-									<Button
-										onclick={() => {
-											if (selectedAgent === null) return;
-											const agentReq = $formData.agents[selectedAgent!]!.provider.remote_request;
-											const addr = (newServerAddress ?? '').trim();
-											const portRaw = newServerPort;
-											if (!addr) {
-												toast.error('Please enter an address');
-												return;
-											}
-											const port = portRaw === '' || portRaw === undefined ? 0 : Number(portRaw);
-											if (port !== undefined && Number.isNaN(port)) {
-												toast.error('Invalid port');
-												return;
-											}
-
-											agentReq.serverSource.servers = agentReq.serverSource.servers ?? [];
-											agentReq.serverSource.servers.push({
-												address: addr,
-												port,
-												secure: false,
-												attributes: []
-											});
-
-											// trigger reactivity
-											$formData.agents = $formData.agents;
-
-											// clear inputs
-											newServerAddress = '';
-											newServerPort = '';
-										}}
-									>
-										Add
-									</Button>
-								</div>
-							{/if}
-						{/if}
-					</Tabs.Content> -->
 			</Tabs.Root>
 		</Resizable.Pane>
 	</Resizable.PaneGroup>

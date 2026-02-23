@@ -111,9 +111,11 @@ export class CoralServer {
 				toast.warning(`Bad LSM Event: '${msg.data}'`);
 				return;
 			}
+
+			let ns_state, sess_state;
 			switch (data.type) {
 				case 'namespace_created':
-					let ns_state = data.initialState;
+					ns_state = data.initialState;
 					this.allSessions[ns_state.name] = {
 						...ns_state,
 						sessions: this.allSessions[ns_state.name]?.sessions ?? {}
@@ -128,7 +130,7 @@ export class CoralServer {
 					break;
 				case 'session_created':
 					ns_state = data.namespaceState;
-					let sess_state = data.initialSessionState;
+					sess_state = data.initialSessionState;
 					if (!(ns_state.name in this.allSessions)) return;
 					this.allSessions[ns_state.name]!.sessions[sess_state.id] = sess_state;
 					break;
