@@ -338,7 +338,9 @@
 	createSessionContext.set(sessCtx);
 	$effect(() => {
 		toPayload(ctx.server, $formData)
-			.then((val) => (sessCtx.payload = val))
+			.then((val) => {
+				sessCtx.payload = val;
+			})
 			.catch(console.error);
 	});
 	$effect(() => {
@@ -356,7 +358,9 @@
 
 	$effect(() => {
 		if (curAgent) {
-			getDetailed(curAgent.id).then((d) => (sessCtx.detailedAgent = d));
+			getDetailed(curAgent.id).then((d) => {
+				sessCtx.detailedAgent = d;
+			});
 		}
 	});
 
