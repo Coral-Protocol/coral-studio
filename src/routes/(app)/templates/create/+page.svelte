@@ -27,6 +27,7 @@
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Form from '$lib/components/ui/form';
+	import { Button } from '$lib/components/ui/button';
 
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
@@ -40,7 +41,7 @@
 	import Pip from '$lib/components/pip.svelte';
 
 	import SidebarTab from './SidebarTab.svelte';
-	import Graph from './Graph.svelte';
+	import Graph from '$lib/components/AgentGraph.svelte';
 
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
@@ -64,6 +65,7 @@
 	import GroupsPane from './panes/GroupsPane.svelte';
 	import SessionPane from './panes/SessionPane.svelte';
 	import AgentPane from './panes/AgentPane.svelte';
+	import TemplateSaver from './TemplateSaver.svelte';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -243,6 +245,8 @@
 
 	let sendingForm = $state(false);
 
+	let templateSaverDialogOpen = $state(false);
+
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
 		SPA: true,
@@ -415,13 +419,18 @@
 	}
 </script>
 
+<TemplateSaver
+	bind:open={templateSaverDialogOpen}
+	data={JSON.stringify(sessCtx.payload, null, 4)}
+/>
+
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
 	<Sidebar.Trigger class="-ml-1" />
 	<Separator orientation="vertical" class="mr-2 h-4" />
 	<Breadcrumb.Root class="flex-grow">
 		<Breadcrumb.List>
 			<Breadcrumb.Item class="hidden md:block">
-				<Breadcrumb.Link>Sessions</Breadcrumb.Link>
+				<Breadcrumb.Link>Templates</Breadcrumb.Link>
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator />
 			<Breadcrumb.Item class="hidden md:block">
@@ -591,6 +600,7 @@
 								<Spinner />
 							{/if}Run</Form.Button
 						>
+						<Button onclick={() => (templateSaverDialogOpen = true)}>Save template</Button>
 					</footer>
 				</Resizable.Pane>
 			</Resizable.PaneGroup>
