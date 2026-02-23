@@ -128,8 +128,7 @@
 							onclick={() => {
 								delete $formData.tools[tool.id];
 								$formData.tools = $formData.tools;
-								ctx.selectedAgent =
-									ctx.selectedAgent && Math.min(ctx.selectedAgent, $formData.agents.length - 1);
+								selectedTool = Object.keys($formData.tools)[0] ?? null;
 							}}><IconTrash /></TwostepButton
 						>
 					</Toggle>
