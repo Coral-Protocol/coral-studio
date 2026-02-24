@@ -10,6 +10,7 @@
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
+	import { Share } from '@lucide/svelte';
 
 	const templates = $state<string[]>([]);
 
@@ -117,6 +118,8 @@
 		};
 		input.click();
 	}
+
+	let dialogOpen = $state(false);
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -143,22 +146,21 @@
 			{@const graphData = templateData.data ? JSON.parse(templateData.data) : {}}
 			<li class="col-span-1">
 				<Card.Root>
-					<Dialog.Root>
+					<Dialog.Root bind:open={dialogOpen}>
 						<Card.Content class="flex flex-col gap-4">
-							<Card.Header class="border-b">
+							<Card.Header class="px-0">
 								<Card.Title>Template</Card.Title>
 								<Card.Description>{template}</Card.Description>
-								<Card.Action>
-									<Button variant="link">Download</Button>
-								</Card.Action>
 							</Card.Header>
-							<Dialog.Trigger class=" bg-sidebar w-full overflow-clip rounded-lg">
+							<Dialog.Trigger
+								class=" bg-sidebar hover:bg-accent-foreground/10 w-full overflow-clip rounded-lg transition-all"
+							>
 								<AgentGraph
 									agents={graphData.agentGraphRequest?.agents || []}
 									groups={graphData.agentGraphRequest?.groups || []}
 								/>
 							</Dialog.Trigger>
-							<Dialog.Content>
+							<Dialog.Content class="w-fit max-w-fit min-w-fit">
 								<Dialog.Header>
 									<Dialog.Title>{template}</Dialog.Title>
 									<Dialog.Description>
@@ -166,41 +168,62 @@
 											<li>Created at: {new Date(templateData.updated).toLocaleString()}</li>
 											<li>
 												Has {graphData.agentGraphRequest?.agents?.length ?? 0} agents and {graphData
-													.agentGraphRequest?.groups?.length ?? 0} groups.
+													.agentGraphRequest?.groups?.length ?? 0} groups
 											</li>
 										</ol>
-										<Separator class="my-2" />
-										<div class="bg-sidebar aspect-square w-full overflow-clip rounded-lg">
-											<AgentGraph
-												agents={graphData.agentGraphRequest?.agents || []}
-												groups={graphData.agentGraphRequest?.groups || []}
-											/>
-										</div>
+
 										<Separator class="my-2" />
 
-										<Accordion.Root type="single">
-											<Accordion.Item value="item-1">
-												<Accordion.Trigger>Data</Accordion.Trigger>
-												<Accordion.Content class="max-h-64 overflow-y-scroll">
-													<pre>{templateData.data}</pre>
-												</Accordion.Content>
-											</Accordion.Item>
-										</Accordion.Root>
+										<section class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-hidden">
+											<div class="bg-sidebar aspect-square w-[400px] overflow-clip rounded-lg">
+												<AgentGraph
+													agents={graphData.agentGraphRequest?.agents || []}
+													groups={graphData.agentGraphRequest?.groups || []}
+												/>
+											</div>
+
+											<Accordion.Root
+												type="single"
+												value="item-1"
+												class="aspect-square max-h-[400px] w-[400px] max-w-[400px] overflow-clip rounded-lg border"
+											>
+												<Accordion.Item value="item-1">
+													<Accordion.Trigger class="w-[400px] grow" variant="compact"
+														>Description</Accordion.Trigger
+													>
+													<Accordion.Content
+														class="max-h-[340px] min-h-0 w-[400px] overflow-x-hidden overflow-y-scroll"
+													>
+														<pre>{templateData.description ?? 'no description'}</pre>
+													</Accordion.Content>
+												</Accordion.Item>
+												<Accordion.Item value="item-2">
+													<Accordion.Trigger class="w-[400px] grow" variant="compact"
+														>Data</Accordion.Trigger
+													>
+													<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
+														<pre>{templateData.data}</pre>
+													</Accordion.Content>
+												</Accordion.Item>
+											</Accordion.Root>
+										</section>
+										<Separator class="my-2" />
 									</Dialog.Description>
-									<Dialog.Footer>
-										<Button>Edit</Button>
+									<Dialog.Footer class="flex justify-start gap-2">
+										<Button href={`/templates/create?template=${template}`}>Edit</Button>
 										<TwostepButton
 											class="hover:bg-destructive/50 "
 											onclick={() => removeTemplate(template)}>Delete</TwostepButton
 										>
 										<Button onclick={() => download(template)}>Download</Button>
+										<Button class="ml-auto">Run</Button>
 									</Dialog.Footer>
 								</Dialog.Header>
 							</Dialog.Content>
 
-							<Card.Footer class="flex gap-2 border-t">
-								<Button>Run</Button>
-								<Button>Open</Button>
+							<Card.Footer class="flex justify-between gap-2 border-t px-0">
+								<Button class="self-start" variant="ghost">Share</Button>
+								<Button onclick={() => (dialogOpen = true)}>Open</Button>
 							</Card.Footer>
 						</Card.Content>
 					</Dialog.Root>

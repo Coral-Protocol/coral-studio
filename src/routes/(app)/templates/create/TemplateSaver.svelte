@@ -12,6 +12,8 @@
 
 	let templateName = $state(`${randomAdjective()}-${randomAnimal()}`);
 
+	// TODO: the above WILL have collisions cause the generator doesnt have many words, need to handle sequals and how overwrites later
+
 	const download = () => {
 		try {
 			const blob = new Blob([data], { type: 'application/json' });

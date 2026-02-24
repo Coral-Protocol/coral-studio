@@ -604,6 +604,11 @@
 											<Spinner />
 										{/if}Run</Form.Button
 									>
+									<Button
+										onclick={() => (templateSaverDialogOpen = true)}
+										disabled={sendingForm || $formData.agents.length === 0}
+										class={sendingForm ? '' : 'bg-accent/80'}>Save template</Button
+									>
 								</Tooltip.Trigger>
 								<Tooltip.Content>
 									<p>You need to add at least one agent first!</p>
