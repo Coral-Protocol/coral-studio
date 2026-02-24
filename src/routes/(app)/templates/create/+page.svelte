@@ -133,24 +133,49 @@
 
 	onMount(async () => {
 		const agentsQuery = page.url.searchParams.get('agents');
-		try {
-			const result = parseAgentsQuery(agentsQuery);
-			parsedAgents = result.agents;
+		const template = page.url.searchParams.get('template');
+		if (agentsQuery) {
+			toast('Parsing agents from URL...', { duration: 2000 });
+			try {
+				const result = parseAgentsQuery(agentsQuery);
+				parsedAgents = result.agents;
 
-			for (const agent of parsedAgents) {
-				console.log(
-					'following url instructions to add agent: ' +
-						agent.name +
-						'@' +
-						agent.version +
-						' from ' +
-						agent.source +
-						' '
-				);
-				await addAgent(agent.name, agent.source, agent.version);
+				for (const agent of parsedAgents) {
+					console.log(
+						'following url instructions to add agent: ' +
+							agent.name +
+							'@' +
+							agent.version +
+							' from ' +
+							agent.source +
+							' '
+					);
+					await addAgent(agent.name, agent.source, agent.version);
+				}
+			} catch (err) {
+				console.error('Failed to parse agents:', err);
 			}
-		} catch (err) {
-			console.error('Failed to parse agents:', err);
+		}
+		if (template) {
+			toast('Loading template...', { duration: 2000 });
+			try {
+				const templateData = localStorage.getItem(`template_${template}`);
+				if (!templateData) {
+					throw new Error('Template not found');
+				}
+				const parsed = JSON.parse(templateData);
+				if (!parsed.data) {
+					throw new Error('Invalid template format');
+				}
+				const sessionData = JSON.parse(parsed.data);
+				sessCtx.importSession({
+					from: JSON.stringify(sessionData),
+					success: 'Template loaded successfully'
+				});
+			} catch (err) {
+				console.error('Failed to load template:', err);
+				toast.error('Failed to load template: ' + err);
+			}
 		}
 	});
 	interface ParsedAgent {
@@ -593,28 +618,39 @@
 				>
 					<CodePane />
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
-						<Tooltip.Provider>
-							<Tooltip.Root>
-								<Tooltip.Trigger disabled={$formData.agents.length !== 0}>
-									<Form.Button
-										disabled={sendingForm || $formData.agents.length === 0}
-										class={sendingForm ? '' : 'bg-accent/80'}
-									>
-										{#if sendingForm}
-											<Spinner />
-										{/if}Run</Form.Button
-									>
-									<Button
-										onclick={() => (templateSaverDialogOpen = true)}
-										disabled={sendingForm || $formData.agents.length === 0}
-										class={sendingForm ? '' : 'bg-accent/80'}>Save template</Button
-									>
-								</Tooltip.Trigger>
-								<Tooltip.Content>
-									<p>You need to add at least one agent first!</p>
-								</Tooltip.Content>
-							</Tooltip.Root>
-						</Tooltip.Provider>
+						{#if sendingForm || !$formData.agents.length}
+							<Tooltip.Provider>
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										<Form.Button disabled={sendingForm || $formData.agents.length === 0}>
+											{#if sendingForm}
+												<Spinner />
+											{/if}Run</Form.Button
+										>
+										<Button disabled={sendingForm || $formData.agents.length === 0}
+											>Save template</Button
+										>
+									</Tooltip.Trigger>
+									<Tooltip.Content>
+										<p>You need to add at least one agent first!</p>
+									</Tooltip.Content>
+								</Tooltip.Root>
+							</Tooltip.Provider>
+						{:else}
+							<Form.Button
+								disabled={sendingForm || $formData.agents.length === 0}
+								class={sendingForm ? '' : 'bg-accent/80'}
+							>
+								{#if sendingForm}
+									<Spinner />
+								{/if}Run</Form.Button
+							>
+							<Button
+								onclick={() => ((templateSaverDialogOpen = true), console.log('aa'))}
+								disabled={sendingForm || $formData.agents.length === 0}
+								class={sendingForm ? '' : 'bg-accent/80'}>Save template</Button
+							>
+						{/if}
 					</footer>
 				</Resizable.Pane>
 			</Resizable.PaneGroup>

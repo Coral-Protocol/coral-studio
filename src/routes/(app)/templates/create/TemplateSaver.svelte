@@ -7,10 +7,26 @@
 	import * as InputGroup from '$lib/components/ui/input-group';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import { toast } from 'svelte-sonner';
+	import { onMount } from 'svelte';
+	import { page } from '$app/state';
+	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import { getValue } from '@unovis/ts';
 
 	let { open = $bindable(false), data }: { open: boolean; data: string } = $props();
 
 	let templateName = $state(`${randomAdjective()}-${randomAnimal()}`);
+	let overwriteWarning = $state(false);
+
+	onMount(() => {
+		const template = page.url.searchParams.get('template');
+		if (template) {
+			templateName = template;
+		}
+
+		if (localStorage.getItem(`template_${templateName}`) != null) {
+			overwriteWarning = true;
+		}
+	});
 
 	// TODO: the above WILL have collisions cause the generator doesnt have many words, need to handle sequals and how overwrites later
 
@@ -31,10 +47,22 @@
 	//TODO: the above only downloads the session json but it should download the template json instead cause rn if you download this then import it, it will not work, but download from main template page works fine
 
 	const save = () => {
+		if (!templateName.trim()) {
+			toast.error('Template name cannot be empty.');
+			return;
+		}
+
+		if (!data) {
+			toast.error('No template data to save.');
+			return;
+		}
+
 		try {
 			const template = { name: templateName, data, updated: Date.now() };
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(template));
-			toast.success('Template saved successfully!');
+			toast.success(
+				overwriteWarning ? 'Template updated successfully!' : 'Template saved successfully!'
+			);
 			open = false;
 
 			try {
@@ -63,7 +91,16 @@
 					it again in the future.
 				</p>
 				<InputGroup.Root>
-					<InputGroup.Input id="templateName" bind:value={templateName} />
+					<InputGroup.Input
+						aria-invalid={overwriteWarning}
+						id="templateName"
+						bind:value={templateName}
+						oninput={() => {
+							localStorage.getItem(`template_${templateName}`) != null
+								? (overwriteWarning = true)
+								: (overwriteWarning = false);
+						}}
+					/>
 					<InputGroup.Addon align="block-start">
 						<Label.Root for="templateName" class="text-foreground">Template Name</Label.Root>
 					</InputGroup.Addon>
@@ -79,7 +116,9 @@
 		</Dialog.Header>
 		<Dialog.Footer>
 			<Button onclick={download} variant="ghost">Download</Button>
-			<Button onclick={save}>Save</Button>
+			<Button onclick={save} variant={overwriteWarning ? 'destructive' : 'default'}
+				>{overwriteWarning ? 'Overwrite' : 'Save'}</Button
+			>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
