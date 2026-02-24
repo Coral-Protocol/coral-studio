@@ -43,7 +43,8 @@ jobs:
           # and collect garbage in the Nix store until it reaches this size in bytes
           gc-max-store-size: 8000000000
 
-      - run: |
+      - name: Build bundle
+        run: |
           set -eu
 
           BUNDLE_DIR=$(nix build --no-link --print-out-paths .#)
@@ -81,10 +82,9 @@ jobs:
         run: |
           set -eu
           cd ./output
-          zip -r ../bundle.zip *
+          zip -r ../coral-console_${{ steps.vars.outputs.ref }}.zip *
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          name: coral-console_${{ steps.vars.outputs.ref }}.zip
-          files: ./bundle.zip
+          files: ./coral-console_${{ steps.vars.outputs.ref }}.zip
