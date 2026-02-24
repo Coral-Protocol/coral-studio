@@ -9,8 +9,27 @@
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import * as Accordion from '$lib/components/ui/accordion';
 
 	const templates = $state<string[]>([]);
+
+	const download = (templateName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${templateName}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const blob = new Blob([data], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `${templateName}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Error downloading template:', error);
+		}
+	};
 
 	onMount(() => {
 		try {
@@ -64,6 +83,40 @@
 			toast.error('Failed to remove template.');
 		}
 	};
+
+	function importTemplate() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = 'application/json';
+		input.onchange = async () => {
+			if (input.files && input.files[0]) {
+				try {
+					const file = input.files[0];
+					const text = await file.text();
+					const data = JSON.parse(text);
+					if (!data.name || !data.data) {
+						throw new Error('Invalid template format');
+					}
+					localStorage.setItem(`template_${data.name}`, JSON.stringify(data));
+					if (!templates.includes(data.name)) {
+						templates.push(data.name);
+					}
+					toast.success('Template imported successfully!');
+					try {
+						const templateIndex = JSON.parse(localStorage.getItem('template_index') || '[]');
+						const updatedIndex = [...new Set([...templateIndex, data.name])];
+						localStorage.setItem('template_index', JSON.stringify(updatedIndex));
+					} catch (error) {
+						console.error('Error updating template index:', error);
+					}
+				} catch (error) {
+					console.error('Error importing template:', error);
+					toast.error('Failed to import template. Make sure it is a valid JSON file.');
+				}
+			}
+		};
+		input.click();
+	}
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -78,21 +131,28 @@
 	</Breadcrumb.Root>
 </header>
 
-<Button variant="outline" href="/templates/create">Create new template</Button>
+<section class="mx-auto my-8 flex gap-2">
+	<Button variant="outline" href="/templates/create" class=" w-fit">Create new template</Button>
+	<Button variant="outline" onclick={() => importTemplate()} class="w-fit">Import from file</Button>
+</section>
 
 {#if templates.length > 0}
-	<ul class="mt-4 grid grid-cols-4 gap-2 p-4">
+	<ul class="grid grid-cols-[repeat(auto-fit,minmax(12rem,28rem))] gap-2 p-4">
 		{#each templates as template}
 			{@const templateData = JSON.parse(localStorage.getItem(`template_${template}`) || '{}')}
 			{@const graphData = templateData.data ? JSON.parse(templateData.data) : {}}
-			<li>
+			<li class="col-span-1">
 				<Card.Root>
 					<Dialog.Root>
-						<Card.Content>
-							<Card.Header>
-								<Card.Title>{template}</Card.Title>
+						<Card.Content class="flex flex-col gap-4">
+							<Card.Header class="border-b">
+								<Card.Title>Template</Card.Title>
+								<Card.Description>{template}</Card.Description>
+								<Card.Action>
+									<Button variant="link">Download</Button>
+								</Card.Action>
 							</Card.Header>
-							<Dialog.Trigger class=" w-full">
+							<Dialog.Trigger class=" bg-sidebar w-full overflow-clip rounded-lg">
 								<AgentGraph
 									agents={graphData.agentGraphRequest?.agents || []}
 									groups={graphData.agentGraphRequest?.groups || []}
@@ -102,30 +162,52 @@
 								<Dialog.Header>
 									<Dialog.Title>{template}</Dialog.Title>
 									<Dialog.Description>
-										created at, does x, has y agents, max cost, ttl, raw, etc
-										{graphData.agentGraphRequest?.agents?.length} agents, {graphData
-											.agentGraphRequest?.groups?.length} groups
-										<!-- <pre>{templateData.data}</pre> -->
+										<ol>
+											<li>Created at: {new Date(templateData.updated).toLocaleString()}</li>
+											<li>
+												Has {graphData.agentGraphRequest?.agents?.length ?? 0} agents and {graphData
+													.agentGraphRequest?.groups?.length ?? 0} groups.
+											</li>
+										</ol>
+										<Separator class="my-2" />
+										<div class="bg-sidebar aspect-square w-full overflow-clip rounded-lg">
+											<AgentGraph
+												agents={graphData.agentGraphRequest?.agents || []}
+												groups={graphData.agentGraphRequest?.groups || []}
+											/>
+										</div>
+										<Separator class="my-2" />
+
+										<Accordion.Root type="single">
+											<Accordion.Item value="item-1">
+												<Accordion.Trigger>Data</Accordion.Trigger>
+												<Accordion.Content class="max-h-64 overflow-y-scroll">
+													<pre>{templateData.data}</pre>
+												</Accordion.Content>
+											</Accordion.Item>
+										</Accordion.Root>
 									</Dialog.Description>
+									<Dialog.Footer>
+										<Button>Edit</Button>
+										<TwostepButton
+											class="hover:bg-destructive/50 "
+											onclick={() => removeTemplate(template)}>Delete</TwostepButton
+										>
+										<Button onclick={() => download(template)}>Download</Button>
+									</Dialog.Footer>
 								</Dialog.Header>
 							</Dialog.Content>
+
+							<Card.Footer class="flex gap-2 border-t">
+								<Button>Run</Button>
+								<Button>Open</Button>
+							</Card.Footer>
 						</Card.Content>
 					</Dialog.Root>
-
-					<Card.Footer class="flex gap-2">
-						<Button>Edit</Button>
-						<TwostepButton
-							class="hover:bg-destructive/50 my-2 grow truncate"
-							onclick={() => removeTemplate(template)}>Delete</TwostepButton
-						>
-						<Button>Download</Button>
-						<Button>Run</Button>
-						<Button>Open</Button>
-					</Card.Footer>
 				</Card.Root>
 			</li>
 		{/each}
 	</ul>
 {:else}
-	<p class="text-muted-foreground mt-4">No templates found. Create a new one to get started!</p>
+	<p class="text-muted-foreground m-auto">No templates found. Create a new one to get started!</p>
 {/if}

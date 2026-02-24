@@ -28,6 +28,7 @@
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Form from '$lib/components/ui/form';
 	import { Button } from '$lib/components/ui/button';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
@@ -592,15 +593,23 @@
 				>
 					<CodePane />
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
-						<Form.Button
-							disabled={sendingForm || $formData.agents.length === 0}
-							class={sendingForm ? '' : 'bg-accent/80'}
-						>
-							{#if sendingForm}
-								<Spinner />
-							{/if}Run</Form.Button
-						>
-						<Button onclick={() => (templateSaverDialogOpen = true)}>Save template</Button>
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger disabled={$formData.agents.length !== 0}>
+									<Form.Button
+										disabled={sendingForm || $formData.agents.length === 0}
+										class={sendingForm ? '' : 'bg-accent/80'}
+									>
+										{#if sendingForm}
+											<Spinner />
+										{/if}Run</Form.Button
+									>
+								</Tooltip.Trigger>
+								<Tooltip.Content>
+									<p>You need to add at least one agent first!</p>
+								</Tooltip.Content>
+							</Tooltip.Root>
+						</Tooltip.Provider>
 					</footer>
 				</Resizable.Pane>
 			</Resizable.PaneGroup>

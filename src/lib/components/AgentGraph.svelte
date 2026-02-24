@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { FormSchema } from './schemas';
+	import type { FormSchema } from '../../routes/(app)/templates/create/schemas';
 	import z from 'zod';
 
 	import { VisSingleContainer, VisGraph } from '@unovis/svelte';

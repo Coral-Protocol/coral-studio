@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Accordion from '$lib/components/ui/accordion';
 	import Input from '$lib/components/ui/input/input.svelte';
 	import { randomAdjective, randomAnimal } from '$lib/words';
 	import * as Label from '$lib/components/ui/label';
@@ -26,6 +25,8 @@
 			console.error('Error downloading template:', error);
 		}
 	};
+
+	//TODO: the above only downloads the session json but it should download the template json instead cause rn if you download this then import it, it will not work, but download from main template page works fine
 
 	const save = () => {
 		try {
@@ -65,15 +66,6 @@
 						<Label.Root for="templateName" class="text-foreground">Template Name</Label.Root>
 					</InputGroup.Addon>
 				</InputGroup.Root>
-
-				<Accordion.Root type="single">
-					<Accordion.Item value="item-1">
-						<Accordion.Trigger>Data</Accordion.Trigger>
-						<Accordion.Content>
-							<pre>{data}</pre>
-						</Accordion.Content>
-					</Accordion.Item>
-				</Accordion.Root>
 
 				<Separator />
 
