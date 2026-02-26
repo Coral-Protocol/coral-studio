@@ -101,7 +101,7 @@
 		}
 	};
 
-	const markSafe = (templateName: string) => {
+	const markTrusted = (templateName: string) => {
 		try {
 			const data = localStorage.getItem(`template_${templateName}`);
 			if (!data) {
@@ -111,11 +111,11 @@
 			parsed.imported = false;
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(parsed));
 			templateData = parsed;
-			toast.success('Template marked as safe!');
+			toast.success('Template marked as trusted!');
 			onRefresh(templateName);
 		} catch (error) {
-			console.error('Error marking template as safe:', error);
-			toast.error('Failed to mark template as safe.');
+			console.error('Error marking template as trusted:', error);
+			toast.error('Failed to mark template as trusted.');
 		}
 	};
 </script>
@@ -193,11 +193,11 @@
 				<Button disabled={loading} onclick={() => download(template)}>Download</Button>
 				{#if templateData.imported}
 					<TwostepButton
-						detail="Are you sure you want to mark this template as safe? This will remove the warning and let you run the template without confirmation."
+						detail="Are you sure you want to mark this template as trusted? This will remove the warning and let you run the template without confirmation."
 						variant="cta"
 						smallText={false}
 						class="ml-auto"
-						onclick={() => markSafe(template)}>Mark as safe</TwostepButton
+						onclick={() => markTrusted(template)}>Mark as trusted</TwostepButton
 					>
 				{:else}
 					<Button
