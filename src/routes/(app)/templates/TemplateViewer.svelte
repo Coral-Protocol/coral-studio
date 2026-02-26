@@ -6,7 +6,6 @@
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
-	import type { on } from 'svelte/events';
 
 	let {
 		template = $bindable(''),
