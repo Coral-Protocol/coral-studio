@@ -195,7 +195,7 @@
 					<TwostepButton
 						detail="Are you sure you want to mark this template as trusted? This will remove the warning and let you run the template without confirmation."
 						variant="cta"
-						smallText={false}
+						detailClass=""
 						class="ml-auto"
 						onclick={() => markTrusted(template)}>Mark as trusted</TwostepButton
 					>
