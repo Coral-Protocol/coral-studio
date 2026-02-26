@@ -4,6 +4,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+	import { base } from '$app/paths';
 
 	import * as Card from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -31,18 +32,6 @@
 	});
 
 	const fetchTemplates = (name?: string) => {
-		// if (name) {
-		// 	const data = localStorage.getItem(`template_${name}`);
-		// 	if (data) {
-		// 		if (!templates.includes(name)) {
-		// 			templates = [...templates, name];
-		// 		}
-		// 	} else {
-		// 		toast.error(`Template ${name} not found.`);
-		// 		templates = templates.filter((t) => t !== name);
-		// 	}
-		// 	return;
-		// }
 		try {
 			const rawIndex = localStorage.getItem('template_index');
 
@@ -97,14 +86,12 @@
 
 				if (!data.name || !data.data) throw new Error('Invalid template format');
 
-				// Check if template exists
 				if (localStorage.getItem(`template_${data.name}`)) {
-					pendingImport = data; // store template for later
-					overwriteWarning = true; // open the dialog
-					return; // pause here until user confirms
+					pendingImport = data;
+					overwriteWarning = true;
+					return;
 				}
 
-				// Otherwise, import immediately
 				saveTemplate(data);
 			} catch (error) {
 				console.error('Error importing template:', error);
@@ -159,7 +146,9 @@
 </header>
 
 <section class="mx-auto my-8 flex gap-2">
-	<Button variant="outline" href="/templates/create" class=" w-fit">Create new template</Button>
+	<Button variant="outline" href="{base}/templates/create" class=" w-fit"
+		>Create new template</Button
+	>
 	<Button variant="outline" onclick={() => importTemplate()} class="w-fit">Import from file</Button>
 </section>
 
