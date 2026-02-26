@@ -10,7 +10,7 @@
 				default:
 					'bg-primary/10 border border-border text-primary-foreground shadow-xs hover:bg-accent hover:text-accent-foreground',
 				destructive:
-					'bg-destructive shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 text-white',
+					'bg-destructive/70 shadow-xs hover:bg-destructive dark:hover:bg-destructive focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/70 text-white',
 				danger:
 					'border-destructive border shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 text-white',
 				outline:
@@ -19,7 +19,8 @@
 				ghost: 'hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent',
 				ghostDestructive:
 					'text-destructive hover:bg-destructive hover:text-accent-foreground dark:hover:bg-destructive',
-				link: 'text-primary-foreground underline-offset-4 hover:underline'
+				link: 'text-primary-foreground underline-offset-4 hover:underline',
+				cta: 'bg-accent/70 border border-border text-primary-foreground shadow-xs hover:bg-accent hover:text-accent-foreground'
 			},
 			size: {
 				default: 'h-9 px-4 py-2 has-[>svg]:px-3',
