@@ -1,38 +1,48 @@
 <script lang="ts">
+	import TemplateViewer from './TemplateViewer.svelte';
+
 	import { Button } from '$lib/components/ui/button';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
+
 	import * as Card from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Sidebar from '$lib/components/ui/sidebar';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
-	import TwostepButton from '$lib/components/twostep-button.svelte';
-	import * as Accordion from '$lib/components/ui/accordion';
-	import { Share } from '@lucide/svelte';
 
-	const templates = $state<string[]>([]);
+	import IconWarningCircleRegular from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
 
-	const download = (templateName: string) => {
-		try {
-			const data = localStorage.getItem(`template_${templateName}`);
-			if (!data) {
-				throw new Error('Template data not found');
-			}
-			const blob = new Blob([data], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `${templateName}.json`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch (error) {
-			console.error('Error downloading template:', error);
-		}
-	};
+	let templates = $state<string[]>([]);
+
+	let dialogOpen = $state(false);
+	let overwriteWarning = $state(false);
+	let pendingImport: any = null; // store template data awaiting confirmation
+	let template = $state('');
+	let templateData = $state<{ name?: string; data?: string }>({});
+	let graphData = $state({});
 
 	onMount(() => {
+		fetchTemplates();
+	});
+
+	const fetchTemplates = (name?: string) => {
+		// if (name) {
+		// 	const data = localStorage.getItem(`template_${name}`);
+		// 	if (data) {
+		// 		if (!templates.includes(name)) {
+		// 			templates = [...templates, name];
+		// 		}
+		// 	} else {
+		// 		toast.error(`Template ${name} not found.`);
+		// 		templates = templates.filter((t) => t !== name);
+		// 	}
+		// 	return;
+		// }
 		try {
 			const rawIndex = localStorage.getItem('template_index');
 
@@ -69,20 +79,8 @@
 			localStorage.setItem('template_index', JSON.stringify([]));
 			templates.length = 0;
 		}
-	});
 
-	const removeTemplate = (name: string) => {
-		try {
-			localStorage.removeItem(`template_${name}`);
-			const index = templates.indexOf(name);
-			if (index !== -1) {
-				templates.splice(index, 1);
-			}
-			toast.success('Template removed successfully!');
-		} catch (error) {
-			console.error('Error removing template:', error);
-			toast.error('Failed to remove template.');
-		}
+		templates = templates;
 	};
 
 	function importTemplate() {
@@ -90,36 +88,61 @@
 		input.type = 'file';
 		input.accept = 'application/json';
 		input.onchange = async () => {
-			if (input.files && input.files[0]) {
-				try {
-					const file = input.files[0];
-					const text = await file.text();
-					const data = JSON.parse(text);
-					if (!data.name || !data.data) {
-						throw new Error('Invalid template format');
-					}
-					localStorage.setItem(`template_${data.name}`, JSON.stringify(data));
-					if (!templates.includes(data.name)) {
-						templates.push(data.name);
-					}
-					toast.success('Template imported successfully!');
-					try {
-						const templateIndex = JSON.parse(localStorage.getItem('template_index') || '[]');
-						const updatedIndex = [...new Set([...templateIndex, data.name])];
-						localStorage.setItem('template_index', JSON.stringify(updatedIndex));
-					} catch (error) {
-						console.error('Error updating template index:', error);
-					}
-				} catch (error) {
-					console.error('Error importing template:', error);
-					toast.error('Failed to import template. Make sure it is a valid JSON file.');
+			if (!input.files?.[0]) return;
+
+			try {
+				const file = input.files[0];
+				const text = await file.text();
+				const data = JSON.parse(text);
+
+				if (!data.name || !data.data) throw new Error('Invalid template format');
+
+				// Check if template exists
+				if (localStorage.getItem(`template_${data.name}`)) {
+					pendingImport = data; // store template for later
+					overwriteWarning = true; // open the dialog
+					return; // pause here until user confirms
 				}
+
+				// Otherwise, import immediately
+				saveTemplate(data);
+			} catch (error) {
+				console.error('Error importing template:', error);
+				toast.error('Failed to import template. Make sure it is a valid JSON file.');
 			}
 		};
 		input.click();
 	}
 
-	let dialogOpen = $state(false);
+	function saveTemplate(data: any) {
+		data.imported = true;
+		localStorage.setItem(`template_${data.name}`, JSON.stringify(data));
+
+		const templateIndex = [...new Set([...(templates || []), data.name])];
+		templates = templateIndex;
+
+		localStorage.setItem('template_index', JSON.stringify(templateIndex));
+		toast.success('Template imported successfully!');
+	}
+
+	const openTemplate = (name: string) => {
+		template = name;
+		templateData = JSON.parse(localStorage.getItem(`template_${name}`) || '{}');
+		graphData = templateData?.data ? JSON.parse(templateData.data) : {};
+		dialogOpen = true;
+	};
+
+	const refresh = (name?: string) => {
+		if (name) {
+			const data = localStorage.getItem(`template_${name}`);
+			if (data) {
+				templateData = JSON.parse(data);
+				graphData = templateData.data ? JSON.parse(templateData.data) : {};
+			}
+		} else {
+			fetchTemplates();
+		}
+	};
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -139,98 +162,104 @@
 	<Button variant="outline" onclick={() => importTemplate()} class="w-fit">Import from file</Button>
 </section>
 
-{#if templates.length > 0}
-	<ul class="grid grid-cols-[repeat(auto-fit,minmax(12rem,28rem))] gap-2 p-4">
-		{#each templates as template}
-			{@const templateData = JSON.parse(localStorage.getItem(`template_${template}`) || '{}')}
-			{@const graphData = templateData.data ? JSON.parse(templateData.data) : {}}
-			<li class="col-span-1">
-				<Card.Root>
-					<Dialog.Root bind:open={dialogOpen}>
-						<Card.Content class="flex flex-col gap-4">
-							<Card.Header class="px-0">
-								<Card.Title>Template</Card.Title>
-								<Card.Description>{template}</Card.Description>
-							</Card.Header>
-							<Dialog.Trigger
-								class=" bg-sidebar hover:bg-accent-foreground/10 w-full overflow-clip rounded-lg transition-all"
-							>
-								<AgentGraph
-									agents={graphData.agentGraphRequest?.agents || []}
-									groups={graphData.agentGraphRequest?.groups || []}
-								/>
-							</Dialog.Trigger>
-							<Dialog.Content class="w-fit max-w-fit min-w-fit">
-								<Dialog.Header>
-									<Dialog.Title>{template}</Dialog.Title>
-									<Dialog.Description>
-										<ol>
-											<li>Created at: {new Date(templateData.updated).toLocaleString()}</li>
-											<li>
-												Has {graphData.agentGraphRequest?.agents?.length ?? 0} agents and {graphData
-													.agentGraphRequest?.groups?.length ?? 0} groups
-											</li>
-										</ol>
+<TemplateViewer
+	{template}
+	{templateData}
+	{graphData}
+	bind:open={dialogOpen}
+	bind:templates
+	onRefresh={(name) => refresh(name)}
+/>
 
-										<Separator class="my-2" />
+<AlertDialog.Root bind:open={overwriteWarning}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Template already exists</AlertDialog.Title>
+			<AlertDialog.Description>
+				This template already exists. Do you want to overwrite it?
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel
+				onclick={() => {
+					pendingImport = null;
+					overwriteWarning = false;
+				}}
+			>
+				Cancel
+			</AlertDialog.Cancel>
+			<AlertDialog.Action
+				onclick={() => {
+					if (pendingImport) {
+						saveTemplate(pendingImport);
+						pendingImport = null;
+					}
+					overwriteWarning = false;
+				}}
+			>
+				Overwrite
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
 
-										<section class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-hidden">
-											<div class="bg-sidebar aspect-square w-[400px] overflow-clip rounded-lg">
-												<AgentGraph
-													agents={graphData.agentGraphRequest?.agents || []}
-													groups={graphData.agentGraphRequest?.groups || []}
-												/>
-											</div>
+{#key templates}
+	{#if templates.length > 0}
+		<ul class="grid grid-cols-[repeat(auto-fit,minmax(12rem,28rem))] gap-2 p-4">
+			{#key templates}
+				{#each templates as template}
+					{@const templateData = JSON.parse(localStorage.getItem(`template_${template}`) || '{}')}
+					{@const graphData = templateData.data ? JSON.parse(templateData.data) : {}}
 
-											<Accordion.Root
-												type="single"
-												value="item-1"
-												class="aspect-square max-h-[400px] w-[400px] max-w-[400px] overflow-clip rounded-lg border"
-											>
-												<Accordion.Item value="item-1">
-													<Accordion.Trigger class="w-[400px] grow" variant="compact"
-														>Description</Accordion.Trigger
+					<li class="col-span-1">
+						<Card.Root>
+							<Dialog.Root bind:open={dialogOpen}>
+								<Card.Content class="flex flex-col gap-4">
+									<Card.Header class="relative flex justify-between px-0">
+										<Card.Title>{template}</Card.Title>
+										{#if templateData.imported}
+											<Tooltip.Provider>
+												<Tooltip.Root delayDuration={0}>
+													<Tooltip.Trigger
+														class="text-accent absolute right-0 opacity-70 hover:opacity-100"
+														><IconWarningCircleRegular class="size-5" /></Tooltip.Trigger
 													>
-													<Accordion.Content
-														class="max-h-[340px] min-h-0 w-[400px] overflow-x-hidden overflow-y-scroll"
-													>
-														<pre>{templateData.description ?? 'no description'}</pre>
-													</Accordion.Content>
-												</Accordion.Item>
-												<Accordion.Item value="item-2">
-													<Accordion.Trigger class="w-[400px] grow" variant="compact"
-														>Data</Accordion.Trigger
-													>
-													<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
-														<pre>{templateData.data}</pre>
-													</Accordion.Content>
-												</Accordion.Item>
-											</Accordion.Root>
-										</section>
-										<Separator class="my-2" />
-									</Dialog.Description>
-									<Dialog.Footer class="flex justify-start gap-2">
-										<Button href={`/templates/create?template=${template}`}>Edit</Button>
-										<TwostepButton
-											class="hover:bg-destructive/50 "
-											onclick={() => removeTemplate(template)}>Delete</TwostepButton
-										>
-										<Button onclick={() => download(template)}>Download</Button>
-										<Button class="ml-auto">Run</Button>
-									</Dialog.Footer>
-								</Dialog.Header>
-							</Dialog.Content>
+													<Tooltip.Content>
+														<p>Imported from external source</p>
+													</Tooltip.Content>
+												</Tooltip.Root>
+											</Tooltip.Provider>
+										{/if}
+									</Card.Header>
+									<button
+										class=" bg-sidebar hover:bg-accent-foreground/10 w-full overflow-clip rounded-lg transition-all"
+										onclick={() => openTemplate(template)}
+									>
+										<AgentGraph
+											agents={graphData.agentGraphRequest?.agents || []}
+											groups={graphData.agentGraphRequest?.groups || []}
+											options={{
+												disableZoom: true,
+												disableDrag: true,
+												disableBrush: true,
+												nodeSubLabel: null,
+												selectedNodeId: null
+											}}
+										/>
+									</button>
 
-							<Card.Footer class="flex justify-between gap-2 border-t px-0">
-								<Button class="self-start" variant="ghost">Share</Button>
-								<Button onclick={() => (dialogOpen = true)}>Open</Button>
-							</Card.Footer>
-						</Card.Content>
-					</Dialog.Root>
-				</Card.Root>
-			</li>
-		{/each}
-	</ul>
-{:else}
-	<p class="text-muted-foreground m-auto">No templates found. Create a new one to get started!</p>
-{/if}
+									<Card.Footer class="flex justify-between gap-2 border-t px-0">
+										<Button class="self-start" variant="ghost">Share</Button>
+										<Button onclick={() => openTemplate(template)}>View</Button>
+									</Card.Footer>
+								</Card.Content>
+							</Dialog.Root>
+						</Card.Root>
+					</li>
+				{/each}
+			{/key}
+		</ul>
+	{:else}
+		<p class="text-muted-foreground m-auto">No templates found. Create a new one to get started!</p>
+	{/if}
+{/key}

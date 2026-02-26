@@ -15,7 +15,10 @@
 	let { open = $bindable(false), data }: { open: boolean; data: string } = $props();
 
 	let templateName = $state(`${randomAdjective()}-${randomAnimal()}`);
+	let templateDescription = $state('');
 	let overwriteWarning = $state(false);
+
+	const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
 
 	onMount(() => {
 		const template = page.url.searchParams.get('template');
@@ -27,8 +30,6 @@
 			overwriteWarning = true;
 		}
 	});
-
-	// TODO: the above WILL have collisions cause the generator doesnt have many words, need to handle sequals and how overwrites later
 
 	const download = () => {
 		try {
@@ -52,13 +53,25 @@
 			return;
 		}
 
+		if (!TEMPLATE_NAME_REGEX.test(templateName)) {
+			toast.error(
+				'Template name must be 1-32 characters and contain only letters, numbers, "-" or "_".'
+			);
+			return;
+		}
+
 		if (!data) {
 			toast.error('No template data to save.');
 			return;
 		}
 
 		try {
-			const template = { name: templateName, data, updated: Date.now() };
+			const template = {
+				name: templateName,
+				data,
+				updated: Date.now(),
+				description: templateDescription
+			};
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(template));
 			toast.success(
 				overwriteWarning ? 'Template updated successfully!' : 'Template saved successfully!'
@@ -103,6 +116,19 @@
 					/>
 					<InputGroup.Addon align="block-start">
 						<Label.Root for="templateName" class="text-foreground">Template Name</Label.Root>
+					</InputGroup.Addon>
+				</InputGroup.Root>
+
+				<InputGroup.Root>
+					<InputGroup.Textarea
+						id="templateDescription"
+						bind:value={templateDescription}
+						class="min-h-[80px]"
+						placeholder="Add an optional description for your template"
+					/>
+
+					<InputGroup.Addon align="block-start">
+						<Label.Root for="templateDescription" class="text-foreground">Description</Label.Root>
 					</InputGroup.Addon>
 				</InputGroup.Root>
 
