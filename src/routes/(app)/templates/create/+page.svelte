@@ -27,6 +27,8 @@
 	import * as Menubar from '$lib/components/ui/menubar/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import * as Form from '$lib/components/ui/form';
+	import { Button } from '$lib/components/ui/button';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
@@ -40,7 +42,7 @@
 	import Pip from '$lib/components/pip.svelte';
 
 	import SidebarTab from './SidebarTab.svelte';
-	import Graph from './Graph.svelte';
+	import Graph from '$lib/components/AgentGraph.svelte';
 
 	import { superForm, defaults } from 'sveltekit-superforms';
 	import { zod4 } from 'sveltekit-superforms/adapters';
@@ -64,6 +66,7 @@
 	import GroupsPane from './panes/GroupsPane.svelte';
 	import SessionPane from './panes/SessionPane.svelte';
 	import AgentPane from './panes/AgentPane.svelte';
+	import TemplateSaver from './TemplateSaver.svelte';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -130,24 +133,49 @@
 
 	onMount(async () => {
 		const agentsQuery = page.url.searchParams.get('agents');
-		try {
-			const result = parseAgentsQuery(agentsQuery);
-			parsedAgents = result.agents;
+		const template = page.url.searchParams.get('template');
+		if (agentsQuery) {
+			toast('Parsing agents from URL...', { duration: 2000 });
+			try {
+				const result = parseAgentsQuery(agentsQuery);
+				parsedAgents = result.agents;
 
-			for (const agent of parsedAgents) {
-				console.log(
-					'following url instructions to add agent: ' +
-						agent.name +
-						'@' +
-						agent.version +
-						' from ' +
-						agent.source +
-						' '
-				);
-				await addAgent(agent.name, agent.source, agent.version);
+				for (const agent of parsedAgents) {
+					console.log(
+						'following url instructions to add agent: ' +
+							agent.name +
+							'@' +
+							agent.version +
+							' from ' +
+							agent.source +
+							' '
+					);
+					await addAgent(agent.name, agent.source, agent.version);
+				}
+			} catch (err) {
+				console.error('Failed to parse agents:', err);
 			}
-		} catch (err) {
-			console.error('Failed to parse agents:', err);
+		}
+		if (template) {
+			toast('Loading template...', { duration: 2000 });
+			try {
+				const templateData = localStorage.getItem(`template_${template}`);
+				if (!templateData) {
+					throw new Error('Template not found');
+				}
+				const parsed = JSON.parse(templateData);
+				if (!parsed.data) {
+					throw new Error('Invalid template format');
+				}
+				const sessionData = JSON.parse(parsed.data);
+				sessCtx.importSession({
+					from: JSON.stringify(sessionData),
+					success: 'Template loaded successfully'
+				});
+			} catch (err) {
+				console.error('Failed to load template:', err);
+				toast.error('Failed to load template: ' + err);
+			}
 		}
 	});
 	interface ParsedAgent {
@@ -242,6 +270,8 @@
 	let currentTab = $state('agent');
 
 	let sendingForm = $state(false);
+
+	let templateSaverDialogOpen = $state(false);
 
 	// svelte-ignore state_referenced_locally
 	let form = superForm(defaults(zod4(formSchema)), {
@@ -415,13 +445,18 @@
 	}
 </script>
 
+<TemplateSaver
+	bind:open={templateSaverDialogOpen}
+	data={JSON.stringify(sessCtx.payload, null, 4)}
+/>
+
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
 	<Sidebar.Trigger class="-ml-1" />
 	<Separator orientation="vertical" class="mr-2 h-4" />
 	<Breadcrumb.Root class="flex-grow">
 		<Breadcrumb.List>
 			<Breadcrumb.Item class="hidden md:block">
-				<Breadcrumb.Link>Sessions</Breadcrumb.Link>
+				<Breadcrumb.Link>Templates</Breadcrumb.Link>
 			</Breadcrumb.Item>
 			<Breadcrumb.Separator />
 			<Breadcrumb.Item class="hidden md:block">
@@ -515,7 +550,7 @@
 										<Table.Header>
 											<Table.Row>
 												<Table.Head class="w-12"><Checkbox /></Table.Head>
-												<Table.Head class="">Name</Table.Head>
+												<Table.Head>Name</Table.Head>
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
 												<Table.Head>Agent</Table.Head>
@@ -583,14 +618,39 @@
 				>
 					<CodePane />
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
-						<Form.Button
-							disabled={sendingForm || $formData.agents.length === 0}
-							class={sendingForm ? '' : 'bg-accent/80'}
-						>
-							{#if sendingForm}
-								<Spinner />
-							{/if}Run</Form.Button
-						>
+						{#if sendingForm || !$formData.agents.length}
+							<Tooltip.Provider>
+								<Tooltip.Root>
+									<Tooltip.Trigger>
+										<Form.Button disabled={sendingForm || $formData.agents.length === 0}>
+											{#if sendingForm}
+												<Spinner />
+											{/if}Run</Form.Button
+										>
+										<Button disabled={sendingForm || $formData.agents.length === 0}
+											>Save template</Button
+										>
+									</Tooltip.Trigger>
+									<Tooltip.Content>
+										<p>You need to add at least one agent first!</p>
+									</Tooltip.Content>
+								</Tooltip.Root>
+							</Tooltip.Provider>
+						{:else}
+							<Form.Button
+								disabled={sendingForm || $formData.agents.length === 0}
+								class={sendingForm ? '' : 'bg-accent/80'}
+							>
+								{#if sendingForm}
+									<Spinner />
+								{/if}Run</Form.Button
+							>
+							<Button
+								onclick={() => ((templateSaverDialogOpen = true), console.log('aa'))}
+								disabled={sendingForm || $formData.agents.length === 0}
+								class={sendingForm ? '' : 'bg-accent/80'}>Save template</Button
+							>
+						{/if}
 					</footer>
 				</Resizable.Pane>
 			</Resizable.PaneGroup>

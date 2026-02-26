@@ -2,15 +2,20 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import type { Snippet } from 'svelte';
 	import Button, { type ButtonProps } from './ui/button/button.svelte';
+	import { cn } from '$lib/utils';
 
 	const {
 		onclick,
 		children,
 		title = 'Are you sure?',
+		detailClass = 'text-xs',
+		detail = 'Holding shift while clicking will bypass this confirmation.',
 		...props
 	}: Omit<ButtonProps, 'onclick'> & {
 		children?: Snippet;
 		title?: string;
+		detail?: string;
+		detailClass?: string;
 		onclick?: () => void;
 	} = $props();
 
@@ -40,8 +45,8 @@
 		<Dialog.Header>
 			<Dialog.Title>{title}</Dialog.Title>
 			<Dialog.Description>
-				<p class="mx-auto py-4 text-xs">
-					Hold shift when clicking to skip this confirmation.
+				<p class="mx-auto py-4 {cn(detailClass)}">
+					{detail}
 				</p></Dialog.Description
 			>
 		</Dialog.Header>

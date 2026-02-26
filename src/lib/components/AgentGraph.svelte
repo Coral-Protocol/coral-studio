@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { FormSchema } from './schemas';
+	import type { FormSchema } from '../../routes/(app)/templates/create/schemas';
 	import z from 'zod';
 
 	import { VisSingleContainer, VisGraph } from '@unovis/svelte';
@@ -12,12 +12,14 @@
 		agents,
 		groups,
 		selectedAgent = $bindable(undefined),
-		onSelect
+		onSelect,
+		options
 	}: {
 		agents: z.infer<FormSchema>['agents'];
 		groups: z.infer<FormSchema>['groups'];
 		selectedAgent?: number | null;
 		onSelect?: (idx: number) => void;
+		options?: {};
 	} = $props();
 
 	type NodeDatum = {
@@ -93,13 +95,27 @@
 		{nodeLabel}
 		{nodeSubLabel}
 		{events}
-		{linkStyle}
 		{selectedNodeId}
 		disableBrush={true}
-		layoutNonConnectedAside={true}
-		linkCurvature={1}
-		zoomScaleExtent={[0.25, 1.3]}
-		linkNeighborSpacing={30}
+		layoutNonConnectedAside={false}
+		layoutType="force"
+		layoutInitialIterations={300}
+		layoutStatic={false}
+		linkStrength={1}
+		linkDistance={120}
+		nodeCharge={-1000}
+		collisionRadius={55}
+		nodeSpacing={20}
+		{linkStyle}
+		linkCurvature={0.15}
+		linkNeighborSpacing={95}
+		zoomScaleExtent={[0.25, 1.5]}
+		nodeLabelPosition="bottom"
+		nodeLabelVerticalOffset={12}
+		nodeSubLabelVerticalOffset={24}
+		nodeSize={50}
+		nodeStrokeWidth={0}
+		{...options}
 	/>
 </VisSingleContainer>
 

@@ -69,7 +69,7 @@
 	--foreground: oklch(1 0 0);          /* #FFFFFF */
 	--card-foreground: oklch(1 0 0);
 	--popover-foreground: oklch(1 0 0);
-	--secondary-foreground: oklch(1 0 0);
+	--secondary-foreground: oklch(0.1 0 0);
 	--sidebar-foreground: oklch(1 0 0);
 
 	--muted-foreground: oklch(0.70 0 0); /* #A1A0A0 */

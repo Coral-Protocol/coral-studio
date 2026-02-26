@@ -20,6 +20,7 @@
 	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
 	import IconPackage from 'phosphor-icons-svelte/IconPackageRegular.svelte';
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
+	import IconFolder from 'phosphor-icons-svelte/IconFolderRegular.svelte';
 
 	import { onMount, tick } from 'svelte';
 	import * as Command from '$lib/components/ui/command/index.js';
@@ -55,8 +56,6 @@
 
 	let connecting = $state(false);
 	let error: string | null = $state(null);
-
-	let tourOpen = $state(false);
 
 	const onNoAuth = useDebounce(() => {
 		switch (config.PUBLIC_LOGIN_BEHAVIOUR) {
@@ -127,30 +126,12 @@
 		} catch (e) {
 			connecting = false;
 			error = `${e}`;
-			throw e;
 			toast.error('Failed to refresh connection. ' + error);
+			throw e;
 		}
 	};
 
-	let namespaceSwitcher = $state(null) as unknown as HTMLButtonElement;
-	let sessionSwitcher = $state(null) as unknown as HTMLButtonElement;
-
 	let feedbackVisible = $state(false);
-
-	async function handleSubmit(event: { preventDefault: () => void }) {
-		event.preventDefault();
-
-		const { data, error } = await supabase.from('feedback').insert([{ content, user_email }]);
-
-		if (error) {
-			toast.error('Error submitting feedback. Please try again later. ' + error.message);
-		} else {
-			toast.success('Feedback submitted successfully. Thank you!');
-			content = '';
-			user_email = '';
-			feedbackVisible = false;
-		}
-	}
 
 	$effect(() => {
 		const hasNewRequest = Object.values(tools.userInput.requests).some(
@@ -212,8 +193,8 @@
 				return;
 			}
 			if (k === 'n') {
-				if (window.location.pathname !== `${base}/sessions/create`) {
-					goto(`${base}/sessions/create`);
+				if (window.location.pathname !== `${base}/templates/create`) {
+					goto(`${base}/templates/create`);
 					toast.info('Navigated to session creation page');
 				}
 				return;
@@ -228,7 +209,27 @@
 	function unreachable(PUBLIC_LOGIN_BEHAVIOUR: never) {
 		throw new Error('Function not implemented.');
 	}
+
+	let namespaceSwitcher = $state(null) as unknown as HTMLButtonElement;
+	let creator = $state(null) as unknown as HTMLButtonElement;
+	let tourOpen = $state(false);
 </script>
+
+<Tour
+	bind:open={tourOpen}
+	items={[
+		{
+			target: namespaceSwitcher,
+			side: 'right',
+			text: "Welcome to Coral Studio!\n\nFirst, let's create a new Template"
+		}
+		// {
+		// 	target: sessionSwitcher,
+		// 	side: 'right',
+		// 	text: 'Then, once connected:\n\nCreate a session here.'
+		// }
+	]}
+/>
 
 <svelte:window on:keydown={handleKeydown} />
 
@@ -237,7 +238,7 @@
 <Quickswitch {ctx} bind:open={openQuickswitch} bind:debugMenu={debugToolsOpen} />
 <Shortcuts bind:open={openShortcuts} />
 <DebugTools bind:open={debugToolsOpen} />
-<Welcome bind:open={welcomeOpen} />
+<!-- <Welcome bind:open={welcomeOpen} bind:tourToggle={tourOpen} /> -->
 
 <div class="fixed top-3 right-3 z-50 flex items-center gap-2">
 	<button
@@ -245,7 +246,7 @@
 		onclick={() => (openQuickswitch = true)}
 	>
 		<div class="text-muted-foreground flex items-center gap-2">
-			<IconSearch class="" />
+			<IconSearch />
 			<span class="text-sm">Search</span>
 		</div>
 		<Kbd.Group>
@@ -272,22 +273,6 @@
 		</Tooltip.Root>
 	</Tooltip.Provider>
 </div>
-
-<!-- <Tour
-	open={tourOpen}
-	items={[
-		{
-			target: serverSwitcher,
-			side: 'right',
-			text: 'Welcome to Coral Studio!\n\nFirst, connect to your server here.'
-		},
-		{
-			target: sessionSwitcher,
-			side: 'right',
-			text: 'Then, once connected:\n\nCreate a session here.'
-		}
-	]}
-/> -->
 
 <Sidebar.Root>
 	<Sidebar.Header>
@@ -335,50 +320,22 @@
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
 	<Sidebar.Content class="gap-0 overflow-hidden">
-		<!-- <Sidebar.Group>
+		<Sidebar.Group>
 			<Sidebar.Separator />
-
-			<Sidebar.GroupLabel class="text-sidebar-foreground flex flex-row gap-1 pr-0 text-sm">
-				<span class="text-muted-foreground grow font-sans font-medium tracking-wide select-none"
-					>Finance</span
-				>
-			</Sidebar.GroupLabel>
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
-					<SidebarLink
-						url="{base}/finance/wallet"
-						icon={IconWallet}
-						title="Wallet"
-						disable={sessCtx.connection === null}
-					/>
-					<SidebarLink
-						url="{base}/finance/dashboard"
-						icon={IconDashboard}
-						title="Dashboard"
-						disable={sessCtx.connection === null}
-					/>
+					<Sidebar.GroupLabel class="text-muted-foreground">My library</Sidebar.GroupLabel>
+					<SidebarLink url="{base}/templates/" icon={IconFolder} title="Templates" />
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
-		</Sidebar.Group> -->
-		<Sidebar.Group class="">
+		</Sidebar.Group>
+		<Sidebar.Group>
 			<Sidebar.Separator />
-
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
 					<Sidebar.GroupLabel class="text-muted-foreground">Session</Sidebar.GroupLabel>
 					<SessionSwitcher />
-					<!-- <SidebarLink
-						url="{base}/sessions/overview"
-						icon={IconListMag}
-						title="Session Overview"
-						disable={!sessCtx.session}
-					/> -->
-					<SidebarLink
-						url="{base}/sessions/create"
-						icon={IconChats}
-						title="Session builder"
-						disabled={ctx.server.alive === false}
-					/>
+
 					<NavBundle
 						items={[
 							{

@@ -27,7 +27,7 @@
 <Tabs.Root bind:value={editorTab.current} class="grow gap-0 overflow-hidden">
 	<Tabs.List class="bg-sidebar  flex w-full justify-start rounded-none border-b *:rounded-none">
 		<Tabs.Trigger value="json" class="grow-0">Session editor{jsonDirty ? '*' : ''}</Tabs.Trigger>
-		<Separator orientation="vertical" class="" />
+		<Separator orientation="vertical" />
 		<Tabs.Trigger value="js" class="grow-0">JavaScript</Tabs.Trigger>
 		<Tabs.Trigger value="py" class="grow-0">Python</Tabs.Trigger>
 		<!-- <Tabs.Trigger value="curl" class="grow-0">cURL</Tabs.Trigger> -->
