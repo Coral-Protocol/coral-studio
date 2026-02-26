@@ -7,10 +7,14 @@
 		onclick,
 		children,
 		title = 'Are you sure?',
+		smallText = true,
+		detail = 'Holding shift while clicking will bypass this confirmation.',
 		...props
 	}: Omit<ButtonProps, 'onclick'> & {
 		children?: Snippet;
 		title?: string;
+		detail?: string;
+		smallText?: boolean;
 		onclick?: () => void;
 	} = $props();
 
@@ -40,8 +44,8 @@
 		<Dialog.Header>
 			<Dialog.Title>{title}</Dialog.Title>
 			<Dialog.Description>
-				<p class="mx-auto py-4 text-xs">
-					Hold shift when clicking to skip this confirmation.
+				<p class="mx-auto py-4 {smallText ? 'text-xs' : ''}">
+					{detail}
 				</p></Dialog.Description
 			>
 		</Dialog.Header>
