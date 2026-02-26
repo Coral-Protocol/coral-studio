@@ -1,0 +1,184 @@
+<script lang="ts">
+	import { Button } from '$lib/components/ui/button';
+	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import AgentGraph from '$lib/components/AgentGraph.svelte';
+	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import * as Accordion from '$lib/components/ui/accordion';
+	import type { on } from 'svelte/events';
+
+	let {
+		template = $bindable(''),
+		templateData = $bindable({}),
+		graphData = $bindable({}),
+		open = $bindable(false),
+		templates = $bindable([]),
+		onRefresh = $bindable(() => {})
+	}: {
+		template: string;
+		templateData: {
+			name?: string;
+			description?: string;
+			data?: string;
+			updated?: number;
+			imported?: boolean;
+		};
+		graphData: { agentGraphRequest?: { agents?: any[]; groups?: any[] } };
+		open: boolean;
+		templates: string[];
+		onRefresh: (name?: string) => void;
+	} = $props();
+
+	let loading = $state(false);
+
+	const download = (templateName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${templateName}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const blob = new Blob([data], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `coral-template-${templateName}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Error downloading template:', error);
+		}
+	};
+
+	const removeTemplate = (name: string) => {
+		try {
+			localStorage.removeItem(`template_${name}`);
+			const index = templates.indexOf(name);
+			if (index !== -1) {
+				templates.splice(index, 1);
+			}
+			toast.success('Template removed successfully!');
+			open = false;
+		} catch (error) {
+			console.error('Error removing template:', error);
+			toast.error('Failed to remove template.');
+		}
+	};
+
+	const createSessionFromTemplate = (templateName: string) => {
+		toast.promise(
+			new Promise((resolve, reject) => {
+				try {
+					loading = true;
+					const data = localStorage.getItem(`template_${templateName}`);
+					if (!data) {
+						throw new Error('Template data not found');
+					}
+
+					const parsed = JSON.parse(data);
+				} catch (error) {
+					console.error('Error creating session from template:', error);
+					reject('Failed to create session.');
+				}
+			}),
+			{
+				loading: 'Creating session...'
+			}
+		);
+	};
+
+	const markSafe = (templateName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${templateName}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const parsed = JSON.parse(data);
+			parsed.imported = false;
+			localStorage.setItem(`template_${templateName}`, JSON.stringify(parsed));
+			toast.success('Template marked as safe!');
+			onRefresh();
+		} catch (error) {
+			console.error('Error marking template as safe:', error);
+			toast.error('Failed to mark template as safe.');
+		}
+	};
+</script>
+
+<Dialog.Root bind:open>
+	<Dialog.Content class="w-fit max-w-fit min-w-fit">
+		<Dialog.Header>
+			<Dialog.Title>{template}</Dialog.Title>
+			<Dialog.Description>
+				<ol>
+					<li>Created at: {new Date(templateData.updated || 0).toLocaleString()}</li>
+					<li>
+						Has {graphData.agentGraphRequest?.agents?.length ?? 0} agent{graphData.agentGraphRequest
+							?.agents?.length !== 1
+							? 's'
+							: ''} and {graphData.agentGraphRequest?.groups?.length ?? 0} group{graphData
+							.agentGraphRequest?.groups?.length !== 1
+							? 's'
+							: ''}.
+					</li>
+				</ol>
+
+				<Separator class="my-2" />
+
+				<section class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-hidden">
+					<div class="bg-sidebar aspect-square w-[400px] overflow-clip rounded-lg">
+						<AgentGraph
+							agents={graphData.agentGraphRequest?.agents || []}
+							groups={graphData.agentGraphRequest?.groups || []}
+							options={{
+								nodeSubLabel: null
+							}}
+						/>
+					</div>
+
+					<Accordion.Root
+						type="single"
+						value="item-1"
+						class="aspect-square max-h-[400px] w-[400px] max-w-[400px] overflow-clip rounded-lg border"
+					>
+						<Accordion.Item value="item-1">
+							<Accordion.Trigger class="w-[400px] grow" variant="compact"
+								>Description</Accordion.Trigger
+							>
+							<Accordion.Content
+								class="max-h-[340px] min-h-0 w-[400px] overflow-x-hidden overflow-y-scroll"
+							>
+								<pre>{templateData.description ?? 'no description'}</pre>
+							</Accordion.Content>
+						</Accordion.Item>
+						<Accordion.Item value="item-2">
+							<Accordion.Trigger class="w-[400px] grow" variant="compact">Data</Accordion.Trigger>
+							<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
+								<pre>{templateData.data}</pre>
+							</Accordion.Content>
+						</Accordion.Item>
+					</Accordion.Root>
+				</section>
+				<Separator class="my-2" />
+			</Dialog.Description>
+			<Dialog.Footer class="flex justify-start gap-2">
+				<Button href={`/templates/create?template=${template}`}>Edit</Button>
+				<TwostepButton class="" onclick={() => removeTemplate(template)}>Delete</TwostepButton>
+				<Button onclick={() => download(template)}>Download</Button>
+				{#if templateData.imported}
+					<TwostepButton
+						detail="This template was imported! Please ensure you trust this template before running it, malicious templates can cause expensive damage."
+						variant="cta"
+						smallText={false}
+						class="ml-auto"
+						onclick={() => markSafe(template)}>Mark as safe</TwostepButton
+					>
+				{:else}
+					<Button class="ml-auto" variant="cta" onclick={() => createSessionFromTemplate(template)}
+						>Start session</Button
+					>
+				{/if}
+			</Dialog.Footer>
+		</Dialog.Header>
+	</Dialog.Content>
+</Dialog.Root>
