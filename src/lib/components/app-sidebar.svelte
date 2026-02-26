@@ -246,7 +246,7 @@
 		onclick={() => (openQuickswitch = true)}
 	>
 		<div class="text-muted-foreground flex items-center gap-2">
-			<IconSearch class="" />
+			<IconSearch />
 			<span class="text-sm">Search</span>
 		</div>
 		<Kbd.Group>
@@ -320,7 +320,7 @@
 		</Sidebar.GroupContent>
 	</Sidebar.Header>
 	<Sidebar.Content class="gap-0 overflow-hidden">
-		<Sidebar.Group class="">
+		<Sidebar.Group>
 			<Sidebar.Separator />
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>
@@ -329,7 +329,7 @@
 				</Sidebar.Menu>
 			</Sidebar.GroupContent>
 		</Sidebar.Group>
-		<Sidebar.Group class="">
+		<Sidebar.Group>
 			<Sidebar.Separator />
 			<Sidebar.GroupContent>
 				<Sidebar.Menu>

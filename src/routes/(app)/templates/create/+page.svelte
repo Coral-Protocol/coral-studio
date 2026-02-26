@@ -550,7 +550,7 @@
 										<Table.Header>
 											<Table.Row>
 												<Table.Head class="w-12"><Checkbox /></Table.Head>
-												<Table.Head class="">Name</Table.Head>
+												<Table.Head>Name</Table.Head>
 												<Table.Head>Version</Table.Head>
 												<Table.Head>Registry source</Table.Head>
 												<Table.Head>Agent</Table.Head>
