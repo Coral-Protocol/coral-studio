@@ -139,6 +139,7 @@
 				templateData = JSON.parse(data);
 				graphData = templateData.data ? JSON.parse(templateData.data) : {};
 			}
+			templates = templates.filter((t) => t !== name).concat(name); // move to end to trigger re-render
 		} else {
 			fetchTemplates();
 		}

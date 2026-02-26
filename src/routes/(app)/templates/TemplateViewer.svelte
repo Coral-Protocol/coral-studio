@@ -65,26 +65,40 @@
 		}
 	};
 
-	const createSessionFromTemplate = (templateName: string) => {
-		toast.promise(
-			new Promise((resolve, reject) => {
-				try {
-					loading = true;
-					const data = localStorage.getItem(`template_${templateName}`);
-					if (!data) {
-						throw new Error('Template data not found');
-					}
+	const createSessionFromTemplate = async (templateName: string) => {
+		loading = true;
 
-					const parsed = JSON.parse(data);
-				} catch (error) {
-					console.error('Error creating session from template:', error);
-					reject('Failed to create session.');
+		try {
+			if (!templateData.data) throw new Error('Template data not found');
+
+			toast.promise(
+				fetch('/api/v1/local/session', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: templateData.data
+				}).then(async (res) => {
+					if (!res.ok) {
+						const text = await res.text();
+						throw new Error(`${res.status} ${res.statusText}: ${text || 'Request failed'}`);
+					}
+					return res.json();
+				}),
+				{
+					loading: 'Creating session...',
+					success: 'Session created!',
+					error: (err) =>
+						`Failed to create session: ${err instanceof Error ? err.message : String(err)}`
 				}
-			}),
-			{
-				loading: 'Creating session...'
-			}
-		);
+			);
+
+			open = false;
+		} catch (err) {
+			console.error(err);
+		} finally {
+			loading = false;
+		}
 	};
 
 	const markSafe = (templateName: string) => {
@@ -96,8 +110,9 @@
 			const parsed = JSON.parse(data);
 			parsed.imported = false;
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(parsed));
+			templateData = parsed;
 			toast.success('Template marked as safe!');
-			onRefresh();
+			onRefresh(templateName);
 		} catch (error) {
 			console.error('Error marking template as safe:', error);
 			toast.error('Failed to mark template as safe.');
@@ -108,7 +123,7 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="w-fit max-w-fit min-w-fit">
 		<Dialog.Header>
-			<Dialog.Title>{template}</Dialog.Title>
+			<Dialog.Title class={templateData.imported ? 'text-accent' : ''}>{template}</Dialog.Title>
 			<Dialog.Description>
 				<ol>
 					<li>Created at: {new Date(templateData.updated || 0).toLocaleString()}</li>
@@ -122,6 +137,13 @@
 							: ''}.
 					</li>
 				</ol>
+
+				{#if templateData.imported}
+					<p class="text-sm text-yellow-500">
+						This template was imported externally! Please review this template before running it,
+						malicious templates can cause damage.
+					</p>
+				{/if}
 
 				<Separator class="my-2" />
 
@@ -138,7 +160,7 @@
 
 					<Accordion.Root
 						type="single"
-						value="item-1"
+						value={templateData.imported ? 'item-2' : 'item-1'}
 						class="aspect-square max-h-[400px] w-[400px] max-w-[400px] overflow-clip rounded-lg border"
 					>
 						<Accordion.Item value="item-1">
@@ -148,11 +170,13 @@
 							<Accordion.Content
 								class="max-h-[340px] min-h-0 w-[400px] overflow-x-hidden overflow-y-scroll"
 							>
-								<pre>{templateData.description ?? 'no description'}</pre>
+								<pre>{templateData.description != ''
+										? templateData.description
+										: 'no description'}</pre>
 							</Accordion.Content>
 						</Accordion.Item>
-						<Accordion.Item value="item-2">
-							<Accordion.Trigger class="w-[400px] grow" variant="compact">Data</Accordion.Trigger>
+						<Accordion.Item value="item-2" class={templateData.imported ? 'text-accent' : ''}>
+							<Accordion.Trigger class=" w-[400px] grow" variant="compact">Data</Accordion.Trigger>
 							<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
 								<pre>{templateData.data}</pre>
 							</Accordion.Content>
@@ -162,20 +186,25 @@
 				<Separator class="my-2" />
 			</Dialog.Description>
 			<Dialog.Footer class="flex justify-start gap-2">
-				<Button href={`/templates/create?template=${template}`}>Edit</Button>
-				<TwostepButton class="" onclick={() => removeTemplate(template)}>Delete</TwostepButton>
-				<Button onclick={() => download(template)}>Download</Button>
+				<Button disabled={loading} href={`/templates/create?template=${template}`}>Edit</Button>
+				<TwostepButton disabled={loading} onclick={() => removeTemplate(template)}
+					>Delete</TwostepButton
+				>
+				<Button disabled={loading} onclick={() => download(template)}>Download</Button>
 				{#if templateData.imported}
 					<TwostepButton
-						detail="This template was imported! Please ensure you trust this template before running it, malicious templates can cause expensive damage."
+						detail="Are you sure you want to mark this template as safe? This will remove the warning and let you run the template without confirmation."
 						variant="cta"
 						smallText={false}
 						class="ml-auto"
 						onclick={() => markSafe(template)}>Mark as safe</TwostepButton
 					>
 				{:else}
-					<Button class="ml-auto" variant="cta" onclick={() => createSessionFromTemplate(template)}
-						>Start session</Button
+					<Button
+						class="ml-auto"
+						variant="cta"
+						disabled={loading}
+						onclick={() => createSessionFromTemplate(template)}>Start session</Button
 					>
 				{/if}
 			</Dialog.Footer>
