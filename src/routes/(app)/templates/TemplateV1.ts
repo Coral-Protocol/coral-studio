@@ -1,3 +1,4 @@
+export type Template = TemplateV1;
 export type TemplateV1 = {
   /**
    * Human-readable template name.

@@ -7,7 +7,7 @@
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
-	import { type TemplateV1 } from './TemplateV1';
+	import { type Template } from './TemplateV1';
 	import * as Rename from '$lib/components/ui/rename';
 	import { Highlight } from 'svelte-highlight';
 
@@ -17,14 +17,14 @@
 
 	let {
 		template = $bindable(''),
-		templateData = $bindable({} as TemplateV1),
+		templateData = $bindable({} as Template),
 		payload = $bindable({}),
 		open = $bindable(false),
 		templates = $bindable([]),
 		onRefresh = $bindable(() => {})
 	}: {
-		template: TemplateV1['name'];
-		templateData: TemplateV1;
+		template: Template['name'];
+		templateData: Template;
 		payload: any;
 		open: boolean;
 		templates: string[];

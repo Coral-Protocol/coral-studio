@@ -67,7 +67,7 @@
 	import SessionPane from './panes/SessionPane.svelte';
 	import AgentPane from './panes/AgentPane.svelte';
 	import TemplateSaver from './TemplateSaver.svelte';
-	import type { TemplateV1 } from '../TemplateV1';
+	import { getSessionDataFromTemplateName } from '../TemplateLib';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -160,13 +160,10 @@
 		if (template) {
 			toast('Loading template...', { duration: 2000 });
 			try {
-				const templateDataJson = localStorage.getItem(`template_${template}`);
-				if (!templateDataJson) {
-					throw new Error('Template not found');
-				}
-				const parsedTemplate = JSON.parse(templateDataJson);
+				const templateSessionData = getSessionDataFromTemplateName(template);
+
 				sessCtx.importSession({
-					from: JSON.stringify(parsedTemplate.data),
+					from: templateSessionData,
 					success: 'Template loaded successfully'
 				});
 			} catch (err) {

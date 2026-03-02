@@ -45,7 +45,7 @@
 		<Dialog.Header>
 			<Dialog.Title>{title}</Dialog.Title>
 			<Dialog.Description>
-				<p class="mx-auto py-4 {cn(detailClass)}">
+				<p class={cn(detailClass, 'mx-auto py-4')}>
 					{detail}
 				</p></Dialog.Description
 			>

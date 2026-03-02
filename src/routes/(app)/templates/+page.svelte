@@ -19,6 +19,15 @@
 	import IconWarningCircleRegular from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
 	import type { TemplateV1 } from './TemplateV1';
 	import { Skeleton } from '$lib/components/ui/skeleton';
+	import {
+		normalizeTemplate,
+		refreshTemplateFromStorage,
+		fetchTemplatesFromStorage,
+		safeJSONParse,
+		pickAndParseTemplateFile,
+		checkTemplateOverwrite,
+		saveTemplateToLocalStorage
+	} from './TemplateLib';
 
 	let templates = $state<string[]>([]);
 
@@ -31,105 +40,41 @@
 	let loading = $state(true);
 
 	onMount(() => {
-		fetchTemplates();
+		templates = fetchTemplatesFromStorage();
 		loading = false;
 	});
 
-	function safeJSONParse(value: string | null, fallback: any = {}) {
-		try {
-			if (!value) return fallback;
-			return JSON.parse(value);
-		} catch {
-			return fallback;
+	async function importTemplate() {
+		const result = await pickAndParseTemplateFile();
+
+		if (!result.success) {
+			toast.error(result.error);
+			return;
 		}
-	}
 
-	function safeArray(value: any) {
-		return Array.isArray(value) ? value : [];
-	}
+		const template = result.data;
 
-	function normalizeTemplate(raw: any) {
-		if (!raw || typeof raw !== 'object') raw = {};
-
-		return {
-			name: typeof raw.name === 'string' ? raw.name : `imported_${Date.now()}`,
-			trusted: !!raw.trusted,
-			payload: typeof raw.payload === 'object' && raw.payload !== null ? raw.payload : {},
-			...raw
-		};
-	}
-
-	const fetchTemplates = () => {
-		try {
-			const rawIndex = localStorage.getItem('template_index');
-			const parsed = safeJSONParse(rawIndex, []);
-
-			if (!Array.isArray(parsed)) {
-				localStorage.setItem('template_index', JSON.stringify([]));
-				templates = [];
-				return;
-			}
-
-			const validTemplates: string[] = [];
-
-			for (const name of parsed) {
-				if (typeof name !== 'string') continue;
-
-				const raw = localStorage.getItem(`template_${name}`);
-				if (!raw) continue;
-
-				// validate JSON but don’t fail
-				const parsedTemplate = safeJSONParse(raw, null);
-				if (!parsedTemplate) continue;
-
-				validTemplates.push(name);
-			}
-
-			localStorage.setItem('template_index', JSON.stringify(validTemplates));
-			templates = validTemplates;
-		} catch {
-			localStorage.setItem('template_index', JSON.stringify([]));
-			templates = [];
+		if (checkTemplateOverwrite(template.name)) {
+			pendingImport = template;
+			overwriteWarning = true;
+			return;
 		}
-	};
 
-	function importTemplate() {
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.accept = 'application/json';
+		const saveResult = saveTemplateToLocalStorage(template);
 
-		input.onchange = async () => {
-			if (!input.files?.[0]) return;
+		if (!saveResult.success) {
+			toast.error(saveResult.error ?? 'Error importing template');
+			return;
+		}
 
-			try {
-				const text = await input.files[0].text();
-				const parsed = safeJSONParse(text, null);
-
-				if (!parsed) {
-					toast.error('Invalid JSON file.');
-					return;
-				}
-
-				const data = normalizeTemplate(parsed);
-
-				if (localStorage.getItem(`template_${data.name}`)) {
-					pendingImport = data;
-					overwriteWarning = true;
-					return;
-				}
-
-				saveTemplate(data);
-			} catch {
-				toast.error('Could not read file.');
-			}
-		};
-
-		input.click();
+		toast.success(
+			saveResult.overwrite ? 'Template updated successfully!' : 'Template saved successfully!'
+		);
 	}
 
 	function saveTemplate(data: any) {
 		const normalized = normalizeTemplate(data);
-		normalized.imported = true;
+		normalized.trusted = true;
 
 		try {
 			localStorage.setItem(`template_${normalized.name}`, JSON.stringify(normalized));
@@ -156,21 +101,6 @@
 
 		dialogOpen = true;
 	};
-
-	const refresh = (name?: string) => {
-		if (name) {
-			const raw = localStorage.getItem(`template_${name}`);
-			const parsed = normalizeTemplate(safeJSONParse(raw, {}));
-
-			templateData = parsed;
-
-			templates = templates.filter((t) => t !== name).concat(name);
-		} else {
-			fetchTemplates();
-		}
-	};
-
-	$inspect(payload);
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -201,7 +131,7 @@
 	{templateData}
 	bind:open={dialogOpen}
 	bind:templates
-	onRefresh={(name) => refresh(name)}
+	onRefresh={(name) => refreshTemplateFromStorage(name)}
 />
 
 <AlertDialog.Root bind:open={overwriteWarning}>

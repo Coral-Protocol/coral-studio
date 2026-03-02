@@ -8,16 +8,16 @@
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import type { TemplateV1 } from '../TemplateV1';
+	import type { Template } from '../TemplateV1';
+	import { saveTemplateToLocalStorage } from '../TemplateLib';
+	import { delay } from 'effect/Effect';
 
-	let { open = $bindable(false), data }: { open: boolean; data: TemplateV1['payload']['data'] } =
+	let { open = $bindable(false), data }: { open: boolean; data: Template['payload']['data'] } =
 		$props();
 
 	let templateName = $state(`${randomAdjective()}-${randomAnimal()}`);
 	let templateDescription = $state('');
 	let overwriteWarning = $state(false);
-
-	const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
 
 	onMount(() => {
 		const template = page.url.searchParams.get('template');
@@ -30,56 +30,33 @@
 		}
 	});
 
-	const save = () => {
-		if (!templateName.trim()) {
-			toast.error('Template name cannot be empty.');
-			return;
-		}
-
-		if (!TEMPLATE_NAME_REGEX.test(templateName)) {
-			toast.error(
-				'Template name must be 1-32 characters and contain only letters, numbers, "-" or "_".'
-			);
-			return;
-		}
-
-		if (!data) {
-			toast.error('No template data to save.');
-			return;
-		}
-
-		try {
-			const template: TemplateV1 = {
-				name: templateName,
-				updated: Date.now(),
-				description: templateDescription,
-				trusted: true,
-				version: 1,
-				payload: {
-					data,
-					version: 1
-				}
-			};
-			localStorage.setItem(`template_${templateName}`, JSON.stringify(template));
-			toast.success(
-				overwriteWarning ? 'Template updated successfully!' : 'Template saved successfully!'
-			);
-			open = false;
-
-			try {
-				const templateIndex = JSON.parse(localStorage.getItem('template_index') || '[]');
-
-				const updatedIndex = [...new Set([...templateIndex, templateName])];
-
-				localStorage.setItem('template_index', JSON.stringify(updatedIndex));
-			} catch (error) {
-				console.error('Error updating template index:', error);
+	function save() {
+		const saveResult = saveTemplateToLocalStorage({
+			name: templateName,
+			updated: Date.now(),
+			description: templateDescription,
+			trusted: true,
+			version: 1,
+			payload: {
+				data,
+				version: 1
 			}
-		} catch (error) {
-			console.error('Error saving template:', error);
-			toast.error('Failed to save template.');
+		});
+
+		if (!saveResult.success) {
+			if (saveResult.error) {
+				toast.error(saveResult.error);
+			}
+			return;
 		}
-	};
+
+		toast.success(
+			saveResult.overwrite ? 'Template updated successfully!' : 'Template saved successfully!'
+		);
+
+		open = false;
+		overwriteWarning = true;
+	}
 </script>
 
 <Dialog.Root bind:open>
