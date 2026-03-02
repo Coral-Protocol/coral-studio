@@ -10,7 +10,6 @@
 	import { page } from '$app/state';
 	import type { Template } from '../TemplateV1';
 	import { saveTemplateToLocalStorage } from '../TemplateLib';
-	import { delay } from 'effect/Effect';
 
 	let { open = $bindable(false), data }: { open: boolean; data: Template['payload']['data'] } =
 		$props();
