@@ -1,29 +1,25 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
+	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
+	import { type TemplateV1 } from './TemplateV1';
 
 	let {
 		template = $bindable(''),
-		templateData = $bindable({}),
-		graphData = $bindable({}),
+		templateData = $bindable({} as TemplateV1),
+		payload = $bindable({}),
 		open = $bindable(false),
 		templates = $bindable([]),
 		onRefresh = $bindable(() => {})
 	}: {
-		template: string;
-		templateData: {
-			name?: string;
-			description?: string;
-			data?: string;
-			updated?: number;
-			imported?: boolean;
-		};
-		graphData: { agentGraphRequest?: { agents?: any[]; groups?: any[] } };
+		template: TemplateV1['name'];
+		templateData: TemplateV1;
+		payload: any;
 		open: boolean;
 		templates: string[];
 		onRefresh: (name?: string) => void;
@@ -68,7 +64,7 @@
 		loading = true;
 
 		try {
-			if (!templateData.data) throw new Error('Template data not found');
+			if (!templateData?.payload?.data) throw new Error('Template data not found');
 
 			toast.promise(
 				fetch('/api/v1/local/session', {
@@ -76,7 +72,7 @@
 					headers: {
 						'Content-Type': 'application/json'
 					},
-					body: templateData.data
+					body: JSON.stringify(payload)
 				}).then(async (res) => {
 					if (!res.ok) {
 						const text = await res.text();
@@ -107,7 +103,7 @@
 				throw new Error('Template data not found');
 			}
 			const parsed = JSON.parse(data);
-			parsed.imported = false;
+			parsed.trusted = true;
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(parsed));
 			templateData = parsed;
 			toast.success('Template marked as trusted!');
@@ -122,22 +118,22 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="w-fit max-w-fit min-w-fit">
 		<Dialog.Header>
-			<Dialog.Title class={templateData.imported ? 'text-accent' : ''}>{template}</Dialog.Title>
+			<Dialog.Title class={!templateData.trusted ? 'text-accent' : ''}>{template}</Dialog.Title>
 			<Dialog.Description>
 				<ol>
 					<li>Created at: {new Date(templateData.updated || 0).toLocaleString()}</li>
 					<li>
-						Has {graphData.agentGraphRequest?.agents?.length ?? 0} agent{graphData.agentGraphRequest
+						Has {payload.agentGraphRequest?.agents?.length ?? 0} agent{payload.agentGraphRequest
 							?.agents?.length !== 1
 							? 's'
-							: ''} and {graphData.agentGraphRequest?.groups?.length ?? 0} group{graphData
+							: ''} and {payload.agentGraphRequest?.groups?.length ?? 0} group{payload
 							.agentGraphRequest?.groups?.length !== 1
 							? 's'
 							: ''}.
 					</li>
 				</ol>
 
-				{#if templateData.imported}
+				{#if !templateData.trusted}
 					<p class="text-sm text-yellow-500">
 						This template was imported externally! Please review this template before running it,
 						malicious templates can cause damage.
@@ -149,8 +145,8 @@
 				<section class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-hidden">
 					<div class="bg-sidebar aspect-square w-[400px] overflow-clip rounded-lg">
 						<AgentGraph
-							agents={graphData.agentGraphRequest?.agents || []}
-							groups={graphData.agentGraphRequest?.groups || []}
+							agents={payload.agentGraphRequest?.agents || []}
+							groups={payload.agentGraphRequest?.groups || []}
 							options={{
 								nodeSubLabel: null
 							}}
@@ -159,7 +155,7 @@
 
 					<Accordion.Root
 						type="single"
-						value={templateData.imported ? 'item-2' : 'item-1'}
+						value={!templateData.trusted ? 'item-2' : 'item-1'}
 						class="aspect-square max-h-[400px] w-[400px] max-w-[400px] overflow-clip rounded-lg border"
 					>
 						<Accordion.Item value="item-1">
@@ -174,10 +170,10 @@
 										: 'no description'}</pre>
 							</Accordion.Content>
 						</Accordion.Item>
-						<Accordion.Item value="item-2" class={templateData.imported ? 'text-accent' : ''}>
+						<Accordion.Item value="item-2" class={!templateData.trusted ? 'text-accent' : ''}>
 							<Accordion.Trigger class=" w-[400px] grow" variant="compact">Data</Accordion.Trigger>
 							<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
-								<pre>{templateData.data}</pre>
+								<pre>{JSON.stringify(payload, null, 2)}</pre>
 							</Accordion.Content>
 						</Accordion.Item>
 					</Accordion.Root>
@@ -190,7 +186,21 @@
 					>Delete</TwostepButton
 				>
 				<Button disabled={loading} onclick={() => download(template)}>Download</Button>
-				{#if templateData.imported}
+				{#if templateData.version != 1}
+					<Tooltip.Provider>
+						<Tooltip.Root delayDuration={0}>
+							<Tooltip.Trigger class="text-accent opacity-70 hover:opacity-100"
+								>Outdated template</Tooltip.Trigger
+							>
+							<Tooltip.Content>
+								<p>
+									Template version ({templateData.version}) is outdated, it may not work properly.
+								</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+				{/if}
+				{#if !templateData.trusted}
 					<TwostepButton
 						detail="Are you sure you want to mark this template as trusted? This will remove the warning and let you run the template without confirmation."
 						variant="cta"

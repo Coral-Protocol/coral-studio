@@ -17,6 +17,7 @@
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 
 	import IconWarningCircleRegular from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
+	import type { TemplateV1 } from './TemplateV1';
 
 	let templates = $state<string[]>([]);
 
@@ -24,67 +25,89 @@
 	let overwriteWarning = $state(false);
 	let pendingImport: any = null; // store template data awaiting confirmation
 	let template = $state('');
-	let templateData = $state<{ name?: string; data?: string }>({});
-	let graphData = $state({});
+	let templateData = $state<TemplateV1>({} as TemplateV1);
+	let payload = $state({}) as any;
 
 	onMount(() => {
 		fetchTemplates();
 	});
 
-	const fetchTemplates = (name?: string) => {
+	function safeJSONParse(value: string | null, fallback: any = {}) {
+		try {
+			if (!value) return fallback;
+			return JSON.parse(value);
+		} catch {
+			return fallback;
+		}
+	}
+
+	function safeArray(value: any) {
+		return Array.isArray(value) ? value : [];
+	}
+
+	function normalizeTemplate(raw: any) {
+		if (!raw || typeof raw !== 'object') raw = {};
+
+		return {
+			name: typeof raw.name === 'string' ? raw.name : `imported_${Date.now()}`,
+			trusted: !!raw.trusted,
+			payload: typeof raw.payload === 'object' && raw.payload !== null ? raw.payload : {},
+			...raw
+		};
+	}
+
+	const fetchTemplates = () => {
 		try {
 			const rawIndex = localStorage.getItem('template_index');
-
-			if (!rawIndex) {
-				localStorage.setItem('template_index', JSON.stringify([]));
-				templates.length = 0;
-				return;
-			}
-
-			const parsed = JSON.parse(rawIndex);
+			const parsed = safeJSONParse(rawIndex, []);
 
 			if (!Array.isArray(parsed)) {
-				console.error('Invalid template index format, resetting.');
 				localStorage.setItem('template_index', JSON.stringify([]));
-				templates.length = 0;
+				templates = [];
 				return;
 			}
 
-			const validTemplates = parsed.filter((name: string) => {
-				const exists = localStorage.getItem(`template_${name}`);
-				if (!exists) {
-					console.warn(`Template ${name} missing, removing from index.`);
-				}
-				return !!exists;
-			});
+			const validTemplates: string[] = [];
 
-			if (validTemplates.length !== parsed.length) {
-				localStorage.setItem('template_index', JSON.stringify(validTemplates));
+			for (const name of parsed) {
+				if (typeof name !== 'string') continue;
+
+				const raw = localStorage.getItem(`template_${name}`);
+				if (!raw) continue;
+
+				// validate JSON but don’t fail
+				const parsedTemplate = safeJSONParse(raw, null);
+				if (!parsedTemplate) continue;
+
+				validTemplates.push(name);
 			}
 
-			templates.splice(0, templates.length, ...validTemplates);
-		} catch (error) {
-			console.error('Error loading templates, resetting.', error);
+			localStorage.setItem('template_index', JSON.stringify(validTemplates));
+			templates = validTemplates;
+		} catch {
 			localStorage.setItem('template_index', JSON.stringify([]));
-			templates.length = 0;
+			templates = [];
 		}
-
-		templates = templates;
 	};
 
 	function importTemplate() {
 		const input = document.createElement('input');
 		input.type = 'file';
 		input.accept = 'application/json';
+
 		input.onchange = async () => {
 			if (!input.files?.[0]) return;
 
 			try {
-				const file = input.files[0];
-				const text = await file.text();
-				const data = JSON.parse(text);
+				const text = await input.files[0].text();
+				const parsed = safeJSONParse(text, null);
 
-				if (!data.name || !data.data) throw new Error('Invalid template format');
+				if (!parsed) {
+					toast.error('Invalid JSON file.');
+					return;
+				}
+
+				const data = normalizeTemplate(parsed);
 
 				if (localStorage.getItem(`template_${data.name}`)) {
 					pendingImport = data;
@@ -93,44 +116,58 @@
 				}
 
 				saveTemplate(data);
-			} catch (error) {
-				console.error('Error importing template:', error);
-				toast.error('Failed to import template. Make sure it is a valid JSON file.');
+			} catch {
+				toast.error('Could not read file.');
 			}
 		};
+
 		input.click();
 	}
 
 	function saveTemplate(data: any) {
-		data.imported = true;
-		localStorage.setItem(`template_${data.name}`, JSON.stringify(data));
+		const normalized = normalizeTemplate(data);
+		normalized.imported = true;
 
-		const templateIndex = [...new Set([...(templates || []), data.name])];
-		templates = templateIndex;
+		try {
+			localStorage.setItem(`template_${normalized.name}`, JSON.stringify(normalized));
 
-		localStorage.setItem('template_index', JSON.stringify(templateIndex));
-		toast.success('Template imported successfully!');
+			const templateIndex = [...new Set([...(templates || []), normalized.name])];
+
+			templates = templateIndex;
+			localStorage.setItem('template_index', JSON.stringify(templateIndex));
+
+			toast.success('Template imported successfully!');
+		} catch {
+			toast.error('Failed to save template.');
+		}
 	}
 
 	const openTemplate = (name: string) => {
 		template = name;
-		templateData = JSON.parse(localStorage.getItem(`template_${name}`) || '{}');
-		graphData = templateData?.data ? JSON.parse(templateData.data) : {};
+
+		const raw = localStorage.getItem(`template_${name}`);
+		const parsed = normalizeTemplate(safeJSONParse(raw, {}));
+
+		templateData = parsed;
+		payload = safeJSONParse(parsed.payload.data);
+
 		dialogOpen = true;
 	};
 
 	const refresh = (name?: string) => {
 		if (name) {
-			const data = localStorage.getItem(`template_${name}`);
-			if (data) {
-				templateData = JSON.parse(data);
-				graphData = templateData.data ? JSON.parse(templateData.data) : {};
-			}
-			templates = templates.filter((t) => t !== name).concat(name); // move to end to trigger re-render
+			const raw = localStorage.getItem(`template_${name}`);
+			const parsed = normalizeTemplate(safeJSONParse(raw, {}));
+
+			templateData = parsed;
+
+			templates = templates.filter((t) => t !== name).concat(name);
 		} else {
 			fetchTemplates();
 		}
 	};
+
+	$inspect(payload);
 </script>
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
@@ -154,8 +191,8 @@
 
 <TemplateViewer
 	{template}
+	{payload}
 	{templateData}
-	{graphData}
 	bind:open={dialogOpen}
 	bind:templates
 	onRefresh={(name) => refresh(name)}
@@ -196,58 +233,59 @@
 {#key templates}
 	{#if templates.length > 0}
 		<ul class="grid grid-cols-[repeat(auto-fit,minmax(12rem,28rem))] gap-2 p-4">
-			{#key templates}
-				{#each templates as template}
-					{@const templateData = JSON.parse(localStorage.getItem(`template_${template}`) || '{}')}
-					{@const graphData = templateData.data ? JSON.parse(templateData.data) : {}}
+			{#each templates as template}
+				{@const templateData = normalizeTemplate(
+					safeJSONParse(localStorage.getItem(`template_${template}`), {})
+				)}
+				{@const graphData = safeJSONParse(templateData.payload?.data || '{}') as {
+					agentGraphRequest?: { agents?: any[]; groups?: any[] };
+				}}
+				<li class="col-span-1">
+					<Card.Root>
+						<Dialog.Root bind:open={dialogOpen}>
+							<Card.Content class="flex flex-col gap-4">
+								<Card.Header class="relative flex justify-between px-0">
+									<Card.Title>{template}</Card.Title>
+									{#if !templateData.trusted}
+										<Tooltip.Provider>
+											<Tooltip.Root delayDuration={0}>
+												<Tooltip.Trigger
+													class="text-accent absolute right-0 opacity-70 hover:opacity-100"
+													><IconWarningCircleRegular class="size-5" /></Tooltip.Trigger
+												>
+												<Tooltip.Content>
+													<p>Imported from external source</p>
+												</Tooltip.Content>
+											</Tooltip.Root>
+										</Tooltip.Provider>
+									{/if}
+								</Card.Header>
+								<button
+									class=" bg-sidebar hover:bg-accent-foreground/10 w-full overflow-clip rounded-lg transition-all"
+									onclick={() => openTemplate(template)}
+								>
+									<AgentGraph
+										agents={graphData?.agentGraphRequest?.agents || []}
+										groups={graphData?.agentGraphRequest?.groups || []}
+										options={{
+											disableZoom: true,
+											disableDrag: true,
+											disableBrush: true,
+											nodeSubLabel: null,
+											selectedNodeId: null
+										}}
+									/>
+								</button>
 
-					<li class="col-span-1">
-						<Card.Root>
-							<Dialog.Root bind:open={dialogOpen}>
-								<Card.Content class="flex flex-col gap-4">
-									<Card.Header class="relative flex justify-between px-0">
-										<Card.Title>{template}</Card.Title>
-										{#if templateData.imported}
-											<Tooltip.Provider>
-												<Tooltip.Root delayDuration={0}>
-													<Tooltip.Trigger
-														class="text-accent absolute right-0 opacity-70 hover:opacity-100"
-														><IconWarningCircleRegular class="size-5" /></Tooltip.Trigger
-													>
-													<Tooltip.Content>
-														<p>Imported from external source</p>
-													</Tooltip.Content>
-												</Tooltip.Root>
-											</Tooltip.Provider>
-										{/if}
-									</Card.Header>
-									<button
-										class=" bg-sidebar hover:bg-accent-foreground/10 w-full overflow-clip rounded-lg transition-all"
-										onclick={() => openTemplate(template)}
-									>
-										<AgentGraph
-											agents={graphData.agentGraphRequest?.agents || []}
-											groups={graphData.agentGraphRequest?.groups || []}
-											options={{
-												disableZoom: true,
-												disableDrag: true,
-												disableBrush: true,
-												nodeSubLabel: null,
-												selectedNodeId: null
-											}}
-										/>
-									</button>
-
-									<Card.Footer class="flex justify-between gap-2 border-t px-0">
-										<Button class="self-start" variant="ghost">Share</Button>
-										<Button onclick={() => openTemplate(template)}>View</Button>
-									</Card.Footer>
-								</Card.Content>
-							</Dialog.Root>
-						</Card.Root>
-					</li>
-				{/each}
-			{/key}
+								<Card.Footer class="flex justify-between gap-2 border-t px-0">
+									<Button class="self-start" variant="ghost">Share</Button>
+									<Button onclick={() => openTemplate(template)}>View</Button>
+								</Card.Footer>
+							</Card.Content>
+						</Dialog.Root>
+					</Card.Root>
+				</li>
+			{/each}
 		</ul>
 	{:else}
 		<p class="text-muted-foreground m-auto">No templates found. Create a new one to get started!</p>

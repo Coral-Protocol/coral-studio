@@ -8,8 +8,10 @@
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import type { TemplateV1 } from '../TemplateV1';
 
-	let { open = $bindable(false), data }: { open: boolean; data: string } = $props();
+	let { open = $bindable(false), data }: { open: boolean; data: TemplateV1['payload']['data'] } =
+		$props();
 
 	let templateName = $state(`${randomAdjective()}-${randomAnimal()}`);
 	let templateDescription = $state('');
@@ -47,11 +49,16 @@
 		}
 
 		try {
-			const template = {
+			const template: TemplateV1 = {
 				name: templateName,
-				data,
 				updated: Date.now(),
-				description: templateDescription
+				description: templateDescription,
+				trusted: true,
+				version: 1,
+				payload: {
+					data,
+					version: 1
+				}
 			};
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(template));
 			toast.success(

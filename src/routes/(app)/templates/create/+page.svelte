@@ -67,6 +67,7 @@
 	import SessionPane from './panes/SessionPane.svelte';
 	import AgentPane from './panes/AgentPane.svelte';
 	import TemplateSaver from './TemplateSaver.svelte';
+	import type { TemplateV1 } from '../TemplateV1';
 
 	function sourceToRegistryId(source: AgentSource): RegistryAgentIdentifier['registrySourceId'] {
 		switch (source) {
@@ -159,17 +160,13 @@
 		if (template) {
 			toast('Loading template...', { duration: 2000 });
 			try {
-				const templateData = localStorage.getItem(`template_${template}`);
-				if (!templateData) {
+				const templateDataJson = localStorage.getItem(`template_${template}`);
+				if (!templateDataJson) {
 					throw new Error('Template not found');
 				}
-				const parsed = JSON.parse(templateData);
-				if (!parsed.data) {
-					throw new Error('Invalid template format');
-				}
-				const sessionData = JSON.parse(parsed.data);
+				const parsedTemplate = JSON.parse(templateDataJson);
 				sessCtx.importSession({
-					from: JSON.stringify(sessionData),
+					from: JSON.stringify(parsedTemplate.data),
 					success: 'Template loaded successfully'
 				});
 			} catch (err) {
@@ -445,10 +442,9 @@
 	}
 </script>
 
-<TemplateSaver
-	bind:open={templateSaverDialogOpen}
-	data={JSON.stringify(sessCtx.payload, null, 4)}
-/>
+{#if sessCtx.payload}
+	<TemplateSaver bind:open={templateSaverDialogOpen} data={JSON.stringify(sessCtx.payload)} />
+{/if}
 
 <header class="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
 	<Sidebar.Trigger class="-ml-1" />
