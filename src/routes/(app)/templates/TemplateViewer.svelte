@@ -8,6 +8,12 @@
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { type TemplateV1 } from './TemplateV1';
+	import * as Rename from '$lib/components/ui/rename';
+	import { Highlight } from 'svelte-highlight';
+
+	import json from 'svelte-highlight/languages/json';
+
+	const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
 
 	let {
 		template = $bindable(''),
@@ -26,6 +32,10 @@
 	} = $props();
 
 	let loading = $state(false);
+	let renameValue = $derived(template);
+	let desciptionValue = $derived(templateData.description || 'No description');
+	let titleMode = $state<'edit' | 'view'>('view');
+	let descriptionMode = $state<'edit' | 'view'>('view');
 
 	const download = (templateName: string) => {
 		try {
@@ -113,12 +123,86 @@
 			toast.error('Failed to mark template as trusted.');
 		}
 	};
+
+	const updateName = (template: string, newName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${template}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const parsed = JSON.parse(data);
+			parsed.name = newName;
+
+			localStorage.setItem(`template_${newName}`, JSON.stringify(parsed));
+
+			localStorage.removeItem(`template_${template}`);
+
+			// Update template index
+			const templateIndex = JSON.parse(localStorage.getItem('template_index') || '[]');
+			const updatedIndex = templateIndex.map((name: string) =>
+				name === template ? newName : name
+			);
+			localStorage.setItem('template_index', JSON.stringify(updatedIndex));
+
+			template = newName;
+			toast.success(`Renamed template to ${newName}`);
+			onRefresh();
+			open = false;
+			return true;
+		} catch (error) {
+			console.error('Error renaming template:', error);
+			toast.error('Failed to rename template.');
+			open = false;
+			return false;
+		}
+	};
+
+	const updateDescription = (template: string, description: string) => {
+		try {
+			const data = localStorage.getItem(`template_${template}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const parsed = JSON.parse(data);
+			parsed.description = description;
+
+			localStorage.setItem(`template_${template}`, JSON.stringify(parsed));
+
+			toast.success(`Description updated`);
+			return true;
+		} catch (error) {
+			console.error('Error updating template description:', error);
+			toast.error('Failed to update template description.');
+			return false;
+		}
+	};
 </script>
 
 <Dialog.Root bind:open>
 	<Dialog.Content class="w-fit max-w-fit min-w-fit">
 		<Dialog.Header>
-			<Dialog.Title class={!templateData.trusted ? 'text-accent' : ''}>{template}</Dialog.Title>
+			<Dialog.Title
+				class="{!templateData.trusted ? 'text-accent' : ''} flex items-center gap-4 align-middle "
+			>
+				<Rename.Provider>
+					<Rename.Root
+						this="span"
+						bind:value={renameValue}
+						inputTag="input"
+						bind:mode={titleMode}
+						validate={(value) => value.length > 0 && TEMPLATE_NAME_REGEX.test(value)}
+						class="w-fit"
+						onSave={(value) => {
+							updateName(template, value);
+						}}
+					/>{#if titleMode === 'edit'}
+						<Rename.Save size="sm" variant="ghost" class="text-muted-foreground" />
+						<Rename.Cancel size="sm" variant="ghost" class="text-muted-foreground" />
+					{:else}
+						<Rename.Edit size="sm" variant="ghost" class="text-muted-foreground" />
+					{/if}
+				</Rename.Provider>
+			</Dialog.Title>
 			<Dialog.Description>
 				<ol>
 					<li>Created at: {new Date(templateData.updated || 0).toLocaleString()}</li>
@@ -142,8 +226,10 @@
 
 				<Separator class="my-2" />
 
-				<section class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-hidden">
-					<div class="bg-sidebar aspect-square w-[400px] overflow-clip rounded-lg">
+				<section
+					class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-x-hidden overflow-y-scroll"
+				>
+					<div class="bg-sidebar sticky top-0 aspect-square w-[400px] overflow-clip rounded-lg">
 						<AgentGraph
 							agents={payload.agentGraphRequest?.agents || []}
 							groups={payload.agentGraphRequest?.groups || []}
@@ -165,15 +251,35 @@
 							<Accordion.Content
 								class="max-h-[340px] min-h-0 w-[400px] overflow-x-hidden overflow-y-scroll"
 							>
-								<pre>{templateData.description != ''
-										? templateData.description
-										: 'no description'}</pre>
+								<Rename.Provider>
+									{#if descriptionMode === 'edit'}
+										<Rename.Save size="sm" class="text-muted-foreground" />
+										<Rename.Cancel size="sm" class="text-muted-foreground" />
+									{:else}
+										<Rename.Edit size="sm" class="text-muted-foreground" />
+									{/if}
+									<Rename.Root
+										this="p"
+										class="mt-2"
+										bind:value={desciptionValue}
+										bind:mode={descriptionMode}
+										inputTag="textarea"
+										validate={(value) => value.length > 0}
+										onSave={(value) => {
+											updateDescription(template, value);
+										}}
+									/>
+								</Rename.Provider>
 							</Accordion.Content>
 						</Accordion.Item>
 						<Accordion.Item value="item-2" class={!templateData.trusted ? 'text-accent' : ''}>
 							<Accordion.Trigger class=" w-[400px] grow" variant="compact">Data</Accordion.Trigger>
 							<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
-								<pre>{JSON.stringify(payload, null, 2)}</pre>
+								<Highlight
+									class="[&>code]:bg-sidebar text-xs leading-relaxed"
+									language={json}
+									code={JSON.stringify(payload, null, 2)}
+								></Highlight>
 							</Accordion.Content>
 						</Accordion.Item>
 					</Accordion.Root>

@@ -18,6 +18,7 @@
 
 	import IconWarningCircleRegular from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
 	import type { TemplateV1 } from './TemplateV1';
+	import { Skeleton } from '$lib/components/ui/skeleton';
 
 	let templates = $state<string[]>([]);
 
@@ -27,9 +28,11 @@
 	let template = $state('');
 	let templateData = $state<TemplateV1>({} as TemplateV1);
 	let payload = $state({}) as any;
+	let loading = $state(true);
 
 	onMount(() => {
 		fetchTemplates();
+		loading = false;
 	});
 
 	function safeJSONParse(value: string | null, fallback: any = {}) {
@@ -183,7 +186,10 @@
 </header>
 
 <section class="mx-auto my-8 flex gap-2">
-	<Button variant="outline" href="{base}/templates/create" class=" w-fit"
+	<Button
+		variant="outline"
+		href="{base}/templates/create"
+		class=" {templates.length > 0 && !loading ? '' : 'border-accent/50!'} w-fit"
 		>Create new template</Button
 	>
 	<Button variant="outline" onclick={() => importTemplate()} class="w-fit">Import from file</Button>
@@ -231,7 +237,7 @@
 </AlertDialog.Root>
 
 {#key templates}
-	{#if templates.length > 0}
+	{#if templates.length > 0 && !loading}
 		<ul class="grid grid-cols-[repeat(auto-fit,minmax(12rem,28rem))] gap-2 p-4">
 			{#each templates as template}
 				{@const templateData = normalizeTemplate(
@@ -287,7 +293,19 @@
 				</li>
 			{/each}
 		</ul>
+	{:else if loading}
+		<section class="m-auto flex flex-col gap-2">
+			<Skeleton class="bg-muted h-4 w-42 rounded-lg" />
+			<Skeleton class="bg-muted h-4 w-32 rounded-lg" />
+			<Skeleton class="bg-muted h-4 w-56 rounded-lg" />
+		</section>
 	{:else}
-		<p class="text-muted-foreground m-auto">No templates found. Create a new one to get started!</p>
+		<section
+			class="bg-sidebar m-auto flex max-w-md flex-col items-center gap-4 rounded-lg border p-8 text-center"
+		>
+			<p class="text-muted-foreground">
+				No templates found. Create your first template to get started!
+			</p>
+		</section>
 	{/if}
 {/key}
