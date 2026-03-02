@@ -131,7 +131,7 @@
 	{templateData}
 	bind:open={dialogOpen}
 	bind:templates
-	onRefresh={(name) => refreshTemplateFromStorage(name)}
+	onRefresh={() => ((templates = fetchTemplatesFromStorage()), console.log('test'))}
 />
 
 <AlertDialog.Root bind:open={overwriteWarning}>

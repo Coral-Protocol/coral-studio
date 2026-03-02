@@ -10,6 +10,7 @@
 	import { type Template } from './TemplateV1';
 	import * as Rename from '$lib/components/ui/rename';
 	import { Highlight } from 'svelte-highlight';
+	import { refreshTemplateFromStorage } from './TemplateLib';
 
 	import json from 'svelte-highlight/languages/json';
 
@@ -117,7 +118,7 @@
 			localStorage.setItem(`template_${templateName}`, JSON.stringify(parsed));
 			templateData = parsed;
 			toast.success('Template marked as trusted!');
-			onRefresh(templateName);
+			onRefresh();
 		} catch (error) {
 			console.error('Error marking template as trusted:', error);
 			toast.error('Failed to mark template as trusted.');
@@ -147,6 +148,7 @@
 			template = newName;
 			toast.success(`Renamed template to ${newName}`);
 			onRefresh();
+
 			open = false;
 			return true;
 		} catch (error) {
