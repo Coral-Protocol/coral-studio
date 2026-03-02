@@ -131,7 +131,7 @@
 	{templateData}
 	bind:open={dialogOpen}
 	bind:templates
-	onRefresh={() => ((templates = fetchTemplatesFromStorage()), console.log('test'))}
+	onRefresh={() => (templates = fetchTemplatesFromStorage())}
 />
 
 <AlertDialog.Root bind:open={overwriteWarning}>
@@ -168,7 +168,7 @@
 
 {#key templates}
 	{#if templates.length > 0 && !loading}
-		<ul class="grid grid-cols-[repeat(auto-fit,minmax(12rem,28rem))] gap-2 p-4">
+		<ul class="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] gap-4 overflow-y-scroll p-4">
 			{#each templates as template}
 				{@const templateData = normalizeTemplate(
 					safeJSONParse(localStorage.getItem(`template_${template}`), {})
@@ -179,7 +179,7 @@
 				<li class="col-span-1">
 					<Card.Root>
 						<Dialog.Root bind:open={dialogOpen}>
-							<Card.Content class="flex flex-col gap-4">
+							<Card.Content class="flex flex-col gap-4 ">
 								<Card.Header class="relative flex justify-between px-0">
 									<Card.Title>{template}</Card.Title>
 									{#if !templateData.trusted}
@@ -197,7 +197,7 @@
 									{/if}
 								</Card.Header>
 								<button
-									class=" bg-sidebar hover:bg-accent-foreground/10 w-full overflow-clip rounded-lg transition-all"
+									class=" bg-sidebar hover:bg-accent-foreground/10 aspect-square w-full overflow-clip rounded-lg transition-all"
 									onclick={() => openTemplate(template)}
 								>
 									<AgentGraph
