@@ -10,7 +10,7 @@
 	import { type Template } from './TemplateV1';
 	import * as Rename from '$lib/components/ui/rename';
 	import { Highlight } from 'svelte-highlight';
-	import { refreshTemplateFromStorage } from './TemplateLib';
+	import { downloadTemplate } from './TemplateLib';
 
 	import json from 'svelte-highlight/languages/json';
 
@@ -37,24 +37,6 @@
 	let desciptionValue = $derived(templateData.description || 'No description');
 	let titleMode = $state<'edit' | 'view'>('view');
 	let descriptionMode = $state<'edit' | 'view'>('view');
-
-	const download = (templateName: string) => {
-		try {
-			const data = localStorage.getItem(`template_${templateName}`);
-			if (!data) {
-				throw new Error('Template data not found');
-			}
-			const blob = new Blob([data], { type: 'application/json' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `coral-template-${templateName}.json`;
-			a.click();
-			URL.revokeObjectURL(url);
-		} catch (error) {
-			console.error('Error downloading template:', error);
-		}
-	};
 
 	const removeTemplate = (name: string) => {
 		try {
@@ -193,7 +175,7 @@
 						inputTag="input"
 						bind:mode={titleMode}
 						validate={(value) => value.length > 0 && TEMPLATE_NAME_REGEX.test(value)}
-						class="w-fit"
+						class="w-fit p-1"
 						onSave={(value) => {
 							updateName(template, value);
 						}}
@@ -201,7 +183,8 @@
 						<Rename.Save size="sm" variant="ghost" class="text-muted-foreground" />
 						<Rename.Cancel size="sm" variant="ghost" class="text-muted-foreground" />
 					{:else}
-						<Rename.Edit size="sm" variant="ghost" class="text-muted-foreground" />
+						<Rename.Edit size="sm" variant="ghost" class="text-muted-foreground">Rename</Rename.Edit
+						>
 					{/if}
 				</Rename.Provider>
 			</Dialog.Title>
@@ -293,7 +276,7 @@
 				<TwostepButton disabled={loading} onclick={() => removeTemplate(template)}
 					>Delete</TwostepButton
 				>
-				<Button disabled={loading} onclick={() => download(template)}>Download</Button>
+				<Button disabled={loading} onclick={() => downloadTemplate(template)}>Download</Button>
 				{#if templateData.version != 1}
 					<Tooltip.Provider>
 						<Tooltip.Root delayDuration={0}>

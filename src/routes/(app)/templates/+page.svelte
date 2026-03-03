@@ -13,6 +13,9 @@
 	import * as Tooltip from '$lib/components/ui/tooltip';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
 
+	import IconPencilRegular from 'phosphor-icons-svelte/IconPencilFill.svelte';
+	import IconDownloadRegular from 'phosphor-icons-svelte/IconDownloadFill.svelte';
+
 	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 
@@ -26,7 +29,8 @@
 		safeJSONParse,
 		pickAndParseTemplateFile,
 		checkTemplateOverwrite,
-		saveTemplateToLocalStorage
+		saveTemplateToLocalStorage,
+		downloadTemplate
 	} from './TemplateLib';
 
 	let templates = $state<string[]>([]);
@@ -169,13 +173,14 @@
 {#key templates}
 	{#if templates.length > 0 && !loading}
 		<ul class="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] gap-4 overflow-y-scroll p-4">
-			{#each templates as template}
+			{#each templates as template, i}
 				{@const templateData = normalizeTemplate(
 					safeJSONParse(localStorage.getItem(`template_${template}`), {})
 				)}
 				{@const graphData = safeJSONParse(templateData.payload?.data || '{}') as {
 					agentGraphRequest?: { agents?: any[]; groups?: any[] };
 				}}
+
 				<li class="col-span-1">
 					<Card.Root>
 						<Dialog.Root bind:open={dialogOpen}>
@@ -214,7 +219,44 @@
 								</button>
 
 								<Card.Footer class="flex justify-between gap-2 border-t px-0">
-									<Button class="self-start" variant="ghost">Share</Button>
+									<span class="flex gap-2">
+										<Tooltip.Provider>
+											<Tooltip.Root delayDuration={300}>
+												<Tooltip.Trigger
+													><Button
+														class="self-start"
+														variant="ghostHover"
+														size="sm"
+														href={`/templates/create?template=${template}`}
+														><IconPencilRegular />
+														<div class="sr-only">Edit</div></Button
+													></Tooltip.Trigger
+												>
+												<Tooltip.Content>
+													<p>Edit</p>
+												</Tooltip.Content>
+											</Tooltip.Root>
+										</Tooltip.Provider>
+
+										<Tooltip.Provider>
+											<Tooltip.Root delayDuration={300}>
+												<Tooltip.Trigger
+													><Button
+														class="self-start"
+														variant="ghostHover"
+														size="sm"
+														onclick={() => downloadTemplate(template)}
+														><IconDownloadRegular />
+														<div class="sr-only">Download</div></Button
+													></Tooltip.Trigger
+												>
+												<Tooltip.Content>
+													<p>Download</p>
+												</Tooltip.Content>
+											</Tooltip.Root>
+										</Tooltip.Provider>
+									</span>
+
 									<Button onclick={() => openTemplate(template)}>View</Button>
 								</Card.Footer>
 							</Card.Content>
