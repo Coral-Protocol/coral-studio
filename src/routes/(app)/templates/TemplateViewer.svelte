@@ -59,7 +59,7 @@
 		try {
 			if (!templateData?.payload?.data) throw new Error('Template data not found');
 
-			if (templateData?.version != 1) throw new Error('Template outdated');
+			if (templateData?.version !== 1) throw new Error('Template outdated');
 
 			toast.promise(
 				fetch('/api/v1/local/session', {
