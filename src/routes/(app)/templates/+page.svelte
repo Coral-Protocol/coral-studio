@@ -172,7 +172,9 @@
 
 {#key templates}
 	{#if templates.length > 0 && !loading}
-		<ul class="grid grid-cols-[repeat(auto-fit,minmax(20rem,1fr))] gap-4 overflow-y-scroll p-4">
+		<ul
+			class="grid grid-cols-[repeat(auto-fit,minmax(20rem,24em))] justify-center gap-4 overflow-y-scroll p-4"
+		>
 			{#each templates as template, i}
 				{@const templateData = normalizeTemplate(
 					safeJSONParse(localStorage.getItem(`template_${template}`), {})
