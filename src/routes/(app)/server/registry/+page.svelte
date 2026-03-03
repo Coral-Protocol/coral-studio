@@ -81,7 +81,7 @@
 					<Dialog.Root>
 						<Dialog.Trigger class="text-left"
 							><Item.Root variant="outline" class="hover:bg-sidebar p-2 px-2.5">
-								<Item.Content class="">
+								<Item.Content>
 									<Item.Title
 										>{agent.name}{#each agent.versions as version}<Badge variant="outline"
 												>{version}</Badge

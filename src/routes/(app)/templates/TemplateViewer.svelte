@@ -1,0 +1,315 @@
+<script lang="ts">
+	import { Button } from '$lib/components/ui/button';
+	import { toast } from 'svelte-sonner';
+	import * as Tooltip from '$lib/components/ui/tooltip';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import AgentGraph from '$lib/components/AgentGraph.svelte';
+	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import * as Accordion from '$lib/components/ui/accordion';
+	import { type Template } from './TemplateV1';
+	import * as Rename from '$lib/components/ui/rename';
+	import { Highlight } from 'svelte-highlight';
+	import { downloadTemplate } from './TemplateLib';
+
+	import json from 'svelte-highlight/languages/json';
+
+	const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
+
+	let {
+		template = $bindable(''),
+		templateData = $bindable({} as Template),
+		payload = $bindable({}),
+		open = $bindable(false),
+		templates = $bindable([]),
+		onRefresh = $bindable(() => {})
+	}: {
+		template: Template['name'];
+		templateData: Template;
+		payload: any;
+		open: boolean;
+		templates: string[];
+		onRefresh: (name?: string) => void;
+	} = $props();
+
+	let loading = $state(false);
+	let renameValue = $derived(template);
+	let desciptionValue = $derived(templateData.description || 'No description');
+	let titleMode = $state<'edit' | 'view'>('view');
+	let descriptionMode = $state<'edit' | 'view'>('view');
+
+	const removeTemplate = (name: string) => {
+		try {
+			localStorage.removeItem(`template_${name}`);
+			const index = templates.indexOf(name);
+			if (index !== -1) {
+				templates.splice(index, 1);
+			}
+			toast.success('Template removed successfully!');
+			open = false;
+		} catch (error) {
+			console.error('Error removing template:', error);
+			toast.error('Failed to remove template.');
+		}
+	};
+
+	const createSessionFromTemplate = async (templateName: string) => {
+		loading = true;
+
+		try {
+			if (!templateData?.payload?.data) throw new Error('Template data not found');
+
+			if (templateData?.version !== 1) throw new Error('Template outdated');
+
+			toast.promise(
+				fetch('/api/v1/local/session', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify(payload)
+				}).then(async (res) => {
+					if (!res.ok) {
+						const text = await res.text();
+						throw new Error(`${res.status} ${res.statusText}: ${text || 'Request failed'}`);
+					}
+					return res.json();
+				}),
+				{
+					loading: 'Creating session...',
+					success: 'Session created!',
+					error: (err) =>
+						`Failed to create session: ${err instanceof Error ? err.message : String(err)}`
+				}
+			);
+
+			open = false;
+		} catch (err) {
+			console.error(err);
+		} finally {
+			loading = false;
+		}
+	};
+
+	const markTrusted = (templateName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${templateName}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const parsed = JSON.parse(data);
+			parsed.trusted = true;
+			localStorage.setItem(`template_${templateName}`, JSON.stringify(parsed));
+			templateData = parsed;
+			toast.success('Template marked as trusted!');
+			onRefresh();
+		} catch (error) {
+			console.error('Error marking template as trusted:', error);
+			toast.error('Failed to mark template as trusted.');
+		}
+	};
+
+	const updateName = (template: string, newName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${template}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const parsed = JSON.parse(data);
+			parsed.name = newName;
+
+			localStorage.setItem(`template_${newName}`, JSON.stringify(parsed));
+
+			localStorage.removeItem(`template_${template}`);
+
+			// Update template index
+			const templateIndex = JSON.parse(localStorage.getItem('template_index') || '[]');
+			const updatedIndex = templateIndex.map((name: string) =>
+				name === template ? newName : name
+			);
+			localStorage.setItem('template_index', JSON.stringify(updatedIndex));
+
+			template = newName;
+			toast.success(`Renamed template to ${newName}`);
+			onRefresh();
+
+			open = false;
+			return true;
+		} catch (error) {
+			console.error('Error renaming template:', error);
+			toast.error('Failed to rename template.');
+			open = false;
+			return false;
+		}
+	};
+
+	const updateDescription = (template: string, description: string) => {
+		try {
+			const data = localStorage.getItem(`template_${template}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const parsed = JSON.parse(data);
+			parsed.description = description;
+
+			localStorage.setItem(`template_${template}`, JSON.stringify(parsed));
+
+			toast.success(`Description updated`);
+			return true;
+		} catch (error) {
+			console.error('Error updating template description:', error);
+			toast.error('Failed to update template description.');
+			return false;
+		}
+	};
+</script>
+
+<Dialog.Root bind:open>
+	<Dialog.Content class="w-fit max-w-fit min-w-fit">
+		<Dialog.Header>
+			<Dialog.Title
+				class="{!templateData.trusted ? 'text-accent' : ''} flex items-center gap-4 align-middle "
+			>
+				<Rename.Provider>
+					<Rename.Root
+						this="span"
+						bind:value={renameValue}
+						inputTag="input"
+						bind:mode={titleMode}
+						validate={(value) => value.length > 0 && TEMPLATE_NAME_REGEX.test(value)}
+						class="w-fit p-1"
+						onSave={(value) => {
+							updateName(template, value);
+						}}
+					/>{#if titleMode === 'edit'}
+						<Rename.Save size="sm" variant="ghost" class="text-muted-foreground" />
+						<Rename.Cancel size="sm" variant="ghost" class="text-muted-foreground" />
+					{:else}
+						<Rename.Edit size="sm" variant="ghost" class="text-muted-foreground">Rename</Rename.Edit
+						>
+					{/if}
+				</Rename.Provider>
+			</Dialog.Title>
+			<Dialog.Description>
+				<ol>
+					<li>Created at: {new Date(templateData.updated || 0).toLocaleString()}</li>
+					<li>
+						Has {payload.agentGraphRequest?.agents?.length ?? 0} agent{payload.agentGraphRequest
+							?.agents?.length !== 1
+							? 's'
+							: ''} and {payload.agentGraphRequest?.groups?.length ?? 0} group{payload
+							.agentGraphRequest?.groups?.length !== 1
+							? 's'
+							: ''}.
+					</li>
+				</ol>
+
+				{#if !templateData.trusted}
+					<p class="text-sm text-yellow-500">
+						This template was imported externally! Please review this template before running it,
+						malicious templates can cause damage.
+					</p>
+				{/if}
+
+				<Separator class="my-2" />
+
+				<section
+					class="flex h-[400px] w-[800px] max-w-[800px] gap-2 overflow-x-hidden overflow-y-scroll"
+				>
+					<div class="bg-sidebar sticky top-0 aspect-square w-[400px] overflow-clip rounded-lg">
+						<AgentGraph
+							agents={payload.agentGraphRequest?.agents || []}
+							groups={payload.agentGraphRequest?.groups || []}
+							options={{
+								nodeSubLabel: null
+							}}
+						/>
+					</div>
+
+					<Accordion.Root
+						type="single"
+						value={!templateData.trusted ? 'item-2' : 'item-1'}
+						class="aspect-square max-h-[400px] w-[400px] max-w-[400px] overflow-clip rounded-lg border"
+					>
+						<Accordion.Item value="item-1">
+							<Accordion.Trigger class="w-[400px] grow" variant="compact"
+								>Description</Accordion.Trigger
+							>
+							<Accordion.Content
+								class="max-h-[340px] min-h-0 w-[400px] overflow-x-hidden overflow-y-scroll"
+							>
+								<Rename.Provider>
+									{#if descriptionMode === 'edit'}
+										<Rename.Save size="sm" class="text-muted-foreground" />
+										<Rename.Cancel size="sm" class="text-muted-foreground" />
+									{:else}
+										<Rename.Edit size="sm" class="text-muted-foreground" />
+									{/if}
+									<Rename.Root
+										this="p"
+										class="mt-2"
+										bind:value={desciptionValue}
+										bind:mode={descriptionMode}
+										inputTag="textarea"
+										validate={(value) => value.length > 0}
+										onSave={(value) => {
+											updateDescription(template, value);
+										}}
+									/>
+								</Rename.Provider>
+							</Accordion.Content>
+						</Accordion.Item>
+						<Accordion.Item value="item-2" class={!templateData.trusted ? 'text-accent' : ''}>
+							<Accordion.Trigger class=" w-[400px] grow" variant="compact">Data</Accordion.Trigger>
+							<Accordion.Content class="max-h-[280px] min-h-0 grow overflow-y-scroll">
+								<Highlight
+									class="[&>code]:bg-sidebar text-xs leading-relaxed"
+									language={json}
+									code={JSON.stringify(payload, null, 2)}
+								></Highlight>
+							</Accordion.Content>
+						</Accordion.Item>
+					</Accordion.Root>
+				</section>
+				<Separator class="my-2" />
+			</Dialog.Description>
+			<Dialog.Footer class="flex justify-start gap-2">
+				<Button disabled={loading} href={`/templates/create?template=${template}`}>Edit</Button>
+				<TwostepButton disabled={loading} onclick={() => removeTemplate(template)}
+					>Delete</TwostepButton
+				>
+				<Button disabled={loading} onclick={() => downloadTemplate(template)}>Download</Button>
+				{#if templateData.version != 1}
+					<Tooltip.Provider>
+						<Tooltip.Root delayDuration={0}>
+							<Tooltip.Trigger class="text-accent opacity-70 hover:opacity-100"
+								>Outdated template</Tooltip.Trigger
+							>
+							<Tooltip.Content>
+								<p>
+									Template version ({templateData.version}) is outdated, it may not work properly.
+								</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+				{/if}
+				{#if !templateData.trusted}
+					<TwostepButton
+						detail="Are you sure you want to mark this template as trusted? This will remove the warning and let you run the template without confirmation."
+						variant="cta"
+						detailClass=""
+						class="ml-auto"
+						onclick={() => markTrusted(template)}>Mark as trusted</TwostepButton
+					>
+				{:else}
+					<Button
+						class="ml-auto"
+						variant="cta"
+						disabled={loading}
+						onclick={() => createSessionFromTemplate(template)}>Start session</Button
+					>
+				{/if}
+			</Dialog.Footer>
+		</Dialog.Header>
+	</Dialog.Content>
+</Dialog.Root>

@@ -28,7 +28,7 @@
 
 <Dialog.Root bind:open>
 	<Dialog.Trigger {child}>Edit Raw</Dialog.Trigger>
-	<Dialog.Content class="">
+	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>Session JSON</Dialog.Title>
 		</Dialog.Header>
