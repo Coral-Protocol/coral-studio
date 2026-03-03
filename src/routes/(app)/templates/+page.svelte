@@ -229,7 +229,7 @@
 														class="self-start"
 														variant="ghostHover"
 														size="sm"
-														href={`/templates/create?template=${template}`}
+														href="{base}/templates/create?template=${template}"
 														><IconPencilRegular />
 														<div class="sr-only">Edit</div></Button
 													></Tooltip.Trigger
