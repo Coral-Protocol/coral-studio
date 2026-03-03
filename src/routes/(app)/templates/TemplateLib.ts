@@ -205,3 +205,22 @@ export const checkTemplateOverwrite = (
 ): boolean => {
 	return !!localStorage.getItem(`template_${name}`);
 };
+
+
+export const downloadTemplate = (templateName: string) => {
+		try {
+			const data = localStorage.getItem(`template_${templateName}`);
+			if (!data) {
+				throw new Error('Template data not found');
+			}
+			const blob = new Blob([data], { type: 'application/json' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `coral-template-${templateName}.json`;
+			a.click();
+			URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error('Error downloading template:', error);
+		}
+	};
