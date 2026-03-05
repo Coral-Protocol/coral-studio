@@ -1,40 +1,41 @@
-# coral-studio
+# Coral Console
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Coral-Protocol/coral-studio)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Coral-Protocol/console)
 
 Create, manage & inspect agent sessions through [Coral Server](https://github.com/Coral-Protocol/coral-server/).
 
 ![thread view](./docs/static/thread-view.webp)
 
-# Getting Started
+<!-- # Getting Started -->
 <!-- ### Running via npx -->
 <!---->
 <!-- ```bash -->
-<!-- npx @coral-protocol/coral-studio -->
+<!-- npx @coral-protocol/console -->
 <!-- ``` -->
 <!-- Coral studio will be available at [`http://localhost:3000/`](http://localhost:3000/) -->
 
-### Running via Docker
-```bash
-docker run -p 3000:3000 ghcr.io/coral-protocol/coral-studio
-```
-Coral studio will be available at [`http://localhost:3000/`](http://localhost:3000/)
+<!-- ### Running via Docker -->
+<!-- ```bash -->
+<!-- docker run -p 3000:3000 ghcr.io/coral-protocol/console -->
+<!-- ``` -->
+<!-- Coral Console will be available at [`http://localhost:3000/`](http://localhost:3000/) -->
 
 ### Run from source
+
 Install dependencies with:
+
 ```bash
 yarn install
 ```
 
 Then build and serve with:
 
-
 ```bash
 yarn build
 yarn preview
 ```
 
-Coral studio will be available at [`http://localhost:4173/`](http://localhost:4173/)
+Coral Console will be available at [`http://localhost:4173/`](http://localhost:4173/)
 
 # Screenshots
 
@@ -43,9 +44,11 @@ Coral studio will be available at [`http://localhost:4173/`](http://localhost:41
 
 # Developing
 Start a development server with
+
 ```bash
 yarn dev
 ```
-Coral studio will be available at [`http://localhost:5173/`](http://localhost:5173/)
+
+Coral Console will be available at [`http://localhost:5173/`](http://localhost:5173/)
 
 
