@@ -41,7 +41,11 @@
 						<Tooltip.Root>
 							<Tooltip.Trigger
 								class={cn(buttonVariants({ size: 'icon' }), '')}
-								onclick={() => ctx.importSession({ from: payloadJson })}
+								onclick={() => {
+									if (ctx.importSession({ from: payloadJson })) {
+										jsonDirty = false;
+									}
+								}}
 							>
 								<IconArrowsClockwise /></Tooltip.Trigger
 							>
