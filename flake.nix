@@ -57,6 +57,10 @@
         basePath = "/ui/console";
         apiPath = "/";
       };
+      dev = bundle {
+        basePath = "/console";
+        apiPath = "/server";
+      };
       cloud = bundle {
         basePath = "/console";
         apiPath = "https://api.coralcloud.ai";
