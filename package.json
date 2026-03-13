@@ -58,6 +58,7 @@
 		"@unovis/svelte": "^1.6.1",
 		"@unovis/ts": "^1.6.1",
 		"codemirror": "^6.0.2",
+		"component-library": "https://github.com/Coral-Protocol/component-library.git",
 		"express": "^5.1.0",
 		"openapi-fetch": "^0.14.0",
 		"runed": "^0.28.0",
