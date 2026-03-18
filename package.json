@@ -15,6 +15,7 @@
 		"prepare": "svelte-kit sync && yarn gen"
 	},
 	"devDependencies": {
+		"@coral-os/component-library": "^0.1.0",
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.18.0",
 		"@internationalized/date": "^3.10.0",
@@ -58,7 +59,6 @@
 		"@unovis/svelte": "^1.6.1",
 		"@unovis/ts": "^1.6.1",
 		"codemirror": "^6.0.2",
-		"component-library": "https://github.com/Coral-Protocol/component-library.git",
 		"express": "^5.1.0",
 		"openapi-fetch": "^0.14.0",
 		"runed": "^0.28.0",

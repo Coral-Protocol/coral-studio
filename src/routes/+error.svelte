@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Sidebar from '$lib/components/ui/sidebar';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import { socketCtx, UserInput } from '$lib/socket.svelte';
 	import { appContext, type AppContext } from '$lib/context';

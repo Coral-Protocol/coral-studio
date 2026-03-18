@@ -1,12 +1,10 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import Button from '../ui/button/button.svelte';
-	import { invalidateAll, goto } from '$app/navigation';
-	import { applyAction, deserialize, enhance } from '$app/forms';
-	import type { ActionResult } from '@sveltejs/kit';
-	import { Input } from '$lib/components/ui/input/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
+
 	import { toast } from 'svelte-sonner';
-	import * as Card from '../ui/card';
 
 	let { open = $bindable(false) } = $props();
 

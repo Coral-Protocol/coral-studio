@@ -1,9 +1,9 @@
 <script lang="ts">
-	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import * as Select from '$lib/components/ui/select';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import * as Accordion from '@coral-os/component-library/ui/accordion/index.js';
+	import * as Select from '@coral-os/component-library/ui/select/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
 
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 
 	import { createSessionContext } from '../+page.svelte';
 

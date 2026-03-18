@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as Tabs from '$lib/components/ui/tabs';
+	import * as Tabs from '@coral-os/component-library/ui/tabs/index.js';
 	import { cn } from '$lib/utils';
 	import type { TabsTriggerProps } from 'bits-ui';
 	import type { Component } from 'svelte';

@@ -68,16 +68,16 @@
 	import * as store from 'svelte/store';
 	import { type SuperForm } from 'sveltekit-superforms';
 
-	import * as Form from '$lib/components/ui/form';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import { buttonVariants } from '$lib/components/ui/button';
+	import * as Form from '@coral-os/component-library/ui/form/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
+	import { buttonVariants } from '@coral-os/component-library/ui/button/index.js';
 
 	import IconArrowUUpLeft from 'phosphor-icons-svelte/IconArrowUUpLeftRegular.svelte';
 
 	import { cn } from '$lib/utils';
 
 	import type { components } from '$generated/api';
-	import TooltipLabel from '$lib/components/tooltip-label.svelte';
+	import { TooltipLabel } from '@coral-os/component-library';
 
 	type Props = {
 		superform: SuperForm<Schema>;

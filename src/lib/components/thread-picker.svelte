@@ -1,26 +1,26 @@
 <script lang="ts">
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Command from '@coral-os/component-library/ui/command/index.js';
+	import * as Popover from '@coral-os/component-library/ui/popover/index.js';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsUpDownIcon from '@lucide/svelte/icons/chevrons-up-down';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import type { components } from '$generated/api';
-  import { tick } from 'svelte';
-  import { cn } from '$lib/utils.js';
+	import { tick } from 'svelte';
+	import { cn } from '$lib/utils.js';
 	import type { Session } from '$lib/session.svelte';
 
 	let {
-    threads,
-    selectedId = $bindable(undefined)
+		threads,
+		selectedId = $bindable(undefined)
 	}: {
-		threads: Array<Session["threads"]["string"]>,
-    selectedId: string | undefined
+		threads: Array<Session['threads']['string']>;
+		selectedId: string | undefined;
 	} = $props();
 
 	let triggerRef = $state<HTMLButtonElement>(null!);
 	let open = $state(false);
 
-  const selectedThread = $derived(threads.find((thread) => thread.id === selectedId));
+	const selectedThread = $derived(threads.find((thread) => thread.id === selectedId));
 
 	// from docs
 	function closeAndFocusTrigger() {

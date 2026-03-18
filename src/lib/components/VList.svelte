@@ -1,7 +1,7 @@
 <script lang="ts" generics="T">
 	import { Virtualizer } from 'virtua/svelte';
 	import type { VListProps, VListHandle } from 'virtua/svelte';
-	import ScrollArea from './ui/scroll-area/scroll-area.svelte';
+	import { ScrollArea } from '@coral-os/component-library/ui/scroll-area/index.js';
 	import { cn } from '$lib/utils.js';
 
 	interface Props extends VListProps<T> {

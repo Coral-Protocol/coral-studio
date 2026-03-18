@@ -15,7 +15,8 @@ const config = {
 		},
 		alias: {
 			$generated: 'src/generated',
-			$ui: 'component-library/'
+			$ui: 'component-library/',
+			'@coral-os/component-library/ui/*': '@coral-os/component-library/dist/components/ui/*'
 		}
 	}
 };

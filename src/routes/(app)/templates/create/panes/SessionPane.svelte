@@ -1,17 +1,16 @@
 <script lang="ts">
-	import * as Item from '$lib/components/ui/item/index.js';
-	import * as Form from '$lib/components/ui/form';
+	import * as Item from '@coral-os/component-library/ui/item/index.js';
+	import * as Form from '@coral-os/component-library/ui/form/index.js';
 
 	import IconTrash from 'phosphor-icons-svelte/IconTrashRegular.svelte';
 
-	import Input from '$lib/components/ui/input/input.svelte';
-	import { Separator } from '$lib/components/ui/separator';
-	import { Button } from '$lib/components/ui/button';
-	import { ScrollArea } from '$lib/components/ui/scroll-area';
-	import { Toggle } from '$lib/components/ui/toggle';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import { ScrollArea } from '@coral-os/component-library/ui/scroll-area/index.js';
+	import { Toggle } from '@coral-os/component-library/ui/toggle/index.js';
 
-	import TooltipLabel from '$lib/components/tooltip-label.svelte';
-	import TwostepButton from '$lib/components/twostep-button.svelte';
+	import { TooltipLabel, TwostepButton } from '@coral-os/component-library';
 
 	import ToolInput from './ToolInput.svelte';
 

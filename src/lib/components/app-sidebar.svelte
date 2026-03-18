@@ -1,20 +1,17 @@
 <script lang="ts">
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as Kbd from '$lib/components/ui/kbd/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Kbd from '@coral-os/component-library/ui/kbd/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
 	import { toast } from 'svelte-sonner';
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import Quickswitch from '$lib/components/dialogs/quickswitch.svelte';
 	import DebugTools from '$lib/components/dialogs/debugtools.svelte';
-	import Welcome from '$lib/components/dialogs/welcome.svelte';
 	import Login from './Login.svelte';
 
 	import IconFileArchive from 'phosphor-icons-svelte/IconFileArchiveRegular.svelte';
-	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 	import MoonIcon from 'phosphor-icons-svelte/IconMoonRegular.svelte';
 	import SunIcon from 'phosphor-icons-svelte/IconSunRegular.svelte';
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
-	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import IconSearch from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import IconQuestion from 'phosphor-icons-svelte/IconQuestionRegular.svelte';
@@ -22,10 +19,7 @@
 	import IconNotepad from 'phosphor-icons-svelte/IconNotepadRegular.svelte';
 	import IconFolder from 'phosphor-icons-svelte/IconFolderRegular.svelte';
 
-	import { onMount, tick } from 'svelte';
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
-	import * as InputGroup from '$lib/components/ui/input-group/index.js';
+	import * as Popover from '@coral-os/component-library/ui/popover/index.js';
 
 	import { cn } from '$lib/utils';
 	import { socketCtx } from '$lib/socket.svelte';
@@ -33,12 +27,8 @@
 
 	import ServerSwitcher from './namespace-switcher.svelte';
 	import NavBundle from './nav-bundle.svelte';
-	import SidebarLink from './sidebar-link.svelte';
-	import Tour from './tour/tour.svelte';
+	import { SidebarLink, Tour } from '@coral-os/component-library';
 
-	import { Session } from '$lib/session.svelte';
-
-	import { supabase } from '$lib/supabaseClient';
 	import { goto } from '$app/navigation';
 	import Shortcuts from './dialogs/shortcuts.svelte';
 	import { appContext } from '$lib/context';
@@ -46,9 +36,6 @@
 	import { useDebounce, watch } from 'runed';
 	import config from '$lib/config';
 	import SessionSwitcher from './SessionSwitcher.svelte';
-
-	let content = $state('');
-	let user_email = $state('');
 
 	let ctx = appContext.get();
 	let tools = socketCtx.get();

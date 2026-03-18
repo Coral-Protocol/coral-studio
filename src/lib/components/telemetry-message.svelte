@@ -2,10 +2,8 @@
 	import User from 'phosphor-icons-svelte/IconUserRegular.svelte';
 	import Robot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 	import Wrench from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
-	import CodeBlock from '$lib/components/code-block.svelte';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
-	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import { Button } from './ui/button';
+	import { CodeBlock } from '@coral-os/component-library';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 
 	let {
 		message,

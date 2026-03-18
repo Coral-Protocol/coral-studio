@@ -1,20 +1,20 @@
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as Card from '$lib/components/ui/card';
-	import * as Item from '$lib/components/ui/item';
-	import * as InputGroup from '$lib/components/ui/input-group';
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
+	import * as Item from '@coral-os/component-library/ui/item/index.js';
+	import * as InputGroup from '@coral-os/component-library/ui/input-group/index.js';
 
-	import { Input } from '$lib/components/ui/input';
-	import { Separator } from '$lib/components/ui/separator';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
 
 	import IconCrane from 'phosphor-icons-svelte/IconCraneRegular.svelte';
 	import { appContext } from '$lib/context';
 	import IconMagnifyingGlassRegular from 'phosphor-icons-svelte/IconMagnifyingGlassRegular.svelte';
 	import { fade } from 'svelte/transition';
-	import { Badge } from '$lib/components/ui/badge';
-	import { Skeleton } from '$lib/components/ui/skeleton';
+	import { Badge } from '@coral-os/component-library/ui/badge/index.js';
+	import { Skeleton } from '@coral-os/component-library/ui/skeleton/index.js';
 
 	let ctx = appContext.get();
 

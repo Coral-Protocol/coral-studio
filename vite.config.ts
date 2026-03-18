@@ -26,7 +26,15 @@ export default defineConfig({
 			'/ws': { target: 'http://localhost:5555', rewriteWsOrigin: true, ws: true }
 		}
 	},
+	ssr: {
+		noExternal: ['@coral-os/component-library']
+	},
 	optimizeDeps: {
-		exclude: ['svelte-codemirror-editor', 'codemirror', '@codemirror/language-javascript' /* ... */]
+		exclude: [
+			'@coral-os/component-library',
+			'svelte-codemirror-editor',
+			'codemirror',
+			'@codemirror/language-javascript' /* ... */
+		]
 	}
 });

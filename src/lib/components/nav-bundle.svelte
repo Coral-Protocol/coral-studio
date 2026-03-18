@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import * as Collapsible from '$lib/components/ui/collapsible/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import ChevronRightIcon from 'phosphor-icons-svelte/IconCaretRightRegular.svelte';
-	import type { Component } from 'svelte';
-	import Badge from '$lib/components/ui/badge/badge.svelte';
-	import SidebarMenuBadge from '$lib/components/ui/sidebar/sidebar-menu-badge.svelte';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import SidebarLink from './sidebar-link.svelte';
+
+	import * as Collapsible from '@coral-os/component-library/ui/collapsible/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
+
+	import { Badge } from '@coral-os/component-library/ui/badge/index.js';
+	import { SidebarLink } from '@coral-os/component-library';
+
 	import { cn } from '$lib/utils';
 	import type { SessionAgentStatus } from '$lib/session.svelte';
 	import { type SessionAgentStatusMap, resolveStateMap } from '$lib';
+
+	import type { Component } from 'svelte';
 
 	let {
 		items

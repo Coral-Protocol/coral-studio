@@ -1,14 +1,12 @@
 <script lang="ts">
 	import type { components } from '$generated/api';
 	import type { Session } from '$lib/session.svelte';
-	import { Button } from '$lib/components/ui/button/index.js';
-	import Textarea from '../ui/textarea/textarea.svelte';
-	import Checkbox from '../ui/checkbox/checkbox.svelte';
-	import Label from '../ui/label/label.svelte';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import { Textarea } from '@coral-os/component-library/ui/textarea/index.js';
 	import { appContext } from '$lib/context';
 	import { toast } from 'svelte-sonner';
 	import ThreadPicker from '../thread-picker.svelte';
-  import * as Select from "$lib/components/ui/select/index.js";
+	import * as Select from '@coral-os/component-library/ui/select/index.js';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	let ctx = appContext.get();
@@ -30,31 +28,29 @@
 	);
 
 	let selectedThread = $derived(openThreads.find((thread) => thread.id === selectedId));
-  let otherParticipants = $derived.by(() => {
-    let set = selectedThread?.participants;
-    if (!set)
-      return new SvelteSet<string>();
+	let otherParticipants = $derived.by(() => {
+		let set = selectedThread?.participants;
+		if (!set) return new SvelteSet<string>();
 
-    // can't mention self
-    set.delete(agent.name);
-    return set;
-  });
+		// can't mention self
+		set.delete(agent.name);
+		return set;
+	});
 
 	async function sendMessage() {
 		if (selectedId === undefined) return;
 
-    try {
-      await ctx.server.sendMessage(session.sessionId, agent.name, {
-        threadId: selectedId,
-        content: messageContent,
-        mentions: mentions
-      });
+		try {
+			await ctx.server.sendMessage(session.sessionId, agent.name, {
+				threadId: selectedId,
+				content: messageContent,
+				mentions: mentions
+			});
 
-      toast.success('Message sent');
-    }
-    catch (e) {
-      toast.error(`${e}`);
-    }
+			toast.success('Message sent');
+		} catch (e) {
+			toast.error(`${e}`);
+		}
 	}
 </script>
 
@@ -66,14 +62,17 @@
 
 <p>Mentions:</p>
 <Select.Root type="multiple" disabled={otherParticipants.size === 0} bind:value={mentions}>
-  <Select.Trigger class="w-[280px]">{mentions.length === 0 ? 'Select mentions' : `Mentioning ${mentions.join(", ")}`}</Select.Trigger>
+	<Select.Trigger class="w-[280px]"
+		>{mentions.length === 0
+			? 'Select mentions'
+			: `Mentioning ${mentions.join(', ')}`}</Select.Trigger
+	>
 
-  <Select.Content>
-    {#each otherParticipants as participant}
-      <Select.Item value={participant}>{participant}</Select.Item>
-    {/each}
-  </Select.Content>
+	<Select.Content>
+		{#each otherParticipants as participant}
+			<Select.Item value={participant}>{participant}</Select.Item>
+		{/each}
+	</Select.Content>
 </Select.Root>
 
 <Button disabled={selectedThread === undefined} onclick={sendMessage}>Send message</Button>
-

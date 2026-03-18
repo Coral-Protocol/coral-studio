@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { base } from '$app/paths';
-	import * as Command from '$lib/components/ui/command';
-	import { Input } from '$lib/components/ui/input';
+	import * as Command from '@coral-os/component-library/ui/command/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
 	import type { AppContext } from '$lib/context';
 	import { Session } from '$lib/session.svelte';
 	import IconChats from 'phosphor-icons-svelte/IconChatsRegular.svelte';

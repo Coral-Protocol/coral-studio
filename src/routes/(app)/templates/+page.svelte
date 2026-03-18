@@ -1,27 +1,27 @@
 <script lang="ts">
 	import TemplateViewer from './TemplateViewer.svelte';
 
-	import { Button } from '$lib/components/ui/button';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { base } from '$app/paths';
 
-	import * as Card from '$lib/components/ui/card';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
+	import * as AlertDialog from '@coral-os/component-library/ui/alert-dialog/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
+	import { Skeleton } from '@coral-os/component-library/ui/skeleton/index.js';
 
 	import IconPencilRegular from 'phosphor-icons-svelte/IconPencilFill.svelte';
 	import IconDownloadRegular from 'phosphor-icons-svelte/IconDownloadFill.svelte';
 
-	import Separator from '$lib/components/ui/separator/separator.svelte';
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 
 	import IconWarningCircleRegular from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
 	import type { TemplateV1 } from './TemplateV1';
-	import { Skeleton } from '$lib/components/ui/skeleton';
 	import {
 		normalizeTemplate,
 		refreshTemplateFromStorage,

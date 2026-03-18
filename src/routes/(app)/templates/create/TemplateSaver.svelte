@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
 	import { randomAdjective, randomAnimal } from '$lib/words';
-	import * as Label from '$lib/components/ui/label';
-	import * as InputGroup from '$lib/components/ui/input-group';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import * as Label from '@coral-os/component-library/ui/label/index.js';
+	import * as InputGroup from '@coral-os/component-library/ui/input-group/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 	import { toast } from 'svelte-sonner';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';

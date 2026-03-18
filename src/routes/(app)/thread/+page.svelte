@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import { Separator } from '$lib/components/ui/separator';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as Resizable from '$lib/components/ui/resizable';
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Resizable from '@coral-os/component-library/ui/resizable/index.js';
 	import { useDebounce, useIntersectionObserver } from 'runed';
 	import { onMount } from 'svelte';
 	import Message from './Message.svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { cn } from '$lib/utils';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import { Users } from '@lucide/svelte';
 	import { pickTextColor, stringToColor } from '$lib/color';
 	import ThreadView from './ThreadView.svelte';

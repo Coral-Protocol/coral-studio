@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import * as Alert from '$lib/components/ui/alert';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import * as Alert from '@coral-os/component-library/ui/alert/index.js';
 	import IconAlertCircle from 'phosphor-icons-svelte/IconWarningCircleRegular.svelte';
-	import Spinner from '$lib/components/ui/spinner/spinner.svelte';
+	import { Spinner } from '@coral-os/component-library/ui/spinner/index.js';
 	import { base } from '$app/paths';
 
 	let { error: propError, status: propStatus } = $props<{

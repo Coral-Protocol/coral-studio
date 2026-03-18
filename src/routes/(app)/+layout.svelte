@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { socketCtx, UserInput } from '$lib/socket.svelte';
-	import { Logs } from '$lib/logs.svelte';
-	import { watch } from 'runed';
-	import * as Sidebar from '$lib/components/ui/sidebar';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import { appContext, type AppContext } from '$lib/context';
 	import { CoralServer } from '$lib/CoralServer.svelte';

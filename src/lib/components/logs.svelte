@@ -3,11 +3,9 @@
 	import { cn } from '$lib/utils';
 
 	import { useDebounce, watch } from 'runed';
-	import ScrollArea from './ui/scroll-area/scroll-area.svelte';
-	import Sonner from './ui/sonner/sonner.svelte';
-	import { Spinner } from './ui/spinner';
-	import * as Card from './ui/card';
-	import * as Tooltip from '$lib/components/ui/tooltip';
+	import { Spinner } from '@coral-os/component-library/ui/spinner/index.js';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
 	import VList from './VList.svelte';
 	import type { Component } from 'svelte';
 
@@ -19,7 +17,7 @@
 	import IconArrowDown from 'phosphor-icons-svelte/IconArrowDownRegular.svelte';
 	import IconBug from 'phosphor-icons-svelte/IconBugRegular.svelte';
 	import IconPath from 'phosphor-icons-svelte/IconPathRegular.svelte';
-	import { Button } from './ui/button';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import { slide } from 'svelte/transition';
 	import type { Snapshot } from '@sveltejs/kit';
 

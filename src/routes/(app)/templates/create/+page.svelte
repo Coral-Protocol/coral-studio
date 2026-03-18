@@ -20,26 +20,25 @@
 </script>
 
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import * as Resizable from '$lib/components/ui/resizable/index.js';
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import * as Menubar from '$lib/components/ui/menubar/index.js';
-	import * as Table from '$lib/components/ui/table/index.js';
-	import * as Form from '$lib/components/ui/form';
-	import { Button } from '$lib/components/ui/button';
-	import * as Tooltip from '$lib/components/ui/tooltip';
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Resizable from '@coral-os/component-library/ui/resizable/index.js';
+	import * as Tabs from '@coral-os/component-library/ui/tabs/index.js';
+	import * as Menubar from '@coral-os/component-library/ui/menubar/index.js';
+	import * as Table from '@coral-os/component-library/ui/table/index.js';
+	import * as Form from '@coral-os/component-library/ui/form/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
 
 	import IconWrenchRegular from 'phosphor-icons-svelte/IconWrenchRegular.svelte';
 	import IconUsersThreeRegular from 'phosphor-icons-svelte/IconUsersThreeRegular.svelte';
 	import IconRobotRegular from 'phosphor-icons-svelte/IconRobotRegular.svelte';
 
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Separator } from '$lib/components/ui/separator';
+	import { Checkbox } from '@coral-os/component-library/ui/checkbox/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 
-	import { Spinner } from '$lib/components/ui/spinner';
-	import TwostepButton from '$lib/components/twostep-button.svelte';
-	import Pip from '$lib/components/pip.svelte';
+	import { Spinner } from '@coral-os/component-library/ui/spinner/index.js';
+	import { Pip, TwostepButton } from '@coral-os/component-library';
 
 	import SidebarTab from './SidebarTab.svelte';
 	import Graph from '$lib/components/AgentGraph.svelte';
