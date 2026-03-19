@@ -14,8 +14,7 @@ const config = {
 			base: process.argv.includes('dev') ? '' : process.env.BASE_PATH
 		},
 		alias: {
-			$generated: 'src/generated',
-			$ui: 'component-library/'
+			$generated: 'src/generated'
 		}
 	}
 };
