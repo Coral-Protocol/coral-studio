@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
 
 	import * as Card from '$lib/components/ui/card';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -26,6 +27,7 @@
 		normalizeTemplate,
 		refreshTemplateFromStorage,
 		fetchTemplatesFromStorage,
+		fetchServerTemplates,
 		safeJSONParse,
 		pickAndParseTemplateFile,
 		checkTemplateOverwrite,
@@ -34,6 +36,7 @@
 	} from './TemplateLib';
 
 	let templates = $state<string[]>([]);
+	let serverTemplateMap = $state<Map<string, TemplateV1>>(new Map());
 
 	let dialogOpen = $state(false);
 	let overwriteWarning = $state(false);
@@ -43,8 +46,16 @@
 	let payload = $state({}) as any;
 	let loading = $state(true);
 
-	onMount(() => {
-		templates = fetchTemplatesFromStorage();
+	onMount(async () => {
+		const serverTemplates = await fetchServerTemplates();
+		const serverNames: string[] = [];
+		for (const st of serverTemplates) {
+			serverTemplateMap.set(st.name, st);
+			serverNames.push(st.name);
+		}
+
+		const localTemplates = fetchTemplatesFromStorage();
+		templates = [...serverNames, ...localTemplates.filter(t => !serverTemplateMap.has(t))];
 		loading = false;
 	});
 
@@ -96,6 +107,12 @@
 
 	const openTemplate = (name: string) => {
 		template = name;
+
+		const serverTpl = serverTemplateMap.get(name);
+		if (serverTpl?.serverInfo) {
+			goto(`${base}/templates/create?serverTemplate=${serverTpl.serverInfo.slug}`);
+			return;
+		}
 
 		const raw = localStorage.getItem(`template_${name}`);
 		const parsed = normalizeTemplate(safeJSONParse(raw, {}));
@@ -176,20 +193,25 @@
 			class="grid grid-cols-[repeat(auto-fit,minmax(20rem,24em))] justify-center gap-4 overflow-y-scroll p-4"
 		>
 			{#each templates as template, i}
-				{@const templateData = normalizeTemplate(
-					safeJSONParse(localStorage.getItem(`template_${template}`), {})
-				)}
-				{@const graphData = safeJSONParse(templateData.payload?.data || '{}') as {
-					agentGraphRequest?: { agents?: any[]; groups?: any[] };
-				}}
+				{@const isServer = serverTemplateMap.has(template)}
+				{@const templateData = isServer
+					? serverTemplateMap.get(template)
+					: normalizeTemplate(
+						safeJSONParse(localStorage.getItem(`template_${template}`), {})
+					)}
+				{@const graphData = isServer
+					? {}
+					: safeJSONParse(templateData?.payload?.data || '{}')}
 
 				<li class="col-span-1">
 					<Card.Root>
 						<Dialog.Root bind:open={dialogOpen}>
 							<Card.Content class="flex flex-col gap-4 ">
 								<Card.Header class="relative flex justify-between px-0">
-									<Card.Title>{template}</Card.Title>
-									{#if !templateData.trusted}
+									<Card.Title>{isServer && templateData?.serverInfo ? templateData.serverInfo.name : template}</Card.Title>
+									{#if isServer}
+										<span class="text-muted-foreground absolute right-0 text-xs">Built-in</span>
+									{:else if !templateData?.trusted}
 										<Tooltip.Provider>
 											<Tooltip.Root delayDuration={0}>
 												<Tooltip.Trigger
@@ -207,17 +229,24 @@
 									class=" bg-sidebar hover:bg-accent-foreground/10 aspect-square w-full overflow-clip rounded-lg transition-all"
 									onclick={() => openTemplate(template)}
 								>
-									<AgentGraph
-										agents={graphData?.agentGraphRequest?.agents || []}
-										groups={graphData?.agentGraphRequest?.groups || []}
-										options={{
-											disableZoom: true,
-											disableDrag: true,
-											disableBrush: true,
-											nodeSubLabel: null,
-											selectedNodeId: null
-										}}
-									/>
+									{#if isServer && templateData?.serverInfo}
+										<div class="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
+											<p class="text-muted-foreground text-sm">{templateData.serverInfo.description}</p>
+											<p class="text-muted-foreground text-xs">{templateData.serverInfo.agentCount} agents &middot; {templateData.serverInfo.estimatedDuration} &middot; {templateData.serverInfo.estimatedCost}</p>
+										</div>
+									{:else}
+										<AgentGraph
+											agents={graphData?.agentGraphRequest?.agents || []}
+											groups={graphData?.agentGraphRequest?.groups || []}
+											options={{
+												disableZoom: true,
+												disableDrag: true,
+												disableBrush: true,
+												nodeSubLabel: null,
+												selectedNodeId: null
+											}}
+										/>
+									{/if}
 								</button>
 
 								<Card.Footer class="flex justify-between gap-2 border-t px-0">

@@ -7,14 +7,12 @@
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
 	import TwostepButton from '$lib/components/twostep-button.svelte';
 	import * as Accordion from '$lib/components/ui/accordion';
-	import { type Template } from './TemplateV1';
+	import { type Template, type ServerTemplateParameter } from './TemplateV1';
 	import * as Rename from '$lib/components/ui/rename';
 	import { Highlight } from 'svelte-highlight';
-	import { downloadTemplate } from './TemplateLib';
+	import { downloadTemplate, TEMPLATE_NAME_REGEX } from './TemplateLib';
 
 	import json from 'svelte-highlight/languages/json';
-
-	const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
 
 	let {
 		template = $bindable(''),
@@ -37,6 +35,70 @@
 	let desciptionValue = $derived(templateData.description || 'No description');
 	let titleMode = $state<'edit' | 'view'>('view');
 	let descriptionMode = $state<'edit' | 'view'>('view');
+
+	let serverParams = $state<Record<string, string>>({});
+	let serverRegistrySource = $state('local');
+	let serverRuntime = $state('executable');
+
+	const getAuthHeaders = (): Record<string, string> => {
+		const token = new URLSearchParams(window.location.search).get('token');
+		const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+		if (token) headers['Authorization'] = `Bearer ${token}`;
+		return headers;
+	};
+
+	const loadSessionParams = (slug: string): Record<string, string> => {
+		try {
+			const saved = sessionStorage.getItem(`template_params_${slug}`);
+			return saved ? JSON.parse(saved) : {};
+		} catch { return {}; }
+	};
+
+	const saveSessionParams = (slug: string, params: Record<string, string>) => {
+		try {
+			sessionStorage.setItem(`template_params_${slug}`, JSON.stringify(params));
+		} catch { /* sessionStorage may be unavailable */ }
+	};
+
+	$effect(() => {
+		if (templateData?.serverTemplate && templateData.serverInfo) {
+			const saved = loadSessionParams(templateData.serverInfo.slug);
+			const defaults: Record<string, string> = {};
+			for (const p of templateData.serverInfo.parameters) {
+				defaults[p.key] = saved[p.key] ?? p.default ?? '';
+			}
+			serverParams = defaults;
+		}
+	});
+
+	const launchServerTemplate = async () => {
+		if (!templateData?.serverInfo) return;
+		loading = true;
+		saveSessionParams(templateData.serverInfo.slug, serverParams);
+		try {
+			const res = await fetch(`/api/v1/templates/${templateData.serverInfo.slug}/launch`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				body: JSON.stringify({
+					parameters: serverParams,
+					namespace: 'default',
+					registrySource: serverRegistrySource,
+					runtime: serverRuntime,
+				})
+			});
+			if (!res.ok) {
+				const text = await res.text();
+				throw new Error(`${res.status}: ${text}`);
+			}
+			const data = await res.json();
+			toast.success(`Session created: ${data.sessionId}`);
+			open = false;
+		} catch (err) {
+			toast.error(`Failed to launch: ${err instanceof Error ? err.message : String(err)}`);
+		} finally {
+			loading = false;
+		}
+	};
 
 	const removeTemplate = (name: string) => {
 		try {
@@ -64,9 +126,7 @@
 			toast.promise(
 				fetch('/api/v1/local/session', {
 					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
+					headers: getAuthHeaders(),
 					body: JSON.stringify(payload)
 				}).then(async (res) => {
 					if (!res.ok) {
@@ -167,6 +227,80 @@
 <Dialog.Root bind:open>
 	<Dialog.Content class="w-fit max-w-fit min-w-fit">
 		<Dialog.Header>
+			{#if templateData?.serverTemplate && templateData.serverInfo}
+				<Dialog.Title class="flex items-center gap-4 align-middle">
+					{templateData.serverInfo.name}
+					<span class="text-muted-foreground text-xs font-normal">Built-in template</span>
+				</Dialog.Title>
+				<Dialog.Description>
+					<p class="text-muted-foreground mb-4">{templateData.serverInfo.description}</p>
+					<p class="text-muted-foreground mb-4 text-xs">
+						{templateData.serverInfo.agentCount} agents &middot;
+						{templateData.serverInfo.estimatedDuration} &middot;
+						{templateData.serverInfo.estimatedCost}
+					</p>
+					<Separator class="my-2" />
+					<div class="flex max-w-md flex-col gap-3 py-2">
+						{#each templateData.serverInfo.parameters as param}
+							<label class="flex flex-col gap-1">
+								<span class="text-foreground text-sm font-medium">{param.label}</span>
+								<span class="text-muted-foreground text-xs">{param.description}</span>
+								{#if param.choices}
+									<select
+										class="border-input bg-background rounded-md border px-3 py-2 text-sm"
+										value={serverParams[param.key] ?? param.default ?? ''}
+										onchange={(e) => serverParams[param.key] = (e.target as HTMLSelectElement).value}
+									>
+										{#each param.choices as choice}
+											<option value={choice}>{choice}</option>
+										{/each}
+									</select>
+								{:else}
+									<input
+										class="border-input bg-background rounded-md border px-3 py-2 text-sm"
+										type={param.secret ? 'password' : 'text'}
+										placeholder={param.default ?? ''}
+										value={serverParams[param.key] ?? ''}
+										oninput={(e) => serverParams[param.key] = (e.target as HTMLInputElement).value}
+									/>
+								{/if}
+							</label>
+						{/each}
+						<Separator class="my-1" />
+						<div class="flex gap-4">
+							<label class="flex flex-col gap-1">
+								<span class="text-foreground text-sm font-medium">Registry Source</span>
+								<select
+									class="border-input bg-background rounded-md border px-3 py-2 text-sm"
+									bind:value={serverRegistrySource}
+								>
+									<option value="local">Local</option>
+									<option value="marketplace">Marketplace</option>
+								</select>
+							</label>
+							<label class="flex flex-col gap-1">
+								<span class="text-foreground text-sm font-medium">Runtime</span>
+								<select
+									class="border-input bg-background rounded-md border px-3 py-2 text-sm"
+									bind:value={serverRuntime}
+								>
+									<option value="executable">Executable</option>
+									<option value="docker">Docker</option>
+								</select>
+							</label>
+						</div>
+					</div>
+				</Dialog.Description>
+				<Dialog.Footer>
+					<Button
+						variant="cta"
+						disabled={loading}
+						onclick={launchServerTemplate}
+					>
+						{#if loading}Launching...{:else}Launch Session{/if}
+					</Button>
+				</Dialog.Footer>
+			{:else}
 			<Dialog.Title
 				class="{!templateData.trusted ? 'text-accent' : ''} flex items-center gap-4 align-middle "
 			>
@@ -310,6 +444,7 @@
 					>
 				{/if}
 			</Dialog.Footer>
+			{/if}
 		</Dialog.Header>
 	</Dialog.Content>
 </Dialog.Root>

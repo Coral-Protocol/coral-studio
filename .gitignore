@@ -25,3 +25,5 @@ vite.config.ts.timestamp-*
 
 socketio.js
 src/generated/api.ts
+
+.idea/

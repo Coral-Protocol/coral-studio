@@ -6,6 +6,11 @@ import type { CreateSessionRequest, CustomTool, FormSchema, Provider, ProviderTy
 
 export type { FormSchema } from './types';
 
+type GraphAgentRequestWithExtras = components['schemas']['GraphAgentRequest'] & {
+	systemPrompt?: string;
+	plugins?: any[];
+};
+
 export const toPayload = async (server: CoralServer, data: z.output<FormSchema>) => {
 	const detailed = await Promise.all(data.agents.map((a) => server.lookupAgent(a.id)));
 	const agents = data.agents.map((agent, idx) => {
@@ -27,7 +32,7 @@ export const toPayload = async (server: CoralServer, data: z.output<FormSchema>)
 			customToolAccess: Array.from(agent.customToolAccess)
 				.map((id) => data.tools[id]?.name)
 				.filter(Boolean) as string[], // safe assertion because .filter(Boolean) removes null/undefined
-			plugins: [],
+			plugins: agent.plugins ?? [],
 			x402Budgets: [],
 			options: Object.fromEntries(
 				Object.entries(agent.options ?? {})
@@ -137,7 +142,9 @@ export const importFromPayload = (json: string): z.output<FormSchema> => {
 				? data.execution.runtimeSettings
 				: {})
 		},
-		agents: data.agentGraphRequest.agents.map((agent) => ({
+		agents: data.agentGraphRequest.agents.map((agent) => {
+			const ext = agent as GraphAgentRequestWithExtras;
+			return {
 			id: agent.id,
 			name: agent.name,
 			description: agent.description ?? '',
@@ -160,11 +167,13 @@ export const importFromPayload = (json: string): z.output<FormSchema> => {
 			},
 			providerType: agent.provider.type,
 			blocking: agent.blocking ?? true,
+			systemPrompt: ext.systemPrompt,
+			plugins: ext.plugins ?? [],
 			options: agent.options as any,
 			customToolAccess: new Set(
 				(agent.customToolAccess ?? []).map((t) => toolMap[t]).filter(Boolean) as string[] // typescript is stupid this is safe because .filter(Boolean)
 			)
-		}))
+		};})
 	};
 	// selectedAgent = $formData.agents.length > 0 ? 0 : null;
 	// toast.success('Session JSON updated successfully');

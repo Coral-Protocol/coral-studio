@@ -1,6 +1,29 @@
-import type { Template } from "./TemplateV1";
+import type { Template, ServerTemplateInfo } from "./TemplateV1";
 
-const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
+export const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
+
+export const fetchServerTemplates = async (): Promise<Template[]> => {
+    try {
+        const token = new URLSearchParams(window.location.search).get('token');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/v1/templates', { headers });
+        if (!res.ok) return [];
+        const infos: ServerTemplateInfo[] = await res.json();
+        return infos.map(info => ({
+            name: info.slug,
+            description: info.description,
+            version: 1 as const,
+            updated: Date.now(),
+            trusted: true,
+            serverTemplate: true,
+            serverInfo: info,
+            payload: { version: 1, data: '' },
+        }));
+    } catch {
+        return [];
+    }
+};
 
 
 export const normalizeTemplate = (raw: Template | unknown): Template => {
@@ -16,9 +39,7 @@ export const normalizeTemplate = (raw: Template | unknown): Template => {
             ? template.name
             : `imported_${Date.now()}`,
         trusted: Boolean(template.trusted),
-        version: typeof template.version === 'string'
-            ? template.version
-            : 1,
+        version: 1,
         payload:
             typeof template.payload === 'object' &&
             template.payload !== null
@@ -86,14 +107,14 @@ export const saveTemplateToLocalStorage = (template: Template) => {
 	}
 };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function safeJSONParse(value: string | null, fallback: any = {}) {
-    try {
-        if (!value) return fallback;
-        return JSON.parse(value);
-    } catch {
-        return fallback;
-    }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function safeJSONParse(value: string | null, fallback: any = {}) {
+	try {
+		if (!value) return fallback;
+		return JSON.parse(value);
+	} catch {
+		return fallback;
+	}
 }
 
 export const refreshTemplateFromStorage = (
@@ -127,7 +148,7 @@ export const refreshTemplateFromStorage = (
 
 
 
-	export const fetchTemplatesFromStorage = (): string[] => {
+export const fetchTemplatesFromStorage = (): string[] => {
 	try {
 		const rawIndex = localStorage.getItem('template_index');
 		const parsed = safeJSONParse(rawIndex, []);
