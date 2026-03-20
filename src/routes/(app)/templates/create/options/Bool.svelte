@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as ButtonGroup from '$lib/components/ui/button-group/index.js';
-	import { Button } from '$lib/components/ui/button';
+	import * as ButtonGroup from '@coral-os/component-library/ui/button-group/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 
 	import { cn } from '$lib/utils';
 

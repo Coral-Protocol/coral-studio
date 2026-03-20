@@ -1,16 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as Tabs from '$lib/components/ui/tabs';
-	import * as Accordion from '$lib/components/ui/accordion';
-	import { Separator } from '$lib/components/ui/separator';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { idAsKey } from '$lib/threads';
-	import { Button } from '$lib/components/ui/button';
-	import CaretRight from 'phosphor-icons-svelte/IconCaretRightRegular.svelte';
-	import ExternalLink from 'phosphor-icons-svelte/IconArrowsOutRegular.svelte';
+
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import * as Tabs from '@coral-os/component-library/ui/tabs/index.js';
+	import * as Accordion from '@coral-os/component-library/ui/accordion/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+
 	import LogsComponent from '$lib/components/logs.svelte';
 	import RemoteControl from '$lib/components/remote-control.svelte';
+
+	import CaretRight from 'phosphor-icons-svelte/IconCaretRightRegular.svelte';
+	import ExternalLink from 'phosphor-icons-svelte/IconArrowsOutRegular.svelte';
 	import { appContext } from '$lib/context';
 	import { cn } from '$lib/utils';
 	import { base } from '$app/paths';

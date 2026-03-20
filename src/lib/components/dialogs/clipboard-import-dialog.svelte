@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import { Textarea } from '@coral-os/component-library/ui/textarea/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import { toast } from 'svelte-sonner';
 
 	import type { Snippet } from 'svelte';

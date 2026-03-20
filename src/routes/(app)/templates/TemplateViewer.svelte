@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import { toast } from 'svelte-sonner';
-	import * as Tooltip from '$lib/components/ui/tooltip';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import Separator from '$lib/components/ui/separator/separator.svelte';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 	import AgentGraph from '$lib/components/AgentGraph.svelte';
-	import TwostepButton from '$lib/components/twostep-button.svelte';
-	import * as Accordion from '$lib/components/ui/accordion';
+	import { TwostepButton } from '@coral-os/component-library';
+	import * as Accordion from '@coral-os/component-library/ui/accordion/index.js';
 	import { type Template } from './TemplateV1';
-	import * as Rename from '$lib/components/ui/rename';
+	import * as Rename from '@coral-os/component-library/ui/rename/index.js';
 	import { Highlight } from 'svelte-highlight';
 	import { downloadTemplate } from './TemplateLib';
 

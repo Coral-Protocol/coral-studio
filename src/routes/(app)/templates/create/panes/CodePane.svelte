@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Tabs from '$lib/components/ui/tabs/index.js';
-	import * as Tooltip from '$lib/components/ui/tooltip/index.js';
+	import * as Tabs from '@coral-os/component-library/ui/tabs/index.js';
+	import * as Tooltip from '@coral-os/component-library/ui/tooltip/index.js';
 
 	import IconArrowsClockwise from 'phosphor-icons-svelte/IconArrowsClockwiseRegular.svelte';
 
@@ -8,10 +8,10 @@
 	import { json } from '@codemirror/lang-json';
 	import { dracula } from '@uiw/codemirror-theme-dracula';
 
-	import { Separator } from '$lib/components/ui/separator';
-	import { buttonVariants } from '$lib/components/ui/button';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
+	import { buttonVariants } from '@coral-os/component-library/ui/button/index.js';
 	import { cn } from '$lib/utils';
-	import CopyButton from '$lib/components/copy-button.svelte';
+	import { CopyButton } from '@coral-os/component-library';
 	import { PersistedState } from 'runed';
 	import { fade } from 'svelte/transition';
 	import CodeSnippet from './CodeSnippet.svelte';

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { stringToColor } from '$lib/color';
-	import * as Card from '$lib/components/ui/card';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
 	import type { Message } from '$lib/threads';
 	import { cn } from '$lib/utils';
 	import { LogsIcon } from '@lucide/svelte';
 	import AgentName from './AgentName.svelte';
 	import type { SvelteSet } from 'svelte/reactivity';
-	import Button from '$lib/components/ui/button/button.svelte';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import * as DropdownMenu from '@coral-os/component-library/ui/dropdown-menu/index.js';
 	import Telemetry from '$lib/components/dialogs/telemetry.svelte';
 	import type { Session } from '$lib/session.svelte';
 

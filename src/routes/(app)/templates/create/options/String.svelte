@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Input } from '$lib/components/ui/input';
-	import { Textarea } from '$lib/components/ui/textarea';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Textarea } from '@coral-os/component-library/ui/textarea/index.js';
 	import { cn } from '$lib/utils';
 
 	import type { OptionProps } from '../OptionField.svelte';

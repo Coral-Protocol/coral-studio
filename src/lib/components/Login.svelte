@@ -1,8 +1,9 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import * as Field from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import * as Field from '@coral-os/component-library/ui/field/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { appContext } from '$lib/context';

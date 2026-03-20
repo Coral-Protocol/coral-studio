@@ -1,13 +1,12 @@
 <script lang="ts">
-	import * as Form from '$lib/components/ui/form';
-	import * as Accordion from '$lib/components/ui/accordion/index.js';
-	import * as Select from '$lib/components/ui/select';
+	import * as Form from '@coral-os/component-library/ui/form/index.js';
+	import * as Accordion from '@coral-os/component-library/ui/accordion/index.js';
+	import * as Select from '@coral-os/component-library/ui/select/index.js';
 
-	import Input from '$lib/components/ui/input/input.svelte';
-	import { Spinner } from '$lib/components/ui/spinner';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Spinner } from '@coral-os/component-library/ui/spinner/index.js';
 
-	import Combobox from '$lib/components/combobox.svelte';
-	import TooltipLabel from '$lib/components/tooltip-label.svelte';
+	import { TooltipLabel, Combobox } from '@coral-os/component-library';
 	import OptionField from '../OptionField.svelte';
 
 	import { createSessionContext } from '../+page.svelte';

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Field from '$lib/components/ui/field/index.js';
-	import { Input } from '$lib/components/ui/input/index.js';
-	import Button from '$lib/components/ui/button/button.svelte';
+	import * as Field from '@coral-os/component-library/ui/field/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import { page } from '$app/state';
 	import Logo from '$lib/icons/logo.svelte';
 	import { onMount } from 'svelte';

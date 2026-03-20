@@ -5,8 +5,8 @@
 	import * as store from 'svelte/store';
 	import { type SuperForm } from 'sveltekit-superforms';
 
-	import * as Form from '$lib/components/ui/form';
-	import { Input } from '$lib/components/ui/input';
+	import * as Form from '@coral-os/component-library/ui/form/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
 
 	type T = z.output<schemas.FormSchema>;
 

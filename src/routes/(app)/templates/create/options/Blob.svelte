@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Input } from '$lib/components/ui/input';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
 
 	import type { OptionProps } from '../OptionField.svelte';
 

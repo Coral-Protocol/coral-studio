@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as Sidebar from '$lib/components/ui/sidebar';
-	import { Separator } from '$lib/components/ui/separator';
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 	import IconCrane from 'phosphor-icons-svelte/IconCraneRegular.svelte';
 </script>
 

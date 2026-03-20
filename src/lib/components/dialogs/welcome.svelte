@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { ScrollArea } from '../ui/scroll-area';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import { ScrollArea } from '@coral-os/component-library/ui/scroll-area/index.js';
 	import { onMount } from 'svelte';
 
 	let { open = $bindable(false) } = $props();

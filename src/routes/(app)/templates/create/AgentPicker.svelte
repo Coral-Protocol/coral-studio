@@ -1,6 +1,6 @@
 <script lang="ts">
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as HoverCard from '$lib/components/ui/hover-card/index.js';
+	import * as Command from '@coral-os/component-library/ui/command/index.js';
+	import * as HoverCard from '@coral-os/component-library/ui/hover-card/index.js';
 	import type { CoralServer } from '$lib/CoralServer.svelte';
 	import type { components } from '$generated/api';
 

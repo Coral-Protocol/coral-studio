@@ -1,20 +1,21 @@
 <script lang="ts">
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
-	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import { toast } from 'svelte-sonner';
+	import * as DropdownMenu from '@coral-os/component-library/ui/dropdown-menu/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import { Badge } from '@coral-os/component-library/ui/badge/index.js';
+	import { TooltipLabel } from '@coral-os/component-library';
 
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 
 	import Logo from '$lib/icons/logo.svelte';
 	import { watch } from 'runed';
-	import { Input } from '$lib/components/ui/input';
-	import TooltipLabel from './tooltip-label.svelte';
-	import Button from './ui/button/button.svelte';
 	import { fade } from 'svelte/transition';
 	import type { WithElementRef } from 'bits-ui';
 
-	import Badge from './ui/badge/badge.svelte';
+	import { toast } from 'svelte-sonner';
+
 	import { appContext } from '$lib/context';
 	import { cn } from '$lib/utils';
 

@@ -53,7 +53,7 @@ requests.post(
 </script>
 
 <script lang="ts">
-	import CopyButton from '$lib/components/copy-button.svelte';
+	import { CopyButton } from '@coral-os/component-library';
 	import { Highlight } from 'svelte-highlight';
 	import type { CreateSessionRequest } from '../schemas/types';
 	let {

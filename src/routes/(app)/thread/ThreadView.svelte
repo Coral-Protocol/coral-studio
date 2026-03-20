@@ -1,12 +1,12 @@
 <script lang="ts">
-	import * as Resizable from '$lib/components/ui/resizable';
+	import * as Resizable from '@coral-os/component-library/ui/resizable/index.js';
 	import { appContext } from '$lib/context';
 	import type { Message as AgentMessage, Thread } from '$lib/threads';
 	import Message from './Message.svelte';
 	import { cn } from '$lib/utils';
 	import { stringToColor } from '$lib/color';
 	import type { Session } from '$lib/session.svelte';
-	import { Toggle } from '$lib/components/ui/toggle';
+	import { Toggle } from '@coral-os/component-library/ui/toggle/index.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import VList from '$lib/components/VList.svelte';
 

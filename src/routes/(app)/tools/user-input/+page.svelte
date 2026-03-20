@@ -1,16 +1,15 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb';
-	import * as Sidebar from '$lib/components/ui/sidebar';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
+	import * as Breadcrumb from '@coral-os/component-library/ui/breadcrumb/index.js';
+	import * as Sidebar from '@coral-os/component-library/ui/sidebar/index.js';
 
 	import IconRobot from 'phosphor-icons-svelte/IconRobotRegular.svelte';
-	import Input from '$lib/components/ui/input/input.svelte';
-	import { Separator } from '$lib/components/ui/separator';
+	import { Input } from '@coral-os/component-library/ui/input/index.js';
+	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 
 	import { socketCtx } from '$lib/socket.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
-	import { toast } from 'svelte-sonner';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
+	import { Badge } from '@coral-os/component-library/ui/badge/index.js';
 
 	let searchTerm = $state('');
 

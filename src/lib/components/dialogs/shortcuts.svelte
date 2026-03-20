@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Dialog from '$lib/components/ui/dialog/index.js';
-	import * as Kbd from '$lib/components/ui/kbd/index.js';
-	import * as Card from '$lib/components/ui/card/index.js';
+	import * as Dialog from '@coral-os/component-library/ui/dialog/index.js';
+	import * as Kbd from '@coral-os/component-library/ui/kbd/index.js';
+	import * as Card from '@coral-os/component-library/ui/card/index.js';
 
 	let { open = $bindable(false) } = $props();
 

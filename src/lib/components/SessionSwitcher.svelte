@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button';
+	import { Button } from '@coral-os/component-library/ui/button/index.js';
 
 	import CaretUpDown from 'phosphor-icons-svelte/IconCaretUpDownRegular.svelte';
 
-	import * as Command from '$lib/components/ui/command/index.js';
-	import * as Popover from '$lib/components/ui/popover/index.js';
+	import * as Command from '@coral-os/component-library/ui/command/index.js';
+	import * as Popover from '@coral-os/component-library/ui/popover/index.js';
 
 	import { Session } from '$lib/session.svelte';
 	import { tick } from 'svelte';
