@@ -66,7 +66,7 @@
 						</div>
 						<div class="flex flex-col gap-0.5 text-lg leading-none">
 							<span class="font-[Oxanium] font-bold tracking-widest"
-								>coral<span class="text-primary/50">OS</span>
+								>Coral<span class="text-primary/50">OS</span>
 							</span>
 							<span class="text-primary/50 font-sans text-sm">Console</span>
 						</div>
