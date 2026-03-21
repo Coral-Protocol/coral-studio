@@ -13,6 +13,7 @@
 	import { downloadTemplate } from './TemplateLib';
 
 	import json from 'svelte-highlight/languages/json';
+	import { base } from '$app/paths';
 
 	const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
 
@@ -274,7 +275,7 @@
 				<Separator class="my-2" />
 			</Dialog.Description>
 			<Dialog.Footer class="flex justify-start gap-2">
-				<Button disabled={loading} href={`/templates/create?template=${template}`}>Edit</Button>
+				<Button disabled={loading} href={`${base}/workbench?template=${template}`}>Edit</Button>
 				<TwostepButton disabled={loading} onclick={() => removeTemplate(template)}
 					>Delete</TwostepButton
 				>
