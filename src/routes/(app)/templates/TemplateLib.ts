@@ -1,29 +1,9 @@
-import type { Template, ServerTemplateInfo } from "./TemplateV1";
+import type { Template } from "./TemplateV1";
+import { bundledTemplates } from "$lib/bundled-templates";
 
 export const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
 
-export const fetchServerTemplates = async (): Promise<Template[]> => {
-    try {
-        const token = new URLSearchParams(window.location.search).get('token');
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch('/api/v1/templates', { headers });
-        if (!res.ok) return [];
-        const infos: ServerTemplateInfo[] = await res.json();
-        return infos.map(info => ({
-            name: info.slug,
-            description: info.description,
-            version: 1 as const,
-            updated: Date.now(),
-            trusted: true,
-            serverTemplate: true,
-            serverInfo: info,
-            payload: { version: 1, data: '' },
-        }));
-    } catch {
-        return [];
-    }
-};
+export const fetchBundledTemplates = (): Template[] => bundledTemplates;
 
 
 export const normalizeTemplate = (raw: Template | unknown): Template => {

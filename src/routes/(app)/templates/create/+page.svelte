@@ -133,36 +133,20 @@
 	let parsedAgents: ParsedAgent[] = [];
 
 	onMount(async () => {
-		const serverTemplateSlug = page.url.searchParams.get('serverTemplate');
-		if (serverTemplateSlug) {
-			toast('Loading server template...', { duration: 2000 });
-			try {
-				const res = await fetch(`/api/v1/templates/${serverTemplateSlug}/preview`, {
-					method: 'POST',
-					headers: (() => {
-					const token = new URLSearchParams(window.location.search).get('token');
-					const h: Record<string, string> = { 'Content-Type': 'application/json' };
-					if (token) h['Authorization'] = `Bearer ${token}`;
-					return h;
-				})(),
-					body: JSON.stringify({
-						parameters: {},
-						namespace: 'default',
-						registrySource: 'local',
-						runtime: 'executable'
-					})
-				});
-				if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
-				const sessionRequest = await res.json();
+		const bundledTemplateSlug = page.url.searchParams.get('bundledTemplate');
+		if (bundledTemplateSlug) {
+			const payload = sessionStorage.getItem('bundledTemplatePayload');
+			sessionStorage.removeItem('bundledTemplatePayload');
+			if (payload) {
 				sessCtx.importSession({
-					from: JSON.stringify(sessionRequest),
-					success: 'Server template loaded'
+					from: payload,
+					success: `Template "${bundledTemplateSlug}" loaded`
 				});
-			} catch (err) {
-				console.error('Failed to load server template:', err);
-				toast.error('Failed to load server template: ' + err);
+			} else {
+				toast.error('Template data not found');
 			}
 		}
+
 		const agentsQuery = page.url.searchParams.get('agents');
 		const template = page.url.searchParams.get('template');
 		if (agentsQuery) {

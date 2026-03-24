@@ -32,18 +32,17 @@ export type TemplateV1 = {
   };
 
   /**
-   * If true, this template comes from the server's /api/v1/templates endpoint.
-   * Server templates have parameters that must be filled in before launching.
+   * If true, this is a bundled built-in template.
    */
-  serverTemplate?: boolean;
+  bundled?: boolean;
 
   /**
-   * Server-side template info (only present for server templates).
+   * Display metadata for bundled templates.
    */
-  serverInfo?: ServerTemplateInfo;
+  templateInfo?: TemplateInfo;
 }
 
-export type ServerTemplateParameter = {
+export type TemplateParameter = {
   key: string;
   label: string;
   description: string;
@@ -53,7 +52,7 @@ export type ServerTemplateParameter = {
   choices: string[] | null;
 }
 
-export type ServerTemplateInfo = {
+export type TemplateInfo = {
   slug: string;
   name: string;
   description: string;
@@ -61,5 +60,5 @@ export type ServerTemplateInfo = {
   agentCount: number;
   estimatedDuration: string;
   estimatedCost: string;
-  parameters: ServerTemplateParameter[];
+  parameters: TemplateParameter[];
 }
