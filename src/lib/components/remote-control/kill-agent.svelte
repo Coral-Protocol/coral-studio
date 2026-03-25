@@ -27,4 +27,4 @@
 </script>
 
 <!-- todo: disable if the agent is not running -->
-<Button variant="danger" onclick={killAgent}>Kill agent</Button>
+<Button variant="destructive" onclick={killAgent}>Kill agent</Button>
