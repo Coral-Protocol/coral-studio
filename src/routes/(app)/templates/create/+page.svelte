@@ -603,11 +603,7 @@
 					</Resizable.PaneGroup>
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
-				<Resizable.Pane
-					class="flex h-full min-h-0 flex-col"
-					minSize={25}
-					defaultSize={50}
-				>
+				<Resizable.Pane class="flex h-full min-h-0 flex-col" minSize={25} defaultSize={50}>
 					<CodePane />
 					<footer class="bg-sidebar flex justify-end gap-2 border-t p-4">
 						{#if sendingForm || !$formData.agents.length}
