@@ -665,7 +665,7 @@
 					>
 				</Tabs.List>
 				{#key sessCtx.selectedAgent}
-					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-2 overflow-y-scroll ">
+					<Tabs.Content value="agent" class="flex min-h-0 flex-col gap-2 overflow-y-auto ">
 						<AgentPane />
 					</Tabs.Content>
 				{/key}
