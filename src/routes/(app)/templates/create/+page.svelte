@@ -604,7 +604,7 @@
 				</Resizable.Pane>
 				<Resizable.Handle withHandle />
 				<Resizable.Pane
-					class=" flex h-full min-h-0 flex-col !overflow-y-scroll"
+					class="flex h-full min-h-0 flex-col"
 					minSize={25}
 					defaultSize={50}
 				>
