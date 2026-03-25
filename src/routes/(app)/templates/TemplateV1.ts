@@ -30,35 +30,4 @@ export type TemplateV1 = {
     version: number;
     data: string;
   };
-
-  /**
-   * If true, this is a bundled built-in template.
-   */
-  bundled?: boolean;
-
-  /**
-   * Display metadata for bundled templates.
-   */
-  templateInfo?: TemplateInfo;
-}
-
-export type TemplateParameter = {
-  key: string;
-  label: string;
-  description: string;
-  required: boolean;
-  secret: boolean;
-  default: string | null;
-  choices: string[] | null;
-}
-
-export type TemplateInfo = {
-  slug: string;
-  name: string;
-  description: string;
-  category: string;
-  agentCount: number;
-  estimatedDuration: string;
-  estimatedCost: string;
-  parameters: TemplateParameter[];
 }

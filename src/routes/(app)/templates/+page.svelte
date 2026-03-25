@@ -198,16 +198,14 @@
 					: normalizeTemplate(
 						safeJSONParse(localStorage.getItem(`template_${template}`), {})
 					)}
-				{@const graphData = isBundled
-					? safeJSONParse(templateData?.payload?.data || '{}')
-					: safeJSONParse(templateData?.payload?.data || '{}')}
+				{@const graphData = safeJSONParse(templateData?.payload?.data || '{}')}
 
 				<li class="col-span-1">
 					<Card.Root>
 						<Dialog.Root bind:open={dialogOpen}>
 							<Card.Content class="flex flex-col gap-4 ">
 								<Card.Header class="relative flex justify-between px-0">
-									<Card.Title>{isBundled && templateData?.templateInfo ? templateData.templateInfo.name : template}</Card.Title>
+									<Card.Title>{templateData?.description ? template : template}</Card.Title>
 									{#if isBundled}
 										<span class="text-muted-foreground absolute right-0 text-xs">Built-in</span>
 									{:else if !templateData?.trusted}
@@ -228,24 +226,17 @@
 									class=" bg-sidebar hover:bg-accent-foreground/10 aspect-square w-full overflow-clip rounded-lg transition-all"
 									onclick={() => openTemplate(template)}
 								>
-									{#if isBundled && templateData?.templateInfo}
-										<div class="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-											<p class="text-muted-foreground text-sm">{templateData.templateInfo.description}</p>
-											<p class="text-muted-foreground text-xs">{templateData.templateInfo.agentCount} agents &middot; {templateData.templateInfo.estimatedDuration} &middot; {templateData.templateInfo.estimatedCost}</p>
-										</div>
-									{:else}
-										<AgentGraph
-											agents={graphData?.agentGraphRequest?.agents || []}
-											groups={graphData?.agentGraphRequest?.groups || []}
-											options={{
-												disableZoom: true,
-												disableDrag: true,
-												disableBrush: true,
-												nodeSubLabel: null,
-												selectedNodeId: null
-											}}
-										/>
-									{/if}
+									<AgentGraph
+										agents={graphData?.agentGraphRequest?.agents || []}
+										groups={graphData?.agentGraphRequest?.groups || []}
+										options={{
+											disableZoom: true,
+											disableDrag: true,
+											disableBrush: true,
+											nodeSubLabel: null,
+											selectedNodeId: null
+										}}
+									/>
 								</button>
 
 								<Card.Footer class="flex justify-between gap-2 border-t px-0">
