@@ -2,6 +2,7 @@
 	import * as Form from '@coral-os/component-library/ui/form/index.js';
 	import * as Accordion from '@coral-os/component-library/ui/accordion/index.js';
 	import * as Select from '@coral-os/component-library/ui/select/index.js';
+	import * as Popover from '@coral-os/component-library/ui/popover/index.js';
 
 	import { Input } from '@coral-os/component-library/ui/input/index.js';
 	import { Spinner } from '@coral-os/component-library/ui/spinner/index.js';
@@ -13,6 +14,8 @@
 	import { appContext } from '$lib/context';
 	import { registryIdOf } from '$lib/CoralServer.svelte';
 	import { tick } from 'svelte';
+	import { buttonVariants } from '@coral-os/component-library/components/ui/button/index.js';
+	import AgentPicker from '../AgentPicker.svelte';
 
 	let appCtx = appContext.get();
 
@@ -218,7 +221,24 @@
 		</ol>
 	{/if}
 {:else}
-	<div class="text-muted-foreground m-auto h-full w-full content-center text-center">
-		Add an agent to begin.
-	</div>
+	<!-- <div class="text-muted-foreground m-auto h-full w-full content-center text-center"> -->
+	<!-- 	Add an agent to begin. -->
+	<!-- </div> -->
+	<section class="flex grow flex-col items-center justify-center gap-2 text-center">
+		<p>No agents.</p>
+		<p class="flex flex-col gap-1">
+			<Popover.Root>
+				<Popover.Trigger class={buttonVariants({ size: 'sm' })}>Add an agent</Popover.Trigger>
+				<Popover.Content class="p-1">
+					<AgentPicker
+						server={appCtx.server}
+						onSelect={(agent, catalogId) => {
+							ctx.addAgent(agent.name, catalogId.type, agent.versions[0]!);
+						}}
+					/>
+				</Popover.Content>
+			</Popover.Root>
+			<span class="text-muted-foreground text-sm">to get started.</span>
+		</p>
+	</section>
 {/if}

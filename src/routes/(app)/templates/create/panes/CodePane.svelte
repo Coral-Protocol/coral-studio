@@ -8,8 +8,10 @@
 	import { json } from '@codemirror/lang-json';
 	import { dracula } from '@uiw/codemirror-theme-dracula';
 
+	import { ScrollArea } from '@coral-os/component-library/ui/scroll-area/index.js';
 	import { Separator } from '@coral-os/component-library/ui/separator/index.js';
 	import { buttonVariants } from '@coral-os/component-library/ui/button/index.js';
+
 	import { cn } from '$lib/utils';
 	import { CopyButton } from '@coral-os/component-library';
 	import { PersistedState } from 'runed';
@@ -32,7 +34,7 @@
 		<Tabs.Trigger value="py" class="grow-0">Python</Tabs.Trigger>
 		<!-- <Tabs.Trigger value="curl" class="grow-0">cURL</Tabs.Trigger> -->
 	</Tabs.List>
-	<Tabs.Content value="json" class="relative overflow-y-auto">
+	<Tabs.Content value="json" class="relative overflow-hidden">
 		<section class="absolute top-5 right-5 z-10 flex flex-col gap-2">
 			<CopyButton value={payloadJson} />
 			{#if jsonDirty}
@@ -55,17 +57,19 @@
 				</span>
 			{/if}
 		</section>
-		<CodeMirror
-			bind:value={payloadJson}
-			onchange={() => {
-				jsonDirty = true;
-			}}
-			lang={json()}
-			tabSize={4}
-			theme={dracula}
-			lineWrapping={true}
-			class="absolute inset-0 [&_.cm-content]:p-0! [&>*]:size-full "
-		/>
+		<ScrollArea class="size-full">
+			<CodeMirror
+				bind:value={payloadJson}
+				onchange={() => {
+					jsonDirty = true;
+				}}
+				lang={json()}
+				tabSize={4}
+				theme={dracula}
+				lineWrapping={true}
+				class="size-full [&_.cm-content]:p-0! [&>*]:size-full "
+			/>
+		</ScrollArea>
 	</Tabs.Content>
 	<Tabs.Content value="js" class="relative overflow-y-auto">
 		{#if ctx.payload}
