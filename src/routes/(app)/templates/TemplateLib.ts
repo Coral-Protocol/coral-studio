@@ -38,13 +38,16 @@ export const normalizeTemplate = (raw: Template | unknown): Template => {
    * Returns the raw JSON string stored in the template's payload, which is expected to be the session data.
    */
 export const getSessionDataFromTemplateName = (template: string) => {
-    const data = JSON.parse(localStorage.getItem(`template_${template}`) || '{}')
-    if (!data || data === '{}') {
+    const raw = localStorage.getItem(`template_${template}`);
+    if (!raw) {
         throw new Error('Template not found');
+    }
+    const data = JSON.parse(raw);
+    if (!data?.payload?.data) {
+        throw new Error('Template has no session data');
     }
 
     return data.payload.data as string;
-
 }
 
 export const saveTemplateToLocalStorage = (template: Template) => {

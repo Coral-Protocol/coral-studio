@@ -133,20 +133,6 @@
 	let parsedAgents: ParsedAgent[] = [];
 
 	onMount(async () => {
-		const bundledTemplateSlug = page.url.searchParams.get('bundledTemplate');
-		if (bundledTemplateSlug) {
-			const payload = sessionStorage.getItem('bundledTemplatePayload');
-			sessionStorage.removeItem('bundledTemplatePayload');
-			if (payload) {
-				sessCtx.importSession({
-					from: payload,
-					success: `Template "${bundledTemplateSlug}" loaded`
-				});
-			} else {
-				toast.error('Template data not found');
-			}
-		}
-
 		const agentsQuery = page.url.searchParams.get('agents');
 		const template = page.url.searchParams.get('template');
 		if (agentsQuery) {

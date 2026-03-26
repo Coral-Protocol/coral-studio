@@ -36,7 +36,6 @@
 	} from './TemplateLib';
 
 	let templates = $state<string[]>([]);
-	let bundledTemplateMap = $state<Map<string, TemplateV1>>(new Map());
 
 	let dialogOpen = $state(false);
 	let overwriteWarning = $state(false);
@@ -47,13 +46,17 @@
 	let loading = $state(true);
 
 	onMount(() => {
-		for (const bt of fetchBundledTemplates()) {
-			bundledTemplateMap.set(bt.name, bt);
+		const BUNDLED_VERSION = '1';
+		if (localStorage.getItem('bundled_templates_seeded') !== BUNDLED_VERSION) {
+			for (const bt of fetchBundledTemplates()) {
+				if (!localStorage.getItem('template_' + bt.name)) {
+					saveTemplateToLocalStorage(bt);
+				}
+			}
+			localStorage.setItem('bundled_templates_seeded', BUNDLED_VERSION);
 		}
 
-		const builtInNames = [...bundledTemplateMap.keys()];
-		const localTemplates = fetchTemplatesFromStorage();
-		templates = [...builtInNames, ...localTemplates.filter(t => !bundledTemplateMap.has(t))];
+		templates = fetchTemplatesFromStorage();
 		loading = false;
 	});
 
@@ -105,13 +108,6 @@
 
 	const openTemplate = (name: string) => {
 		template = name;
-
-		const bundledTpl = bundledTemplateMap.get(name);
-		if (bundledTpl?.payload?.data) {
-			sessionStorage.setItem('bundledTemplatePayload', bundledTpl.payload.data);
-			goto(`${base}/templates/create?bundledTemplate=${name}`);
-			return;
-		}
 
 		const raw = localStorage.getItem(`template_${name}`);
 		const parsed = normalizeTemplate(safeJSONParse(raw, {}));
@@ -192,12 +188,9 @@
 			class="grid grid-cols-[repeat(auto-fit,minmax(20rem,24em))] justify-center gap-4 overflow-y-scroll p-4"
 		>
 			{#each templates as template, i}
-				{@const isBundled = bundledTemplateMap.has(template)}
-				{@const templateData = isBundled
-					? bundledTemplateMap.get(template)
-					: normalizeTemplate(
-						safeJSONParse(localStorage.getItem(`template_${template}`), {})
-					)}
+				{@const templateData = normalizeTemplate(
+					safeJSONParse(localStorage.getItem(`template_${template}`), {})
+				)}
 				{@const graphData = safeJSONParse(templateData?.payload?.data || '{}')}
 
 				<li class="col-span-1">
@@ -205,10 +198,8 @@
 						<Dialog.Root bind:open={dialogOpen}>
 							<Card.Content class="flex flex-col gap-4 ">
 								<Card.Header class="relative flex justify-between px-0">
-									<Card.Title>{templateData?.description ? template : template}</Card.Title>
-									{#if isBundled}
-										<span class="text-muted-foreground absolute right-0 text-xs">Built-in</span>
-									{:else if !templateData?.trusted}
+									<Card.Title>{template}</Card.Title>
+									{#if !templateData?.trusted}
 										<Tooltip.Provider>
 											<Tooltip.Root delayDuration={0}>
 												<Tooltip.Trigger
@@ -248,7 +239,7 @@
 														class="self-start"
 														variant="ghostHover"
 														size="sm"
-														href="{base}/templates/create?template=${template}"
+														href="{base}/templates/create?template={template}"
 														><IconPencilRegular />
 														<div class="sr-only">Edit</div></Button
 													></Tooltip.Trigger
