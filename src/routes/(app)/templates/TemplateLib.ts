@@ -1,6 +1,9 @@
 import type { Template } from "./TemplateV1";
+import { bundledTemplates } from "$lib/bundled-templates";
 
-const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
+export const TEMPLATE_NAME_REGEX = /^[a-zA-Z0-9_-]{1,32}$/;
+
+export const fetchBundledTemplates = (): Template[] => bundledTemplates;
 
 
 export const normalizeTemplate = (raw: Template | unknown): Template => {
@@ -16,9 +19,7 @@ export const normalizeTemplate = (raw: Template | unknown): Template => {
             ? template.name
             : `imported_${Date.now()}`,
         trusted: Boolean(template.trusted),
-        version: typeof template.version === 'string'
-            ? template.version
-            : 1,
+        version: 1,
         payload:
             typeof template.payload === 'object' &&
             template.payload !== null
@@ -37,13 +38,16 @@ export const normalizeTemplate = (raw: Template | unknown): Template => {
    * Returns the raw JSON string stored in the template's payload, which is expected to be the session data.
    */
 export const getSessionDataFromTemplateName = (template: string) => {
-    const data = JSON.parse(localStorage.getItem(`template_${template}`) || '{}')
-    if (!data || data === '{}') {
+    const raw = localStorage.getItem(`template_${template}`);
+    if (!raw) {
         throw new Error('Template not found');
+    }
+    const data = JSON.parse(raw);
+    if (!data?.payload?.data) {
+        throw new Error('Template has no session data');
     }
 
     return data.payload.data as string;
-
 }
 
 export const saveTemplateToLocalStorage = (template: Template) => {
@@ -86,14 +90,14 @@ export const saveTemplateToLocalStorage = (template: Template) => {
 	}
 };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function safeJSONParse(value: string | null, fallback: any = {}) {
-    try {
-        if (!value) return fallback;
-        return JSON.parse(value);
-    } catch {
-        return fallback;
-    }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function safeJSONParse(value: string | null, fallback: any = {}) {
+	try {
+		if (!value) return fallback;
+		return JSON.parse(value);
+	} catch {
+		return fallback;
+	}
 }
 
 export const refreshTemplateFromStorage = (
@@ -127,7 +131,7 @@ export const refreshTemplateFromStorage = (
 
 
 
-	export const fetchTemplatesFromStorage = (): string[] => {
+export const fetchTemplatesFromStorage = (): string[] => {
 	try {
 		const rawIndex = localStorage.getItem('template_index');
 		const parsed = safeJSONParse(rawIndex, []);

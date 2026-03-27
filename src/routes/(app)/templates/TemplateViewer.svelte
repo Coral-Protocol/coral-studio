@@ -11,6 +11,7 @@
 	import * as Rename from '@coral-os/component-library/ui/rename/index.js';
 	import { Highlight } from 'svelte-highlight';
 	import { downloadTemplate } from './TemplateLib';
+	import { base } from '$app/paths';
 
 	import json from 'svelte-highlight/languages/json';
 
@@ -274,7 +275,7 @@
 				<Separator class="my-2" />
 			</Dialog.Description>
 			<Dialog.Footer class="flex justify-start gap-2">
-				<Button disabled={loading} href={`/templates/create?template=${template}`}>Edit</Button>
+				<Button disabled={loading} href="{base}/templates/create?template={template}">Edit</Button>
 				<TwostepButton disabled={loading} onclick={() => removeTemplate(template)}
 					>Delete</TwostepButton
 				>

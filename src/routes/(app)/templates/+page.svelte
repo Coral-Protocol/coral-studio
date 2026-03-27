@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { base } from '$app/paths';
+	import { goto } from '$app/navigation';
 
 	import { Button } from '@coral-os/component-library/ui/button/index.js';
 	import * as Card from '@coral-os/component-library/ui/card/index.js';
@@ -26,6 +27,7 @@
 		normalizeTemplate,
 		refreshTemplateFromStorage,
 		fetchTemplatesFromStorage,
+		fetchBundledTemplates,
 		safeJSONParse,
 		pickAndParseTemplateFile,
 		checkTemplateOverwrite,
@@ -44,6 +46,16 @@
 	let loading = $state(true);
 
 	onMount(() => {
+		const BUNDLED_VERSION = '1';
+		if (localStorage.getItem('bundled_templates_seeded') !== BUNDLED_VERSION) {
+			for (const bt of fetchBundledTemplates()) {
+				if (!localStorage.getItem('template_' + bt.name)) {
+					saveTemplateToLocalStorage(bt);
+				}
+			}
+			localStorage.setItem('bundled_templates_seeded', BUNDLED_VERSION);
+		}
+
 		templates = fetchTemplatesFromStorage();
 		loading = false;
 	});
@@ -179,9 +191,7 @@
 				{@const templateData = normalizeTemplate(
 					safeJSONParse(localStorage.getItem(`template_${template}`), {})
 				)}
-				{@const graphData = safeJSONParse(templateData.payload?.data || '{}') as {
-					agentGraphRequest?: { agents?: any[]; groups?: any[] };
-				}}
+				{@const graphData = safeJSONParse(templateData?.payload?.data || '{}')}
 
 				<li class="col-span-1">
 					<Card.Root>
@@ -189,7 +199,7 @@
 							<Card.Content class="flex flex-col gap-4 ">
 								<Card.Header class="relative flex justify-between px-0">
 									<Card.Title>{template}</Card.Title>
-									{#if !templateData.trusted}
+									{#if !templateData?.trusted}
 										<Tooltip.Provider>
 											<Tooltip.Root delayDuration={0}>
 												<Tooltip.Trigger
@@ -229,7 +239,7 @@
 														class="self-start"
 														variant="ghostHover"
 														size="sm"
-														href="{base}/templates/create?template=${template}"
+														href="{base}/templates/create?template={template}"
 														><IconPencilRegular />
 														<div class="sr-only">Edit</div></Button
 													></Tooltip.Trigger

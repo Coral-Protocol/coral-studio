@@ -213,6 +213,7 @@ const formSchema = z.object({
 			provider: ProviderSchema,
 			providerType: z.string(),
 			systemPrompt: z.string().optional(),
+			plugins: z.array(z.any()).optional(),
 			customToolAccess: z.set(z.string()),
 			blocking: z.boolean(),
 			options: z
